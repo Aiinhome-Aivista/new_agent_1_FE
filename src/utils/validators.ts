@@ -6,7 +6,7 @@ export const loginSchema = z.object({
 });
 
 export const proposalUploadSchema = z.object({
-  clientName: z.string().min(2, { message: 'Client name must be at least 2 characters' }),
-  projectDuration: z.string().min(2, { message: 'Duration details are required' }),
-  budget: z.string().min(2, { message: 'Budget sizing details are required' }),
+  clientName: z.string().optional(),
+  projectDuration: z.string().optional(),
+  budget: z.string().optional(),
 });

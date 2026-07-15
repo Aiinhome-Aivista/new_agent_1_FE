@@ -57,8 +57,8 @@ const Home: React.FC = () => {
     resolver: zodResolver(proposalUploadSchema),
     defaultValues: {
       clientName: '',
-      projectDuration: '14 Weeks',
-      budget: '$250,000',
+      projectDuration: '',
+      budget: '',
     }
   });
 
@@ -70,9 +70,11 @@ const Home: React.FC = () => {
   // Poll active proposal status
   useEffect(() => {
     let timerId: any = null;
+    let isFetching = false;
 
     const poll = async () => {
-      if (!activeProposalId) return;
+      if (!activeProposalId || isFetching) return;
+      isFetching = true;
       try {
         const details = await proposalApi.status(activeProposalId);
         setStatusDetails(details);
@@ -88,19 +90,25 @@ const Home: React.FC = () => {
           setActiveProposalId(null);
           toast('Proposal generation failed. Check step logs.', 'error');
           fetchProposals();
+        } else {
+          // Schedule next poll only if still running
+          timerId = setTimeout(poll, 3000);
         }
       } catch (err) {
         console.error('Polling status failed:', err);
+        // Retry after 3 seconds on error
+        timerId = setTimeout(poll, 3000);
+      } finally {
+        isFetching = false;
       }
     };
 
     if (isPolling && activeProposalId) {
-      poll(); // Immediate first check
-      timerId = setInterval(poll, 3000);
+      poll();
     }
 
     return () => {
-      if (timerId) clearInterval(timerId);
+      if (timerId) clearTimeout(timerId);
     };
   }, [isPolling, activeProposalId]);
 
@@ -242,27 +250,6 @@ const Home: React.FC = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(handleUpload)} className="flex flex-col gap-5">
-                <Input
-                  label="Target Client Name"
-                  placeholder="e.g. Acme Corporation"
-                  error={errors.clientName?.message as string}
-                  {...register('clientName')}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Contract Timeline / Duration"
-                    placeholder="e.g. 14 Weeks"
-                    error={errors.projectDuration?.message as string}
-                    {...register('projectDuration')}
-                  />
-                  <Input
-                    label="Estimated Target Budget"
-                    placeholder="e.g. $250,000"
-                    error={errors.budget?.message as string}
-                    {...register('budget')}
-                  />
-                </div>
 
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-foreground/80">Support Documents (RFI, RFP, Questionnaire)</label>
