@@ -14,7 +14,7 @@ export const Header: React.FC = () => {
           P
         </div>
         <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          Advisory Bid Sentinel
+         Autonomous Proposal Creator
         </h1>
       </div>
 
