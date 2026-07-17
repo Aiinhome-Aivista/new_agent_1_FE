@@ -504,7 +504,7 @@ const Home: React.FC = () => {
 
                       {/* Draft → DeliveryReview */}
                       {canSubmitToDelivery && (
-                        <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Draft')}>
+                        <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('DeliveryReview')}>
                           <Send size={11} /> Submit to Delivery Lead
                         </Button>
                       )}
