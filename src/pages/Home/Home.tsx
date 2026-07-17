@@ -69,52 +69,7 @@ const Home: React.FC = () => {
   const [savingIr, setSavingIr] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [activeTab, setActiveTab] = useState<'archive' | 'admin'>('archive');
-  const [adminUsers, setAdminUsers] = useState<any[]>([]);
-  const [adminConfig, setAdminConfig] = useState<any>(null);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
-  const [newModelName, setNewModelName] = useState('');
-  const [selectedRetryId, setSelectedRetryId] = useState('');
-
-  // ── Admin data ──────────────────────────────────────────
-  const fetchAdminData = async () => {
-    if (!perms.canViewAdminPanel) return;
-
-    // Fetch each resource independently so a failing endpoint
-    // (e.g. ArangoDB down → getConfig throws) never blocks the others.
-    try {
-      const usersData = await adminApi.getUsers();
-      setAdminUsers(Array.isArray(usersData) ? usersData : []);
-    } catch (err) {
-      console.error('Admin: failed to load users', err);
-    }
-
-    try {
-      const configData = await adminApi.getConfig();
-      if (configData && typeof configData === 'object') {
-        setAdminConfig(configData);
-        setNewModelName(configData.active_ai_model || '');
-      }
-    } catch (err) {
-      console.error('Admin: failed to load config', err);
-    }
-
-    try {
-      const logsData = await adminApi.getAuditLogs();
-      setAuditLogs(Array.isArray(logsData) ? logsData : []);
-    } catch (err) {
-      console.error('Admin: failed to load audit logs', err);
-    }
-  };
-
-
-  useEffect(() => {
-    if (perms.canViewAdminPanel && activeTab === 'admin') {
-      fetchAdminData();
-      const interval = setInterval(fetchAdminData, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [perms.canViewAdminPanel, activeTab]);
 
   // Audit logs for partner review
   useEffect(() => {
@@ -123,39 +78,7 @@ const Home: React.FC = () => {
     }
   }, [perms.isPartner, statusDetails]);
 
-  // ── Admin actions ───────────────────────────────────────
-  const handleUserRoleChange = async (username: string, role: string) => {
-    try {
-      await adminApi.changeRole(username, role);
-      toast(`User ${username} role updated to ${role}`, 'success');
-      fetchAdminData();
-    } catch (err: any) {
-      toast('Failed to change role: ' + (err.response?.data?.error || err.message), 'error');
-    }
-  };
 
-  const handleModelUpdate = async () => {
-    if (!newModelName) return;
-    try {
-      await adminApi.updateModel(newModelName);
-      toast(`Active AI Model updated to ${newModelName}`, 'success');
-      fetchAdminData();
-    } catch (err: any) {
-      toast('Failed to update AI model: ' + (err.response?.data?.error || err.message), 'error');
-    }
-  };
-
-  const handleRetryJob = async () => {
-    if (!selectedRetryId) return;
-    try {
-      await adminApi.retryJob(selectedRetryId);
-      toast(`Job retry started for proposal ${selectedRetryId}`, 'success');
-      setSelectedRetryId('');
-      fetchProposals();
-    } catch (err: any) {
-      toast('Failed to retry job: ' + (err.response?.data?.error || err.message), 'error');
-    }
-  };
 
   // ── Workflow transitions ────────────────────────────────
   const handleTransition = async (targetStatus: string) => {
@@ -642,194 +565,78 @@ const Home: React.FC = () => {
 
         {/* RIGHT WORKSPACE: Archive + Admin Panel */}
         <div className="lg:col-span-5 flex flex-col gap-6">
-          {perms.canViewAdminPanel && (
-            <div className="flex bg-muted/60 p-1 border border-border rounded-xl gap-1">
-              <button
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors ${activeTab === 'archive' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted/50'}`}
-                onClick={() => setActiveTab('archive')}
-              >
-                Drafts Archive
-              </button>
-              <button
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors ${activeTab === 'admin' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted/50'}`}
-                onClick={() => setActiveTab('admin')}
-              >
-                Admin Control Center
-              </button>
-            </div>
-          )}
-
-          {activeTab === 'archive' || !perms.canViewAdminPanel ? (
-            <Card className="h-full">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-base font-bold">
-                    <History size={18} className="text-primary" />
-                    Historical Drafts Archive
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    Review generated solution decks requiring human validation
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={fetchProposals} title="Refresh History">
-                  <RefreshCw size={15} />
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {proposals.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <History size={32} className="text-muted-foreground mb-3" />
-                    <p className="text-sm font-semibold text-foreground">No proposal archives yet</p>
-                    <p className="text-xs text-muted-foreground max-w-[200px] mt-1">
-                      {perms.canCreateProposal
-                        ? 'Upload an RFP specification to create your first client-presentable PPTX proposal deck.'
-                        : 'No proposals are available for review yet.'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3 max-h-[640px] overflow-y-auto pr-1">
-                    {proposals.map((proposal) => (
-                      <div
-                        key={proposal.id}
-                        onClick={() => handleViewStatus(proposal)}
-                        className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${
-                          statusDetails?.proposal.id === proposal.id
-                            ? 'border-primary bg-primary/5 shadow-sm'
-                            : 'border-border bg-card hover:border-primary/20 hover:bg-muted/10'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-bold text-sm text-foreground/90">{proposal.client_name}</span>
-                            <span className="text-[11px] text-muted-foreground">Generated: {formatDate(proposal.created_at)}</span>
-                          </div>
-                          <Badge variant={getProposalBadgeVariant(proposal.status)} className="text-[10px] py-0 px-2 flex-shrink-0">
-                            {proposal.status}
-                          </Badge>
-                        </div>
-
-                        <div className="flex items-center justify-between border-t border-border/40 pt-2.5 mt-1 text-[11px] text-muted-foreground">
-                          <div className="flex items-center gap-3">
-                            <span>Timeline: <strong>{proposal.project_duration}</strong></span>
-                            <span>Budget: <strong>{proposal.budget}</strong></span>
-                          </div>
-                          
-                          {BUSINESS_STATUSES.includes(proposal.status) && perms.canDownload && (
-                            <a
-                              href={proposalApi.downloadUrl(proposal.id)}
-                              onClick={(e) => e.stopPropagation()}
-                              download
-                              className="text-primary hover:text-primary/80 flex items-center gap-1 font-bold"
-                            >
-                              <Download size={13} />
-                              PPTX
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            // Admin Control Center
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="text-base font-bold flex items-center gap-2">
-                  <Cpu size={18} className="text-primary" />
-                  Admin Control Center
+          <Card className="h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base font-bold">
+                  <History size={18} className="text-primary" />
+                  Historical Drafts Archive
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Configure active LLM configurations, adjust user role scopes, and run diagnostics logs.
+                  Review generated solution decks requiring human validation
                 </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-6 max-h-[640px] overflow-y-auto pr-1">
-                {/* 1. Diagnostics */}
-                <div className="flex flex-col gap-2 bg-muted/40 p-3 border border-border rounded-xl">
-                  <span className="text-xs font-bold text-foreground border-b border-border pb-1 font-sans">Diagnostics & Config</span>
-                  <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground mt-1">
-                    <span>MySQL: <strong className={adminConfig?.mysql_status?.includes("Online") ? "text-emerald-500" : "text-amber-500"}>{adminConfig?.mysql_status || "Checking..."}</strong></span>
-                    <span>ArangoDB: <strong className={adminConfig?.arango_status === "Online" ? "text-emerald-500" : "text-rose-500"}>{adminConfig?.arango_status || "Checking..."}</strong></span>
-                    <span className="col-span-2">Active LLM: <strong>{adminConfig?.active_ai_model || "mistral-small:24b"}</strong></span>
-                  </div>
-                  {/* Model Update */}
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      type="text"
-                      className="flex-1 h-8 rounded-md border border-input bg-card px-2 text-xs"
-                      placeholder="Change LLM Model name"
-                      value={newModelName}
-                      onChange={(e) => setNewModelName(e.target.value)}
-                    />
-                    <Button size="sm" className="h-8 text-[10px] py-1 px-2.5" onClick={handleModelUpdate}>Update</Button>
-                  </div>
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={fetchProposals} title="Refresh History">
+                <RefreshCw size={15} />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {proposals.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <History size={32} className="text-muted-foreground mb-3" />
+                  <p className="text-sm font-semibold text-foreground">No proposal archives yet</p>
+                  <p className="text-xs text-muted-foreground max-w-[200px] mt-1">
+                    {perms.canCreateProposal
+                      ? 'Upload an RFP specification to create your first client-presentable PPTX proposal deck.'
+                      : 'No proposals are available for review yet.'}
+                  </p>
                 </div>
-
-                {/* 2. User & Role Management */}
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-bold text-foreground border-b border-border pb-1">User & Role Directory</span>
-                  <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto">
-                    {(Array.isArray(adminUsers) ? adminUsers : []).map((u: any) => (
-                      <div key={u.id} className="flex justify-between items-center bg-muted/20 p-2 border border-border rounded-lg text-xs">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-semibold">{u.username}</span>
-                          <span className="text-muted-foreground text-[10px]">{u.created_at}</span>
-                        </div>
-                        <select
-                          className="bg-card border border-border rounded px-1.5 py-0.5 text-[11px]"
-                          value={u.role}
-                          onChange={(e) => handleUserRoleChange(u.username, e.target.value)}
-                        >
-                          <option value="admin">Admin</option>
-                          <option value="presales">Pre-Sales</option>
-                          <option value="bidmanager">Bid Manager</option>
-                          <option value="delivery">Delivery Lead</option>
-                          <option value="partner">Reviewing Partner</option>
-                        </select>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 3. Retry Failed Jobs */}
-                <div className="flex flex-col gap-2 bg-muted/40 p-3 border border-border rounded-xl">
-                  <span className="text-xs font-bold text-foreground border-b border-border pb-1">Failed Jobs Retries</span>
-                  <div className="flex gap-2 items-center">
-                    <select
-                      className="flex-1 h-8 bg-card border border-border rounded-md px-2 text-xs"
-                      value={selectedRetryId}
-                      onChange={(e) => setSelectedRetryId(e.target.value)}
+              ) : (
+                <div className="flex flex-col gap-3 max-h-[640px] overflow-y-auto pr-1">
+                  {proposals.map((proposal) => (
+                    <div
+                      key={proposal.id}
+                      onClick={() => handleViewStatus(proposal)}
+                      className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${
+                        statusDetails?.proposal.id === proposal.id
+                          ? 'border-primary bg-primary/5 shadow-sm'
+                          : 'border-border bg-card hover:border-primary/20 hover:bg-muted/10'
+                      }`}
                     >
-                      <option value="">-- Select proposal to retry --</option>
-                      {proposals.map((p) => (
-                        <option key={p.id} value={p.id}>{p.client_name} ({p.id})</option>
-                      ))}
-                    </select>
-                    <Button variant="outline" size="sm" className="h-8 text-[10px] text-primary hover:bg-primary/10" onClick={handleRetryJob}>
-                      Retry Job
-                    </Button>
-                  </div>
-                </div>
-
-                {/* 4. Global Audit Logs */}
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-bold text-foreground border-b border-border pb-1">Global System Audit Logs</span>
-                  <div className="bg-muted p-2 rounded-lg font-mono text-[9px] max-h-[150px] overflow-y-auto border border-border leading-relaxed">
-                    {!Array.isArray(auditLogs) || auditLogs.length === 0 ? (
-                      <span className="italic text-muted-foreground">No system activities logged yet.</span>
-                    ) : (
-                      auditLogs.map((log: any, idx: number) => (
-                        <div key={idx} className="border-b border-border/40 pb-1.5 mb-1.5 last:border-0 last:pb-0 last:mb-0">
-                          <span className="text-primary font-bold">[{log.proposal_id}]</span> <strong>{log.step_name}</strong> — {log.log_message} <span className="text-muted-foreground">({log.updated_at})</span>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold text-sm text-foreground/90">{proposal.client_name}</span>
+                          <span className="text-[11px] text-muted-foreground">Generated: {formatDate(proposal.created_at)}</span>
                         </div>
-                      ))
-                    )}
-                  </div>
+                        <Badge variant={getProposalBadgeVariant(proposal.status)} className="text-[10px] py-0 px-2 flex-shrink-0">
+                          {proposal.status}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-border/40 pt-2.5 mt-1 text-[11px] text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                          <span>Timeline: <strong>{proposal.project_duration}</strong></span>
+                          <span>Budget: <strong>{proposal.budget}</strong></span>
+                        </div>
+                        
+                        {BUSINESS_STATUSES.includes(proposal.status) && perms.canDownload && (
+                          <a
+                            href={proposalApi.downloadUrl(proposal.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            download
+                            className="text-primary hover:text-primary/80 flex items-center gap-1 font-bold"
+                          >
+                            <Download size={13} />
+                            PPTX
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
 
