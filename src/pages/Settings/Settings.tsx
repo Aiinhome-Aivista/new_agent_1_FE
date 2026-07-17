@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Database, Plus, Search, FolderGit, Cpu, Tag } from 'lucide-react';
+import {
+  Database, Plus, Search, FolderGit, Cpu, Tag, Edit, Trash2,
+  RefreshCw, Lock, Eye, ShieldAlert, CheckCircle2
+} from 'lucide-react';
 import { knowledgeApi } from '../../services/api/endpoints';
 import { KnowledgeAsset } from '../../types';
 import { PageWrapper } from '../../components/layout/PageWrapper/PageWrapper';
@@ -9,27 +12,48 @@ import { Input } from '../../components/ui/Input/Input';
 import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
+import { useRolePermissions } from '../../hooks';
+
+// ── Inline permission legend shown to all users ──────────────
+const ROLE_ACCESS_MATRIX = [
+  { role: 'Pre-Sales / Solution Architect', view: true, readOnly: false, upload: true,  edit: true,  del: false, reindex: true,  color: 'text-blue-500',   dot: 'bg-blue-500' },
+  { role: 'Bid / Proposal Manager',         view: true, readOnly: false, upload: false, edit: false, del: false, reindex: false, color: 'text-violet-500', dot: 'bg-violet-500' },
+  { role: 'Delivery Lead',                  view: true, readOnly: true,  upload: false, edit: false, del: false, reindex: false, color: 'text-emerald-500',dot: 'bg-emerald-500' },
+  { role: 'Reviewing Partner',              view: true, readOnly: true,  upload: false, edit: false, del: false, reindex: false, color: 'text-amber-500',  dot: 'bg-amber-500' },
+  { role: 'Admin (recommended)',            view: true, readOnly: false, upload: true,  edit: true,  del: true,  reindex: true,  color: 'text-rose-500',   dot: 'bg-rose-500' },
+];
+
+const Tick = () => <CheckCircle2 size={13} className="text-emerald-500 flex-shrink-0" />;
+const Cross = () => <ShieldAlert size={13} className="text-rose-400 flex-shrink-0" />;
 
 const Settings: React.FC = () => {
   const { toast } = useToast();
+  const perms = useRolePermissions();
+
   const [assets, setAssets] = useState<KnowledgeAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'All' | 'Asset' | 'Competency'>('All');
-  
-  // Modal state
+  const [reindexing, setReindexing] = useState(false);
+
+  // ── Add/Edit modal state ─────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [newCategory, setNewCategory] = useState<'Asset' | 'Competency'>('Asset');
-  const [newCaps, setNewCaps] = useState('');
+  const [editingAsset, setEditingAsset] = useState<KnowledgeAsset | null>(null);  // null = add, non-null = edit
+  const [formName, setFormName] = useState('');
+  const [formDesc, setFormDesc] = useState('');
+  const [formCategory, setFormCategory] = useState<'Asset' | 'Competency'>('Asset');
+  const [formCaps, setFormCaps] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // ── Delete confirm ───────────────────────────────────────
+  const [deleteTarget, setDeleteTarget] = useState<KnowledgeAsset | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchAssets = async () => {
     try {
       setLoading(true);
       const data = await knowledgeApi.list();
-      setAssets(data);
+      setAssets(Array.isArray(data) ? data : []);
     } catch (err) {
       toast('Failed to load knowledge asset database.', 'error');
     } finally {
@@ -37,49 +61,89 @@ const Settings: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAssets();
-  }, []);
+  useEffect(() => { fetchAssets(); }, []);
 
+  // ── Open modal ───────────────────────────────────────────
+  const openAddModal = () => {
+    setEditingAsset(null);
+    setFormName(''); setFormDesc(''); setFormCategory('Asset'); setFormCaps('');
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (asset: KnowledgeAsset) => {
+    setEditingAsset(asset);
+    setFormName(asset.name);
+    setFormDesc(asset.description);
+    setFormCategory(asset.category);
+    setFormCaps(asset.capabilities);
+    setIsModalOpen(true);
+  };
+
+  // ── Save (add or edit) ───────────────────────────────────
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName || !newDesc) {
-      toast('Name and description are required.', 'warning');
+    if (!formName || !formDesc) {
+      toast('Name and description are required.', 'error');
       return;
     }
-
+    const payload = { name: formName, description: formDesc, category: formCategory, capabilities: formCaps };
     try {
       setSaving(true);
-      await knowledgeApi.add({
-        name: newName,
-        description: newDesc,
-        category: newCategory,
-        capabilities: newCaps
-      });
-      toast('New RAG knowledge node added successfully.', 'success');
-      
-      // Reset form
-      setNewName('');
-      setNewDesc('');
-      setNewCategory('Asset');
-      setNewCaps('');
+      if (editingAsset) {
+        await knowledgeApi.update(editingAsset.id, payload);
+        toast('Knowledge node updated successfully.', 'success');
+      } else {
+        await knowledgeApi.add(payload);
+        toast('New RAG knowledge node added successfully.', 'success');
+      }
       setIsModalOpen(false);
-      
-      // Refresh list
       fetchAssets();
     } catch (err: any) {
-      toast('Failed to add knowledge node: ' + (err.response?.data?.error || err.message), 'error');
+      toast(
+        (editingAsset ? 'Failed to update: ' : 'Failed to add: ') +
+        (err.response?.data?.error || err.message),
+        'error'
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // Filter logic
+  // ── Delete ───────────────────────────────────────────────
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setDeleting(true);
+      await knowledgeApi.delete(deleteTarget.id);
+      toast(`"${deleteTarget.name}" removed from knowledge base.`, 'success');
+      setDeleteTarget(null);
+      fetchAssets();
+    } catch (err: any) {
+      toast('Delete failed: ' + (err.response?.data?.error || err.message), 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ── Re-index ─────────────────────────────────────────────
+  const handleReindex = async () => {
+    try {
+      setReindexing(true);
+      const res = await knowledgeApi.reindex();
+      toast(res.message || 'Re-indexing complete.', 'success');
+    } catch (err: any) {
+      toast('Re-index failed: ' + (err.response?.data?.error || err.message), 'error');
+    } finally {
+      setReindexing(false);
+    }
+  };
+
+  // ── Filter ───────────────────────────────────────────────
   const filtered = assets.filter((asset) => {
-    const matchesSearch = asset.name.toLowerCase().includes(search.toLowerCase()) ||
+    const matchesSearch =
+      asset.name.toLowerCase().includes(search.toLowerCase()) ||
       asset.description.toLowerCase().includes(search.toLowerCase()) ||
       asset.capabilities.toLowerCase().includes(search.toLowerCase());
-      
     const matchesCat = categoryFilter === 'All' || asset.category === categoryFilter;
     return matchesSearch && matchesCat;
   });
@@ -87,29 +151,111 @@ const Settings: React.FC = () => {
   return (
     <PageWrapper>
       <div className="flex flex-col gap-6">
-        {/* Header Summary */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-5">
+
+        {/* ── Page Header ─────────────────────────────────── */}
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-border pb-5">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
               Organizational Knowledge Base
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-1">
               Manage competencies and technical assets queried by the Requirement RAG agent
             </p>
+
+            {/* Role access notice */}
+            {(!perms.canUploadKnowledge) && (
+              <div className="flex items-center gap-2 mt-3 text-xs px-3 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg w-fit">
+                <Eye size={13} />
+                <span>
+                  <strong>{perms.displayRole}</strong> — Read-Only access. Contact Pre-Sales or Admin to add or edit nodes.
+                </span>
+              </div>
+            )}
           </div>
-          <Button variant="primary" onClick={() => setIsModalOpen(true)} className="gap-2 self-start md:self-auto">
-            <Plus size={16} />
-            Add Knowledge Node
-          </Button>
+
+          {/* Action buttons — gated */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {perms.canReindexKnowledge && (
+              <Button
+                variant="outline"
+                className="gap-2 text-sm"
+                onClick={handleReindex}
+                isLoading={reindexing}
+                title="Re-index all knowledge nodes into the RAG vector store"
+              >
+                <RefreshCw size={14} />
+                Re-index RAG Store
+              </Button>
+            )}
+            {perms.canUploadKnowledge ? (
+              <Button variant="primary" onClick={openAddModal} className="gap-2">
+                <Plus size={16} />
+                Add Knowledge Node
+              </Button>
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-2 border border-border rounded-lg bg-muted/20">
+                <Lock size={12} />
+                <span>Upload restricted to Pre-Sales & Admin</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Toolbar */}
+        {/* ── Permission Matrix collapsible ───────────────── */}
+        <details className="group">
+          <summary className="text-xs font-bold text-muted-foreground cursor-pointer select-none flex items-center gap-2 list-none pb-1">
+            <ShieldAlert size={13} className="text-primary" />
+            Role Access Matrix — Knowledge Base
+            <span className="ml-auto text-[10px] opacity-50 group-open:hidden">Click to expand</span>
+          </summary>
+          <div className="mt-3 border border-border rounded-xl overflow-hidden">
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="bg-muted/60 border-b border-border">
+                  <th className="text-left p-2.5 font-bold">Role</th>
+                  <th className="text-center p-2.5 font-bold">View</th>
+                  <th className="text-center p-2.5 font-bold">Upload</th>
+                  <th className="text-center p-2.5 font-bold">Edit</th>
+                  <th className="text-center p-2.5 font-bold">Delete</th>
+                  <th className="text-center p-2.5 font-bold">Re-index</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ROLE_ACCESS_MATRIX.map((r, idx) => (
+                  <tr key={r.role} className={`border-b border-border/50 ${idx === ROLE_ACCESS_MATRIX.length - 1 ? 'border-0' : ''}`}>
+                    <td className="p-2.5">
+                      <span className="flex items-center gap-1.5">
+                        <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${r.dot}`} />
+                        <span className={`font-semibold ${r.color}`}>{r.role}</span>
+                      </span>
+                    </td>
+                    <td className="text-center p-2.5">
+                      <div className="flex justify-center items-center gap-1">
+                        {r.view ? <Tick /> : <Cross />}
+                        {r.readOnly && <span className="text-[10px] text-muted-foreground">(Read Only)</span>}
+                      </div>
+                    </td>
+                    {[r.upload, r.edit, r.del, r.reindex].map((v, i) => (
+                      <td key={i} className="text-center p-2.5">
+                        <div className="flex justify-center">
+                          {v ? <Tick /> : <Cross />}
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+        {/* ── Toolbar ─────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row items-center gap-4 bg-card border border-border p-4 rounded-xl shadow-sm">
           <div className="relative w-full sm:max-w-xs">
             <Search className="absolute left-3 top-3 text-muted-foreground" size={16} />
             <input
               type="text"
-              placeholder="Search assets, tag, description..."
+              placeholder="Search assets, tags, description..."
               className="pl-9 pr-4 py-2 border border-input rounded-lg w-full text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -131,9 +277,13 @@ const Settings: React.FC = () => {
               </button>
             ))}
           </div>
+
+          <div className="ml-auto text-xs text-muted-foreground flex-shrink-0">
+            {filtered.length} / {assets.length} items
+          </div>
         </div>
 
-        {/* Assets Grid */}
+        {/* ── Asset Grid ──────────────────────────────────── */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
@@ -145,29 +295,35 @@ const Settings: React.FC = () => {
             <Database size={32} className="text-muted-foreground mb-4" />
             <CardTitle className="text-base text-foreground mb-1">No Knowledge Items Found</CardTitle>
             <CardDescription className="text-xs max-w-sm">
-              We couldn't find any assets matching your query. Click "Add Knowledge Node" to register a new competency.
+              {perms.canUploadKnowledge
+                ? 'Click "Add Knowledge Node" to register a new competency or asset.'
+                : 'No assets match your current search or filter.'}
             </CardDescription>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filtered.map((asset) => (
-              <Card key={asset.id} className="flex flex-col justify-between hoverable">
+              <Card key={asset.id} className="flex flex-col justify-between hoverable group transition-all">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-4">
                     <CardTitle className="text-base font-bold text-foreground leading-snug">
                       {asset.name}
                     </CardTitle>
-                    <Badge variant={asset.category === 'Asset' ? 'info' : 'success'} className="gap-1 flex-shrink-0">
-                      {asset.category === 'Asset' ? <FolderGit size={11} /> : <Cpu size={11} />}
-                      {asset.category}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Badge variant={asset.category === 'Asset' ? 'info' : 'success'} className="gap-1">
+                        {asset.category === 'Asset' ? <FolderGit size={11} /> : <Cpu size={11} />}
+                        {asset.category}
+                      </Badge>
+                    </div>
                   </div>
                   <CardDescription className="text-xs pt-1 line-clamp-3 leading-relaxed">
                     {asset.description}
                   </CardDescription>
                 </CardHeader>
+
                 <CardContent className="pt-2 border-t border-border/40 mt-auto bg-muted/20 pb-4 rounded-b-lg">
-                  <div className="flex flex-wrap gap-1.5 items-center">
+                  {/* Tag chips */}
+                  <div className="flex flex-wrap gap-1.5 items-center mb-3">
                     <Tag size={12} className="text-muted-foreground mr-1" />
                     {asset.capabilities.split(',').map((tag) => (
                       <span
@@ -178,49 +334,73 @@ const Settings: React.FC = () => {
                       </span>
                     ))}
                   </div>
+
+                  {/* Action buttons — role-gated */}
+                  {(perms.canEditKnowledge || perms.canDeleteKnowledge) && (
+                    <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+                      {perms.canEditKnowledge && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2.5 text-[11px] gap-1"
+                          onClick={() => openEditModal(asset)}
+                        >
+                          <Edit size={11} />
+                          Edit
+                        </Button>
+                      )}
+                      {perms.canDeleteKnowledge && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2.5 text-[11px] gap-1 text-destructive hover:bg-destructive/10 border-destructive/30 ml-auto"
+                          onClick={() => setDeleteTarget(asset)}
+                        >
+                          <Trash2 size={11} />
+                          Delete
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
 
-        {/* Create Modal */}
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create Knowledge Node">
+        {/* ── Add / Edit Modal ─────────────────────────────── */}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={editingAsset ? `Edit: ${editingAsset.name}` : 'Create Knowledge Node'}
+        >
           <form onSubmit={handleSave} className="flex flex-col gap-4">
             <Input
               label="Asset / Competency Name"
               type="text"
               placeholder="e.g. PwC Migration Blueprints"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
               required
             />
             
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-foreground/80">Category</label>
               <div className="grid grid-cols-2 gap-2 bg-muted p-1 rounded-lg border border-border">
-                <button
-                  type="button"
-                  onClick={() => setNewCategory('Asset')}
-                  className={`py-2 text-sm font-semibold rounded-md transition-all cursor-pointer ${
-                    newCategory === 'Asset'
-                      ? 'bg-card text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Reusable Asset
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNewCategory('Competency')}
-                  className={`py-2 text-sm font-semibold rounded-md transition-all cursor-pointer ${
-                    newCategory === 'Competency'
-                      ? 'bg-card text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Core Competency
-                </button>
+                {(['Asset', 'Competency'] as const).map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setFormCategory(cat)}
+                    className={`py-2 text-sm font-semibold rounded-md transition-all cursor-pointer ${
+                      formCategory === cat
+                        ? 'bg-card text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {cat === 'Asset' ? 'Reusable Asset' : 'Core Competency'}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -230,8 +410,8 @@ const Settings: React.FC = () => {
                 type="text"
                 placeholder="AWS, Docker, Terraform, Migration"
                 className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                value={newCaps}
-                onChange={(e) => setNewCaps(e.target.value)}
+                value={formCaps}
+                onChange={(e) => setFormCaps(e.target.value)}
               />
             </div>
 
@@ -241,17 +421,47 @@ const Settings: React.FC = () => {
                 placeholder="Outline capabilities, dependencies, or delivery units..."
                 className="flex min-h-[80px] w-full rounded-md border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 rows={3}
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
+                value={formDesc}
+                onChange={(e) => setFormDesc(e.target.value)}
                 required
               />
             </div>
 
             <Button type="submit" variant="primary" isLoading={saving} className="w-full mt-2">
-              Save to RAG Catalog
+              {editingAsset ? 'Save Changes to RAG Catalog' : 'Add to RAG Catalog'}
             </Button>
           </form>
         </Modal>
+
+        {/* ── Delete Confirmation Modal ────────────────────── */}
+        <Modal
+          isOpen={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          title="Confirm Deletion"
+        >
+          <div className="flex flex-col gap-5">
+            <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-sm text-destructive">
+              <Trash2 size={16} className="flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Permanently delete this node?</p>
+                <p className="text-xs mt-1 opacity-80">
+                  <strong>"{deleteTarget?.name}"</strong> will be removed from the knowledge base and will no longer be
+                  available to the Requirement RAG agent. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" isLoading={deleting} onClick={handleDelete} className="gap-2">
+                <Trash2 size={14} />
+                Delete Permanently
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
       </div>
     </PageWrapper>
   );

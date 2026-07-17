@@ -14,7 +14,13 @@ export interface Proposal {
   client_name: string;
   project_duration: string;
   budget: string;
-  status: 'Ingesting' | 'Analyzing' | 'Designing' | 'Planning' | 'Assembling' | 'Complete' | 'Failed';
+  // AI pipeline statuses
+  // Business workflow statuses: Complete → Draft → DeliveryReview → PartnerReview → Approved/Published
+  status: 
+    | 'Ingesting' | 'Analyzing' | 'Designing' | 'Planning' | 'Assembling' | 'Complete' | 'Failed'
+    | 'Draft' | 'DeliveryReview' | 'PartnerReview' | 'Approved' | 'Published';
+  submitted_by_role?: string | null;   // Role that last transitioned the proposal
+  last_transitioned_at?: string | null;
   generated_file_path?: string | null;
   structured_json_ir?: string | null;
   created_at: string;

@@ -7,6 +7,20 @@ export function setupInterceptors(instance: AxiosInstance): AxiosInstance {
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      // Auto-inject role header for backend RBAC middleware (require_role decorator)
+      const rawUser = localStorage.getItem('pwc_auth_user');
+      if (rawUser && config.headers) {
+        try {
+          const user = JSON.parse(rawUser);
+          if (user?.role) {
+            config.headers['X-User-Role'] = user.role;
+          }
+        } catch {
+          // ignore parse errors — user just won't have role header
+        }
+      }
+
       return config;
     },
     (error: AxiosError) => {

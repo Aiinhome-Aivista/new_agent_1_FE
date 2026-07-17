@@ -33,6 +33,10 @@ export const proposalApi = {
   downloadUrl: (id: string) => {
     return API_ENDPOINTS.downloadProposal(id);
   },
+  transition: async (id: string, status: string, userRole: string): Promise<any> => {
+    const res = await apiClient.post(`/api/proposals/transition/${id}`, { status, user_role: userRole });
+    return res.data;
+  },
 };
 
 export const knowledgeApi = {
@@ -40,8 +44,48 @@ export const knowledgeApi = {
     const res = await apiClient.get(API_ENDPOINTS.knowledge);
     return res.data;
   },
-  add: async (asset: Omit<KnowledgeAsset, 'id'>): Promise<any> => {
+  add: async (asset: Omit<KnowledgeAsset, 'id' | 'created_at'>): Promise<any> => {
     const res = await apiClient.post(API_ENDPOINTS.knowledge, asset);
     return res.data;
   },
+  update: async (id: number, asset: Omit<KnowledgeAsset, 'id' | 'created_at'>): Promise<any> => {
+    const res = await apiClient.put(`${API_ENDPOINTS.knowledge}/${id}`, asset);
+    return res.data;
+  },
+  delete: async (id: number): Promise<any> => {
+    const res = await apiClient.delete(`${API_ENDPOINTS.knowledge}/${id}`);
+    return res.data;
+  },
+  reindex: async (): Promise<any> => {
+    const res = await apiClient.post(`${API_ENDPOINTS.knowledge}/reindex`);
+    return res.data;
+  },
 };
+
+export const adminApi = {
+  getUsers: async (): Promise<any[]> => {
+    const res = await apiClient.get('/admin/users');
+    return res.data;
+  },
+  changeRole: async (username: string, role: string): Promise<any> => {
+    const res = await apiClient.post('/admin/users/role', { username, role });
+    return res.data;
+  },
+  getConfig: async (): Promise<any> => {
+    const res = await apiClient.get('/admin/config');
+    return res.data;
+  },
+  getAuditLogs: async (): Promise<any[]> => {
+    const res = await apiClient.get('/admin/audit-logs');
+    return res.data;
+  },
+  retryJob: async (id: string): Promise<any> => {
+    const res = await apiClient.post(`/admin/retry/${id}`);
+    return res.data;
+  },
+  updateModel: async (modelName: string): Promise<any> => {
+    const res = await apiClient.post('/admin/model', { model_name: modelName });
+    return res.data;
+  },
+};
+
