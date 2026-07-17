@@ -51,7 +51,6 @@ export const Sidebar: React.FC = () => {
           <span className="text-xs font-bold uppercase tracking-wider">Agent Sandbox</span>
         </div>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Specialist agents operate under a Hierarchical Orchestration model. All financial parameters are verified deterministically.
         </p>
       </div>
     </aside>

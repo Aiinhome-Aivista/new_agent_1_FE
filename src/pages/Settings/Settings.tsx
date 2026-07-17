@@ -38,13 +38,9 @@ const Settings: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<'All' | 'Asset' | 'Competency'>('All');
   const [reindexing, setReindexing] = useState(false);
 
-  // ── Add/Edit modal state ─────────────────────────────────
+  // ── Add modal state ─────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingAsset, setEditingAsset] = useState<KnowledgeAsset | null>(null);  // null = add, non-null = edit
-  const [formName, setFormName] = useState('');
-  const [formDesc, setFormDesc] = useState('');
-  const [formCategory, setFormCategory] = useState<'Asset' | 'Competency'>('Asset');
-  const [formCaps, setFormCaps] = useState('');
+  const [formFiles, setFormFiles] = useState<FileList | null>(null);
   const [saving, setSaving] = useState(false);
 
   // ── Delete confirm ───────────────────────────────────────
@@ -85,45 +81,31 @@ const Settings: React.FC = () => {
 
   // ── Open modal ───────────────────────────────────────────
   const openAddModal = () => {
-    setEditingAsset(null);
-    setFormName(''); setFormDesc(''); setFormCategory('Asset'); setFormCaps('');
+    setFormFiles(null);
     setIsModalOpen(true);
   };
 
-  const openEditModal = (asset: KnowledgeAsset) => {
-    setEditingAsset(asset);
-    setFormName(asset.name);
-    setFormDesc(asset.description);
-    setFormCategory(asset.category);
-    setFormCaps(asset.capabilities);
-    setIsModalOpen(true);
-  };
-
-  // ── Save (add or edit) ───────────────────────────────────
+  // ── Save (upload files) ───────────────────────────────────
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName || !formDesc) {
-      toast('Name and description are required.', 'error');
+    if (!formFiles || formFiles.length === 0) {
+      toast('Please select at least one file to upload.', 'error');
       return;
     }
-    const payload = { name: formName, description: formDesc, category: formCategory, capabilities: formCaps };
+    
+    const formData = new FormData();
+    for (let i = 0; i < formFiles.length; i++) {
+      formData.append('files', formFiles[i]);
+    }
+
     try {
       setSaving(true);
-      if (editingAsset) {
-        await knowledgeApi.update(editingAsset.id, payload);
-        toast('Knowledge node updated successfully.', 'success');
-      } else {
-        await knowledgeApi.add(payload);
-        toast('New RAG knowledge node added successfully.', 'success');
-      }
+      await knowledgeApi.upload(formData);
+      toast('Knowledge base files uploaded successfully.', 'success');
       setIsModalOpen(false);
       fetchAssets();
     } catch (err: any) {
-      toast(
-        (editingAsset ? 'Failed to update: ' : 'Failed to add: ') +
-        (err.response?.data?.error || err.message),
-        'error'
-      );
+      toast('Failed to upload: ' + (err.response?.data?.error || err.message), 'error');
     } finally {
       setSaving(false);
     }
@@ -210,7 +192,7 @@ const Settings: React.FC = () => {
             {perms.canUploadKnowledge ? (
               <Button variant="primary" onClick={openAddModal} className="gap-2">
                 <Plus size={16} />
-                Add Knowledge Node
+                Add Knowledge Base
               </Button>
             ) : (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-2 border border-border rounded-lg bg-muted/20">
@@ -356,30 +338,17 @@ const Settings: React.FC = () => {
                   </div>
 
                   {/* Action buttons — role-gated */}
-                  {(perms.canEditKnowledge || perms.canDeleteKnowledge) && (
+                  {perms.canDeleteKnowledge && (
                     <div className="flex items-center gap-2 pt-2 border-t border-border/40">
-                      {perms.canEditKnowledge && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2.5 text-[11px] gap-1"
-                          onClick={() => openEditModal(asset)}
-                        >
-                          <Edit size={11} />
-                          Edit
-                        </Button>
-                      )}
-                      {perms.canDeleteKnowledge && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2.5 text-[11px] gap-1 text-destructive hover:bg-destructive/10 border-destructive/30 ml-auto"
-                          onClick={() => setDeleteTarget(asset)}
-                        >
-                          <Trash2 size={11} />
-                          Delete
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2.5 text-[11px] gap-1 text-destructive hover:bg-destructive/10 border-destructive/30 ml-auto"
+                        onClick={() => setDeleteTarget(asset)}
+                      >
+                        <Trash2 size={11} />
+                        Delete
+                      </Button>
                     </div>
                   )}
                 </CardContent>
@@ -388,67 +357,34 @@ const Settings: React.FC = () => {
           </div>
         )}
 
-        {/* ── Add / Edit Modal ─────────────────────────────── */}
+
+
+        {/* ── Add Knowledge Modal ───────────────────────── */}
         <Modal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          title={editingAsset ? `Edit: ${editingAsset.name}` : 'Create Knowledge Node'}
+          title="Add Knowledge Base Files"
+          className="max-w-md"
         >
-          <form onSubmit={handleSave} className="flex flex-col gap-4">
-            <Input
-              label="Asset / Competency Name"
-              type="text"
-              placeholder="e.g. PwC Migration Blueprints"
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              required
-            />
-            
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground/80">Category</label>
-              <div className="grid grid-cols-2 gap-2 bg-muted p-1 rounded-lg border border-border">
-                {(['Asset', 'Competency'] as const).map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setFormCategory(cat)}
-                    className={`py-2 text-sm font-semibold rounded-md transition-all cursor-pointer ${
-                      formCategory === cat
-                        ? 'bg-card text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {cat === 'Asset' ? 'Reusable Asset' : 'Core Competency'}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <form onSubmit={handleSave} className="flex flex-col gap-4 mt-2">
+            <p className="text-sm text-muted-foreground">
+              Upload documents (PDF, DOCX, TXT) to expand the knowledge base. The system will automatically parse and index them into the Vector & Graph databases.
+            </p>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground/80">Capabilities Keywords (comma separated)</label>
+              <label className="text-sm font-medium text-foreground/80">Select Files</label>
               <input
-                type="text"
-                placeholder="AWS, Docker, Terraform, Migration"
-                className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                value={formCaps}
-                onChange={(e) => setFormCaps(e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground/80">Functional Description</label>
-              <textarea
-                placeholder="Outline capabilities, dependencies, or delivery units..."
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                rows={3}
-                value={formDesc}
-                onChange={(e) => setFormDesc(e.target.value)}
+                type="file"
+                multiple
+                accept=".pdf,.docx,.doc,.txt"
+                onChange={(e) => setFormFiles(e.target.files)}
+                className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-muted-foreground file:border-0 file:bg-transparent file:text-sm file:font-medium hover:file:cursor-pointer"
                 required
               />
             </div>
 
             <Button type="submit" variant="primary" isLoading={saving} className="w-full mt-2">
-              {editingAsset ? 'Save Changes to RAG Catalog' : 'Add to RAG Catalog'}
+              Upload and Index Files
             </Button>
           </form>
         </Modal>

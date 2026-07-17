@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   FileUp, Play, Download, History, Layers, Clock, 
-  CheckCircle2, Cpu, Edit, Trash2, Plus, X, Save, Eye, 
+  CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save, Eye, 
   Send, ShieldCheck, Award, AlertTriangle, Lock
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
@@ -18,6 +18,7 @@ import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
 import { WorkflowStepper } from '../../components/ui/WorkflowStepper/WorkflowStepper';
+import { TechSelectionModal } from '../../components/TechSelectionModal';
 
 const STEP_PHASES = [
   { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
@@ -106,6 +107,8 @@ const Home: React.FC = () => {
     fetchProposals();
   }, []);
 
+  const [showTechSelection, setShowTechSelection] = useState(false);
+
   // ── Poll active proposal status ─────────────────────────
   useEffect(() => {
     let timerId: any = null;
@@ -121,18 +124,24 @@ const Home: React.FC = () => {
           setStatusDetails(details);
         }
         const proposalStatus = details.proposal.status;
-        const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
-        if (!isRunning) {
+        
+        if (proposalStatus === 'WaitingForTechSelection') {
           setPolling(false);
-          setActiveProposalId(null);
-          if (proposalStatus === 'Failed') {
-            toast('Proposal generation failed. Check step logs.', 'error');
-          } else {
-            toast('Proposal PowerPoint generation completed!', 'success');
-          }
-          fetchProposals();
+          setShowTechSelection(true);
         } else {
-          timerId = setTimeout(poll, 3000);
+          const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
+          if (!isRunning) {
+            setPolling(false);
+            setActiveProposalId(null);
+            if (proposalStatus === 'Failed') {
+              toast('Proposal generation failed. Check step logs.', 'error');
+            } else {
+              toast('Proposal PowerPoint generation completed!', 'success');
+            }
+            fetchProposals();
+          } else {
+            timerId = setTimeout(poll, 3000);
+          }
         }
       } catch (err) {
         console.error('Polling status failed:', err);
@@ -377,7 +386,7 @@ const Home: React.FC = () => {
                   )}
                 </div>
 
-                <Button type="submit" variant="primary" isLoading={uploadLoading} disabled={selectedFiles.length === 0} className="w-full gap-2 mt-2">
+                <Button type="submit" variant="primary" isLoading={uploadLoading} disabled={selectedFiles.length === 0} className="w-full gap-2 mt-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:pointer-events-auto">
                   <Play size={15} />
                   Assemble Solution Advisory Deck
                 </Button>
@@ -410,23 +419,27 @@ const Home: React.FC = () => {
 
               {/* AI Pipeline Stepper — only show when AI is running or just finished */}
               {(AI_RUNNING_STATUSES.includes(currentStatus) || currentStatus === 'Complete') && (
-                <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 pt-2">
-                  {STEP_PHASES.map((phase) => {
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  {STEP_PHASES.map((phase, idx) => {
                     const stepStatus = getStepStatusVariant(phase.name);
                     return (
-                      <div
-                        key={phase.name}
-                        className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${
-                          stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
-                          stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
-                          stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
-                          'bg-muted/40 border-border text-muted-foreground'
-                        }`}
-                      >
-                        {phase.icon}
-                        <span className="text-xs font-bold leading-none">{phase.name}</span>
-                        <span className="text-[9px] text-muted-foreground leading-none">{phase.label}</span>
-                      </div>
+                      <React.Fragment key={phase.name}>
+                        <div
+                          className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${
+                            stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
+                            stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
+                            stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                            'bg-muted/40 border-border text-muted-foreground'
+                          }`}
+                        >
+                          {phase.icon}
+                          <span className="text-xs font-bold leading-none">{phase.name}</span>
+                          <span className="text-[9px] text-muted-foreground leading-none">{phase.label}</span>
+                        </div>
+                        {idx < STEP_PHASES.length - 1 && (
+                          <MoveRight size={18} className="text-muted-foreground" />
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </div>
@@ -837,6 +850,16 @@ const Home: React.FC = () => {
           </div>
         )}
       </Modal>
+      {activeProposalId && (
+        <TechSelectionModal
+          isOpen={showTechSelection}
+          proposalId={activeProposalId}
+          onComplete={() => {
+            setShowTechSelection(false);
+            setPolling(true); // resume polling to catch next phase
+          }}
+        />
+      )}
     </PageWrapper>
   );
 };
