@@ -18,6 +18,7 @@ import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
 import { WorkflowStepper } from '../../components/ui/WorkflowStepper/WorkflowStepper';
+import { TechSelectionModal } from '../../components/TechSelectionModal';
 
 const STEP_PHASES = [
   { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
@@ -105,6 +106,8 @@ const Home: React.FC = () => {
     fetchProposals();
   }, []);
 
+  const [showTechSelection, setShowTechSelection] = useState(false);
+
   // ── Poll active proposal status ─────────────────────────
   useEffect(() => {
     let timerId: any = null;
@@ -120,18 +123,24 @@ const Home: React.FC = () => {
           setStatusDetails(details);
         }
         const proposalStatus = details.proposal.status;
-        const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
-        if (!isRunning) {
+        
+        if (proposalStatus === 'WaitingForTechSelection') {
           setPolling(false);
-          setActiveProposalId(null);
-          if (proposalStatus === 'Failed') {
-            toast('Proposal generation failed. Check step logs.', 'error');
-          } else {
-            toast('Proposal PowerPoint generation completed!', 'success');
-          }
-          fetchProposals();
+          setShowTechSelection(true);
         } else {
-          timerId = setTimeout(poll, 3000);
+          const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
+          if (!isRunning) {
+            setPolling(false);
+            setActiveProposalId(null);
+            if (proposalStatus === 'Failed') {
+              toast('Proposal generation failed. Check step logs.', 'error');
+            } else {
+              toast('Proposal PowerPoint generation completed!', 'success');
+            }
+            fetchProposals();
+          } else {
+            timerId = setTimeout(poll, 3000);
+          }
         }
       } catch (err) {
         console.error('Polling status failed:', err);
@@ -806,6 +815,16 @@ const Home: React.FC = () => {
           </div>
         )}
       </Modal>
+      {activeProposalId && (
+        <TechSelectionModal
+          isOpen={showTechSelection}
+          proposalId={activeProposalId}
+          onComplete={() => {
+            setShowTechSelection(false);
+            setPolling(true); // resume polling to catch next phase
+          }}
+        />
+      )}
     </PageWrapper>
   );
 };

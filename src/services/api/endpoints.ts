@@ -37,6 +37,18 @@ export const proposalApi = {
     const res = await apiClient.post(`/api/proposals/transition/${id}`, { status, user_role: userRole });
     return res.data;
   },
+  getTechOptions: async (): Promise<any> => {
+    const res = await apiClient.get(API_ENDPOINTS.techOptions);
+    return res.data;
+  },
+  calculateBudget: async (ui_tech: string, backend_tech: string, db_tech: string): Promise<any> => {
+    const res = await apiClient.post(API_ENDPOINTS.calculateBudget, { ui_tech, backend_tech, db_tech });
+    return res.data;
+  },
+  resumeProposal: async (id: string, ui_tech: string, backend_tech: string, db_tech: string, formatted_budget: string): Promise<any> => {
+    const res = await apiClient.post(API_ENDPOINTS.resumeProposal(id), { ui_tech, backend_tech, db_tech, formatted_budget });
+    return res.data;
+  },
 };
 
 export const knowledgeApi = {
@@ -44,12 +56,12 @@ export const knowledgeApi = {
     const res = await apiClient.get(API_ENDPOINTS.knowledge);
     return res.data;
   },
-  add: async (asset: Omit<KnowledgeAsset, 'id' | 'created_at'>): Promise<any> => {
-    const res = await apiClient.post(API_ENDPOINTS.knowledge, asset);
-    return res.data;
-  },
-  update: async (id: number, asset: Omit<KnowledgeAsset, 'id' | 'created_at'>): Promise<any> => {
-    const res = await apiClient.put(`${API_ENDPOINTS.knowledge}/${id}`, asset);
+  upload: async (formData: FormData): Promise<any> => {
+    const res = await apiClient.post(API_ENDPOINTS.knowledge, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return res.data;
   },
   delete: async (id: number): Promise<any> => {
