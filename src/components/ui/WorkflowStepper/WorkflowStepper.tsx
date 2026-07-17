@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Clock, Send, ShieldCheck, Award, Globe, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Clock, Send, ShieldCheck, Award, Globe, AlertTriangle, ChevronRight, MoveRight } from 'lucide-react';
 
 interface WorkflowStepperProps {
   currentStatus: string;
@@ -151,16 +151,10 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
                 </div>
               </div>
 
-              {/* Connector line */}
+              {/* Connector Arrow */}
               {!isLast && (
-                <div className="flex-0 w-full max-w-[32px] mt-4 relative">
-                  <div
-                    className={`h-0.5 w-full transition-colors duration-500 ${
-                      getStepState(WORKFLOW_STEPS[idx + 1], currentStatus) !== 'pending' || state === 'done'
-                        ? 'bg-emerald-500'
-                        : 'bg-border'
-                    }`}
-                  />
+                <div className="flex-0 flex items-center justify-center mt-1.5 px-2 text-muted-foreground opacity-50">
+                  <MoveRight size={20} strokeWidth={2} />
                 </div>
               )}
             </div>

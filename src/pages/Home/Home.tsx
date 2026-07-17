@@ -335,8 +335,8 @@ const Home: React.FC = () => {
           </div>
         )}
 
-        {/* Upload / Pipeline Card — hidden for delivery and partner */}
-        {perms.canCreateProposal && (
+        {/* Upload / Pipeline Card — hidden for delivery and partner, and hidden if active proposal exists */}
+        {perms.canCreateProposal && !statusDetails && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -398,14 +398,14 @@ const Home: React.FC = () => {
         {/* Pipeline Status + Workflow Panel */}
         {statusDetails && (
           <Card className="border-primary/20 shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardHeader className="flex flex-row items-center justify-between !p-1.5 !px-3">
               <div>
-                <CardTitle className="text-base font-bold">
+                <CardTitle className="text-sm font-bold">
                   {AI_RUNNING_STATUSES.includes(currentStatus)
                     ? `Pipeline Execution: ${statusDetails.proposal.client_name}`
                     : `Proposal Review: ${statusDetails.proposal.client_name}`}
                 </CardTitle>
-                <CardDescription className="text-xs">
+                <CardDescription className="text-[10px] mt-0.5">
                   {AI_RUNNING_STATUSES.includes(currentStatus)
                     ? 'Tracking multi-agent sequential/parallel orchestration'
                     : 'Business review workflow — human-in-the-loop approval chain'}
@@ -415,17 +415,17 @@ const Home: React.FC = () => {
                 {currentStatus}
               </Badge>
             </CardHeader>
-            <CardContent className="flex flex-col gap-6">
+            <CardContent className="flex flex-col gap-2 !p-2 !px-3">
 
               {/* AI Pipeline Stepper — only show when AI is running or just finished */}
               {(AI_RUNNING_STATUSES.includes(currentStatus) || currentStatus === 'Complete') && (
-                <div className="flex flex-wrap items-center gap-2 pt-2">
+                <div className="flex items-center justify-between gap-2 py-1 w-full overflow-x-auto">
                   {STEP_PHASES.map((phase, idx) => {
                     const stepStatus = getStepStatusVariant(phase.name);
                     return (
                       <React.Fragment key={phase.name}>
                         <div
-                          className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${
+                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-2 rounded-lg border text-center gap-1 transition-all min-w-[120px] ${
                             stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
                             stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
                             stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
@@ -437,7 +437,7 @@ const Home: React.FC = () => {
                           <span className="text-[9px] text-muted-foreground leading-none">{phase.label}</span>
                         </div>
                         {idx < STEP_PHASES.length - 1 && (
-                          <MoveRight size={18} className="text-muted-foreground" />
+                          <MoveRight size={18} className="text-muted-foreground flex-shrink-0" />
                         )}
                       </React.Fragment>
                     );
@@ -447,7 +447,7 @@ const Home: React.FC = () => {
 
               {/* Business Workflow Stepper */}
               {isBusinessWorkflow && (
-                <div className="bg-muted/20 border border-border rounded-xl p-4">
+                <div className="bg-muted/20 border border-border rounded-xl p-2 px-3">
                   <WorkflowStepper
                     currentStatus={currentStatus}
                     submittedByRole={statusDetails.proposal.submitted_by_role}
@@ -457,8 +457,8 @@ const Home: React.FC = () => {
 
               {/* Agent Reasoning Logs */}
               {perms.canViewAgentLogs && (
-                <div className="bg-muted p-4 rounded-xl border border-border flex flex-col gap-2 max-h-55 overflow-y-auto font-mono text-xs">
-                  <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1.5 font-sans mb-1 flex items-center gap-1.5">
+                <div className="bg-muted p-2 px-3 rounded-xl border border-border flex flex-col gap-1 max-h-55 overflow-y-auto font-mono text-xs">
+                  <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1 font-sans mb-1 flex items-center gap-1.5">
                     <History size={13} className="text-primary" />
                     Agent Reasoning Logs & State Changes
                   </span>
@@ -466,7 +466,7 @@ const Home: React.FC = () => {
                     <span className="text-muted-foreground italic">No logs generated yet. Starting engine loop...</span>
                   ) : (
                     statusDetails.steps.map((step, idx) => (
-                      <div key={idx} className="flex flex-col gap-1 border-b border-border/40 pb-2 mb-1 last:border-0 last:pb-0">
+                      <div key={idx} className="flex flex-col gap-1 border-b border-border/40 pb-1.5 mb-1 last:border-0 last:pb-0">
                         <div className="flex items-center justify-between gap-4">
                           <span className="font-bold text-primary">[{step.step_name}]</span>
                           <Badge variant={step.status === 'completed' ? 'success' : step.status === 'running' ? 'warning' : step.status === 'failed' ? 'destructive' : 'secondary'} className="text-[9px] py-0 px-1.5">
@@ -474,7 +474,7 @@ const Home: React.FC = () => {
                           </Badge>
                         </div>
                         {step.log_message && (
-                          <p className="text-foreground/90 whitespace-pre-wrap pl-2 leading-relaxed text-[11px]">
+                          <p className="text-foreground/90 whitespace-pre-wrap pl-2 leading-relaxed text-[10px]">
                             {step.log_message}
                           </p>
                         )}
@@ -486,9 +486,9 @@ const Home: React.FC = () => {
 
               {/* Workflow Transition Actions + Download — show once AI pipeline done */}
               {!AI_RUNNING_STATUSES.includes(currentStatus) && (
-                <div className="flex flex-col gap-4 pt-2 border-t border-border/40">
+                <div className="flex flex-col gap-2 pt-1 border-t border-border/40">
                   {/* Status + transition buttons */}
-                  <div className="flex justify-between items-center bg-muted/40 p-3 rounded-lg border border-border text-xs flex-wrap gap-2">
+                  <div className="flex justify-between items-center bg-muted/40 py-1.5 px-3 rounded-lg border border-border text-xs flex-wrap gap-2">
                     <span>
                       Approval State: <strong>{currentStatus}</strong>
                       {statusDetails.proposal.submitted_by_role && (
