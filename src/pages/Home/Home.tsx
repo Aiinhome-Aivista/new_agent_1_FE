@@ -2,14 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
-  FileUp, Play, Download, History, RefreshCw, Layers, Clock, 
+  FileUp, Play, Download, History, Layers, Clock, 
   CheckCircle2, Cpu, Edit, Trash2, Plus, X, Save, Eye, 
   Send, ShieldCheck, Award, AlertTriangle, Lock
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
 import { useProposalStore, useAuthStore } from '../../store';
 import { useRolePermissions } from '../../hooks';
-import { Proposal, ProposalStep, ProposalStatusResponse } from '../../types';
 import { proposalUploadSchema } from '../../utils/validators';
 import { PageWrapper } from '../../components/layout/PageWrapper/PageWrapper';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card/Card';
@@ -19,7 +18,6 @@ import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
 import { WorkflowStepper } from '../../components/ui/WorkflowStepper/WorkflowStepper';
-import { formatDate } from '../../utils/formatters';
 
 const STEP_PHASES = [
   { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
@@ -48,7 +46,6 @@ function getProposalBadgeVariant(status: string) {
 const Home: React.FC = () => {
   const { toast } = useToast();
   const { 
-    proposals, 
     activeProposalId, 
     statusDetails, 
     isPolling, 
@@ -96,10 +93,8 @@ const Home: React.FC = () => {
 
   // ── Form setup ──────────────────────────────────────────
   const {
-    register,
     handleSubmit,
     reset,
-    formState: { errors },
   } = useForm({
     resolver: zodResolver(proposalUploadSchema),
     defaultValues: { clientName: '', projectDuration: '', budget: '' }
@@ -120,7 +115,10 @@ const Home: React.FC = () => {
       isFetching = true;
       try {
         const details = await proposalApi.status(activeProposalId);
-        setStatusDetails(details);
+        const currentDetails = useProposalStore.getState().statusDetails;
+        if (!currentDetails || currentDetails.proposal.id === activeProposalId) {
+          setStatusDetails(details);
+        }
         const proposalStatus = details.proposal.status;
         const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
         if (!isRunning) {
@@ -181,18 +179,7 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleViewStatus = async (proposal: Proposal) => {
-    try {
-      const details = await proposalApi.status(proposal.id);
-      setStatusDetails(details);
-      if (AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposal.status)) {
-        setActiveProposalId(proposal.id);
-        setPolling(true);
-      }
-    } catch (err) {
-      toast('Failed to fetch details.', 'error');
-    }
-  };
+
 
   // ── IR Editor ───────────────────────────────────────────
   const openEditor = (structuredIr: any) => {
@@ -296,348 +283,268 @@ const Home: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="max-w-4xl mx-auto flex flex-col gap-6">
         
-        {/* LEFT WORKSPACE */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
-
-          {/* Role access notice for restricted roles */}
-          {(perms.isDelivery || perms.isPartner) && (
-            <div className={`flex items-start gap-3 p-4 rounded-xl border text-sm ${
-              perms.isPartner
-                ? 'bg-amber-500/5 border-amber-500/20 text-amber-700 dark:text-amber-400'
-                : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
-            }`}>
-              {perms.isPartner ? <ShieldCheck size={18} className="flex-shrink-0 mt-0.5" /> : <Award size={18} className="flex-shrink-0 mt-0.5" />}
-              <div className="flex flex-col gap-0.5">
-                <span className="font-bold">{perms.displayRole} — Restricted Mode</span>
-                <span className="text-xs opacity-80">
-                  {perms.isPartner
-                    ? 'You can read the full proposal, view agent reasoning, and approve / reject / publish.'
-                    : 'You can review and edit resource planning, timeline phases, and skill matrix.'}
-                </span>
-              </div>
+        {/* Role access notice for restricted roles */}
+        {(perms.isDelivery || perms.isPartner) && (
+          <div className={`flex items-start gap-3 p-4 rounded-xl border text-sm ${
+            perms.isPartner
+              ? 'bg-amber-500/5 border-amber-500/20 text-amber-700 dark:text-amber-400'
+              : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+          }`}>
+            {perms.isPartner ? <ShieldCheck size={18} className="flex-shrink-0 mt-0.5" /> : <Award size={18} className="flex-shrink-0 mt-0.5" />}
+            <div className="flex flex-col gap-0.5">
+              <span className="font-bold">{perms.displayRole} — Restricted Mode</span>
+              <span className="text-xs opacity-80">
+                {perms.isPartner
+                  ? 'You can read the full proposal, view agent reasoning, and approve / reject / publish.'
+                  : 'You can review and edit resource planning, timeline phases, and skill matrix.'}
+              </span>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Upload / Pipeline Card — hidden for delivery and partner */}
-          {perms.canCreateProposal && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Play size={18} className="text-primary" />
-                  Initialize Specialist Agent Pipeline
-                </CardTitle>
-                <CardDescription>
-                  Upload client RFP specification or questionnaires to run RAG grounding, solution design, estimation, and document assembly.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit(handleUpload)} className="flex flex-col gap-5">
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-foreground/80">Support Documents (RFI, RFP, Questionnaire)</label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center gap-3 bg-muted/20 hover:bg-muted/40 transition-colors">
-                      <FileUp size={32} className="text-muted-foreground" />
-                      <div className="text-xs text-muted-foreground text-center">
-                        <span className="font-semibold text-primary cursor-pointer hover:underline" onClick={() => fileInputRef.current?.click()}>
-                          Click to upload
-                        </span> or drag & drop files here
-                      </div>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        multiple
-                        className="hidden"
-                        onChange={handleFileChange}
-                      />
-                    </div>
-                    {selectedFiles.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {selectedFiles.map((file, idx) => (
-                          <Badge key={idx} variant="secondary" className="gap-1">
-                            {file.name}
-                            <X size={12} className="cursor-pointer" onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))} />
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <Button type="submit" variant="primary" isLoading={uploadLoading} className="w-full gap-2 mt-2">
-                    <Play size={15} />
-                    Assemble Solution Advisory Deck
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Pipeline Status + Workflow Panel */}
-          {statusDetails && (
-            <Card className="border-primary/20 shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <div>
-                  <CardTitle className="text-base font-bold">
-                    {AI_RUNNING_STATUSES.includes(currentStatus)
-                      ? `Pipeline Execution: ${statusDetails.proposal.client_name}`
-                      : `Proposal Review: ${statusDetails.proposal.client_name}`}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {AI_RUNNING_STATUSES.includes(currentStatus)
-                      ? 'Tracking multi-agent sequential/parallel orchestration'
-                      : 'Business review workflow — human-in-the-loop approval chain'}
-                  </CardDescription>
-                </div>
-                <Badge variant={getProposalBadgeVariant(currentStatus)}>
-                  {currentStatus}
-                </Badge>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-6">
-
-                {/* AI Pipeline Stepper — only show when AI is running or just finished */}
-                {(AI_RUNNING_STATUSES.includes(currentStatus) || currentStatus === 'Complete') && (
-                  <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 pt-2">
-                    {STEP_PHASES.map((phase) => {
-                      const stepStatus = getStepStatusVariant(phase.name);
-                      return (
-                        <div
-                          key={phase.name}
-                          className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${
-                            stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
-                            stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
-                            stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
-                            'bg-muted/40 border-border text-muted-foreground'
-                          }`}
-                        >
-                          {phase.icon}
-                          <span className="text-xs font-bold leading-none">{phase.name}</span>
-                          <span className="text-[9px] text-muted-foreground leading-none">{phase.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Business Workflow Stepper */}
-                {isBusinessWorkflow && (
-                  <div className="bg-muted/20 border border-border rounded-xl p-4">
-                    <WorkflowStepper
-                      currentStatus={currentStatus}
-                      submittedByRole={statusDetails.proposal.submitted_by_role}
-                    />
-                  </div>
-                )}
-
-                {/* Agent Reasoning Logs */}
-                {perms.canViewAgentLogs && (
-                  <div className="bg-muted p-4 rounded-xl border border-border flex flex-col gap-2 max-h-[220px] overflow-y-auto font-mono text-xs">
-                    <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1.5 font-sans mb-1 flex items-center gap-1.5">
-                      <History size={13} className="text-primary" />
-                      Agent Reasoning Logs & State Changes
-                    </span>
-                    {statusDetails.steps.length === 0 ? (
-                      <span className="text-muted-foreground italic">No logs generated yet. Starting engine loop...</span>
-                    ) : (
-                      statusDetails.steps.map((step, idx) => (
-                        <div key={idx} className="flex flex-col gap-1 border-b border-border/40 pb-2 mb-1 last:border-0 last:pb-0">
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="font-bold text-primary">[{step.step_name}]</span>
-                            <Badge variant={step.status === 'completed' ? 'success' : step.status === 'running' ? 'warning' : step.status === 'failed' ? 'destructive' : 'secondary'} className="text-[9px] py-0 px-1.5">
-                              {step.status}
-                            </Badge>
-                          </div>
-                          {step.log_message && (
-                            <p className="text-foreground/90 whitespace-pre-wrap pl-2 leading-relaxed text-[11px]">
-                              {step.log_message}
-                            </p>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-
-                {/* Workflow Transition Actions + Download — show once AI pipeline done */}
-                {!AI_RUNNING_STATUSES.includes(currentStatus) && (
-                  <div className="flex flex-col gap-4 pt-2 border-t border-border/40">
-                    {/* Status + transition buttons */}
-                    <div className="flex justify-between items-center bg-muted/40 p-3 rounded-lg border border-border text-xs flex-wrap gap-2">
-                      <span>
-                        Approval State: <strong>{currentStatus}</strong>
-                        {statusDetails.proposal.submitted_by_role && (
-                          <span className="text-muted-foreground ml-2">
-                            (last: {statusDetails.proposal.submitted_by_role})
-                          </span>
-                        )}
-                      </span>
-                      <div className="flex gap-2 flex-wrap">
-
-                        {/* Move Complete → Draft */}
-                        {canMoveToWorkflow && (
-                          <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Draft')}>
-                            <Send size={11} /> Start Review Workflow
-                          </Button>
-                        )}
-
-                        {/* Draft → DeliveryReview */}
-                        {canSubmitToDelivery && (
-                          <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('DeliveryReview')}>
-                            <Send size={11} /> Submit to Delivery Lead
-                          </Button>
-                        )}
-
-                        {/* DeliveryReview → PartnerReview */}
-                        {canSubmitToPartnerNow && (
-                          <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('PartnerReview')}>
-                            <Send size={11} /> Submit to Partner
-                          </Button>
-                        )}
-
-                        {/* PartnerReview → Approved */}
-                        {canApproveNow && (
-                          <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Approved')}>
-                            <CheckCircle2 size={11} /> Approve
-                          </Button>
-                        )}
-
-                        {/* PartnerReview → Draft (reject) */}
-                        {canRejectNow && (
-                          <Button size="sm" variant="destructive" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Draft')}>
-                            <AlertTriangle size={11} /> Reject
-                          </Button>
-                        )}
-
-                        {/* Approved → Published */}
-                        {canPublishNow && (
-                          <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Published')}>
-                            <Award size={11} /> Publish Proposal
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Edit / View + Download row */}
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        variant="outline"
-                        className="flex-1 gap-2"
-                        onClick={() => openEditor(statusDetails.structured_ir)}
-                      >
-                        {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
-                        {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
-                      </Button>
-                      <a
-                        href={proposalApi.downloadUrl(statusDetails.proposal.id)}
-                        className="flex-1"
-                        download
-                      >
-                        <Button variant="primary" className="w-full gap-2">
-                          <Download size={15} />
-                          Download PowerPoint Draft
-                        </Button>
-                      </a>
-                    </div>
-
-                    {/* Partner — show audit logs inline */}
-                    {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (
-                      <div className="flex flex-col gap-2">
-                        <span className="text-xs font-bold text-foreground border-b border-border pb-1">Audit Trail</span>
-                        <div className="bg-muted p-2 rounded-lg font-mono text-[9px] max-h-[120px] overflow-y-auto border border-border leading-relaxed">
-                          {auditLogs
-                            .filter(log => log.proposal_id === statusDetails.proposal.id)
-                            .map((log: any, idx: number) => (
-                              <div key={idx} className="border-b border-border/40 pb-1.5 mb-1.5 last:border-0">
-                                <span className="text-primary font-bold">[{log.proposal_id}]</span>{' '}
-                                <strong>{log.step_name}</strong> — {log.log_message}{' '}
-                                <span className="text-muted-foreground">({log.updated_at})</span>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* RIGHT WORKSPACE: Archive + Admin Panel */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
-          <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base font-bold">
-                  <History size={18} className="text-primary" />
-                  Historical Drafts Archive
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Review generated solution decks requiring human validation
-                </CardDescription>
-              </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={fetchProposals} title="Refresh History">
-                <RefreshCw size={15} />
-              </Button>
+        {/* Upload / Pipeline Card — hidden for delivery and partner */}
+        {perms.canCreateProposal && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Play size={18} className="text-primary" />
+                Initialize Specialist Agent Pipeline
+              </CardTitle>
+              <CardDescription>
+                Upload client RFP specification or questionnaires to run RAG grounding, solution design, estimation, and document assembly.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {proposals.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <History size={32} className="text-muted-foreground mb-3" />
-                  <p className="text-sm font-semibold text-foreground">No proposal archives yet</p>
-                  <p className="text-xs text-muted-foreground max-w-[200px] mt-1">
-                    {perms.canCreateProposal
-                      ? 'Upload an RFP specification to create your first client-presentable PPTX proposal deck.'
-                      : 'No proposals are available for review yet.'}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3 max-h-[640px] overflow-y-auto pr-1">
-                  {proposals.map((proposal) => (
-                    <div
-                      key={proposal.id}
-                      onClick={() => handleViewStatus(proposal)}
-                      className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${
-                        statusDetails?.proposal.id === proposal.id
-                          ? 'border-primary bg-primary/5 shadow-sm'
-                          : 'border-border bg-card hover:border-primary/20 hover:bg-muted/10'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-bold text-sm text-foreground/90">{proposal.client_name}</span>
-                          <span className="text-[11px] text-muted-foreground">Generated: {formatDate(proposal.created_at)}</span>
-                        </div>
-                        <Badge variant={getProposalBadgeVariant(proposal.status)} className="text-[10px] py-0 px-2 flex-shrink-0">
-                          {proposal.status}
-                        </Badge>
-                      </div>
+              <form onSubmit={handleSubmit(handleUpload)} className="flex flex-col gap-5">
 
-                      <div className="flex items-center justify-between border-t border-border/40 pt-2.5 mt-1 text-[11px] text-muted-foreground">
-                        <div className="flex items-center gap-3">
-                          <span>Timeline: <strong>{proposal.project_duration}</strong></span>
-                          <span>Budget: <strong>{proposal.budget}</strong></span>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-foreground/80">Support Documents (RFI, RFP, Questionnaire)</label>
+                  <div className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center gap-3 bg-muted/20 hover:bg-muted/40 transition-colors">
+                    <FileUp size={32} className="text-muted-foreground" />
+                    <div className="text-xs text-muted-foreground text-center">
+                      <span className="font-semibold text-primary cursor-pointer hover:underline" onClick={() => fileInputRef.current?.click()}>
+                        Click to upload
+                      </span> or drag & drop files here
+                    </div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      multiple
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                  {selectedFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedFiles.map((file, idx) => (
+                        <Badge key={idx} variant="secondary" className="gap-1">
+                          {file.name}
+                          <X size={12} className="cursor-pointer" onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))} />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Button type="submit" variant="primary" isLoading={uploadLoading} className="w-full gap-2 mt-2">
+                  <Play size={15} />
+                  Assemble Solution Advisory Deck
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pipeline Status + Workflow Panel */}
+        {statusDetails && (
+          <Card className="border-primary/20 shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <div>
+                <CardTitle className="text-base font-bold">
+                  {AI_RUNNING_STATUSES.includes(currentStatus)
+                    ? `Pipeline Execution: ${statusDetails.proposal.client_name}`
+                    : `Proposal Review: ${statusDetails.proposal.client_name}`}
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  {AI_RUNNING_STATUSES.includes(currentStatus)
+                    ? 'Tracking multi-agent sequential/parallel orchestration'
+                    : 'Business review workflow — human-in-the-loop approval chain'}
+                </CardDescription>
+              </div>
+              <Badge variant={getProposalBadgeVariant(currentStatus)}>
+                {currentStatus}
+              </Badge>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-6">
+
+              {/* AI Pipeline Stepper — only show when AI is running or just finished */}
+              {(AI_RUNNING_STATUSES.includes(currentStatus) || currentStatus === 'Complete') && (
+                <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 pt-2">
+                  {STEP_PHASES.map((phase) => {
+                    const stepStatus = getStepStatusVariant(phase.name);
+                    return (
+                      <div
+                        key={phase.name}
+                        className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${
+                          stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
+                          stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
+                          stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                          'bg-muted/40 border-border text-muted-foreground'
+                        }`}
+                      >
+                        {phase.icon}
+                        <span className="text-xs font-bold leading-none">{phase.name}</span>
+                        <span className="text-[9px] text-muted-foreground leading-none">{phase.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Business Workflow Stepper */}
+              {isBusinessWorkflow && (
+                <div className="bg-muted/20 border border-border rounded-xl p-4">
+                  <WorkflowStepper
+                    currentStatus={currentStatus}
+                    submittedByRole={statusDetails.proposal.submitted_by_role}
+                  />
+                </div>
+              )}
+
+              {/* Agent Reasoning Logs */}
+              {perms.canViewAgentLogs && (
+                <div className="bg-muted p-4 rounded-xl border border-border flex flex-col gap-2 max-h-[220px] overflow-y-auto font-mono text-xs">
+                  <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1.5 font-sans mb-1 flex items-center gap-1.5">
+                    <History size={13} className="text-primary" />
+                    Agent Reasoning Logs & State Changes
+                  </span>
+                  {statusDetails.steps.length === 0 ? (
+                    <span className="text-muted-foreground italic">No logs generated yet. Starting engine loop...</span>
+                  ) : (
+                    statusDetails.steps.map((step, idx) => (
+                      <div key={idx} className="flex flex-col gap-1 border-b border-border/40 pb-2 mb-1 last:border-0 last:pb-0">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="font-bold text-primary">[{step.step_name}]</span>
+                          <Badge variant={step.status === 'completed' ? 'success' : step.status === 'running' ? 'warning' : step.status === 'failed' ? 'destructive' : 'secondary'} className="text-[9px] py-0 px-1.5">
+                            {step.status}
+                          </Badge>
                         </div>
-                        
-                        {BUSINESS_STATUSES.includes(proposal.status) && perms.canDownload && (
-                          <a
-                            href={proposalApi.downloadUrl(proposal.id)}
-                            onClick={(e) => e.stopPropagation()}
-                            download
-                            className="text-primary hover:text-primary/80 flex items-center gap-1 font-bold"
-                          >
-                            <Download size={13} />
-                            PPTX
-                          </a>
+                        {step.log_message && (
+                          <p className="text-foreground/90 whitespace-pre-wrap pl-2 leading-relaxed text-[11px]">
+                            {step.log_message}
+                          </p>
                         )}
                       </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Workflow Transition Actions + Download — show once AI pipeline done */}
+              {!AI_RUNNING_STATUSES.includes(currentStatus) && (
+                <div className="flex flex-col gap-4 pt-2 border-t border-border/40">
+                  {/* Status + transition buttons */}
+                  <div className="flex justify-between items-center bg-muted/40 p-3 rounded-lg border border-border text-xs flex-wrap gap-2">
+                    <span>
+                      Approval State: <strong>{currentStatus}</strong>
+                      {statusDetails.proposal.submitted_by_role && (
+                        <span className="text-muted-foreground ml-2">
+                          (last: {statusDetails.proposal.submitted_by_role})
+                        </span>
+                      )}
+                    </span>
+                    <div className="flex gap-2 flex-wrap">
+
+                      {/* Move Complete → Draft */}
+                      {canMoveToWorkflow && (
+                        <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Draft')}>
+                          <Send size={11} /> Start Review Workflow
+                        </Button>
+                      )}
+
+                      {/* Draft → DeliveryReview */}
+                      {canSubmitToDelivery && (
+                        <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Draft')}>
+                          <Send size={11} /> Submit to Delivery Lead
+                        </Button>
+                      )}
+
+                      {/* DeliveryReview → PartnerReview */}
+                      {canSubmitToPartnerNow && (
+                        <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('PartnerReview')}>
+                          <Send size={11} /> Submit to Partner
+                        </Button>
+                      )}
+
+                      {/* PartnerReview → Approved */}
+                      {canApproveNow && (
+                        <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Approved')}>
+                          <CheckCircle2 size={11} /> Approve
+                        </Button>
+                      )}
+
+                      {/* PartnerReview → Draft (reject) */}
+                      {canRejectNow && (
+                        <Button size="sm" variant="destructive" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Draft')}>
+                          <AlertTriangle size={11} /> Reject
+                        </Button>
+                      )}
+
+                      {/* Approved → Published */}
+                      {canPublishNow && (
+                        <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Published')}>
+                          <Award size={11} /> Publish Proposal
+                        </Button>
+                      )}
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Edit / View + Download row */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2"
+                      onClick={() => openEditor(statusDetails.structured_ir)}
+                    >
+                      {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
+                      {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
+                    </Button>
+                    <a
+                      href={proposalApi.downloadUrl(statusDetails.proposal.id)}
+                      className="flex-1"
+                      download
+                    >
+                      <Button variant="primary" className="w-full gap-2">
+                        <Download size={15} />
+                        Download PowerPoint Draft
+                      </Button>
+                    </a>
+                  </div>
+
+                  {/* Partner — show audit logs inline */}
+                  {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-bold text-foreground border-b border-border pb-1">Audit Trail</span>
+                      <div className="bg-muted p-2 rounded-lg font-mono text-[9px] max-h-[120px] overflow-y-auto border border-border leading-relaxed">
+                        {auditLogs
+                          .filter(log => log.proposal_id === statusDetails.proposal.id)
+                          .map((log: any, idx: number) => (
+                            <div key={idx} className="border-b border-border/40 pb-1.5 mb-1.5 last:border-0">
+                              <span className="text-primary font-bold">[{log.proposal_id}]</span>{' '}
+                              <strong>{log.step_name}</strong> — {log.log_message}{' '}
+                              <span className="text-muted-foreground">({log.updated_at})</span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
+        )}
       </div>
 
       {/* HITL SOLUTION REVIEW EDITOR MODAL */}

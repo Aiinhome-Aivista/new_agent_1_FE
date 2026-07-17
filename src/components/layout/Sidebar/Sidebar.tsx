@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, Database, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Database, ShieldAlert, History } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 
 export const Sidebar: React.FC = () => {
   const menuItems = [
     { title: 'Proposal Dashboard', href: '/', icon: <LayoutDashboard size={18} /> },
+    { title: 'Historical Drafts Archive', href: '/archive', icon: <History size={18} /> },
     { title: 'Asset Knowledge Base', href: '/settings', icon: <Database size={18} /> },
   ];
 
