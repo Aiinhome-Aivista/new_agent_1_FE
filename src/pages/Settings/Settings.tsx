@@ -13,6 +13,7 @@ import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
 import { useRolePermissions } from '../../hooks';
+import { useAuthStore } from '../../store';
 
 // ── Inline permission legend shown to all users ──────────────
 const ROLE_ACCESS_MATRIX = [
@@ -28,6 +29,7 @@ const Cross = () => <ShieldAlert size={13} className="text-rose-400 flex-shrink-
 
 const Settings: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuthStore();
   const perms = useRolePermissions();
 
   const [assets, setAssets] = useState<KnowledgeAsset[]>([]);
@@ -57,7 +59,25 @@ const Settings: React.FC = () => {
     }
   };
 
-  useEffect(() => { fetchAssets(); }, []);
+  useEffect(() => {
+    if (user?.role === 'admin' || user?.role === 'presales') {
+      fetchAssets();
+    }
+  }, [user]);
+
+  if (user?.role !== 'admin' && user?.role !== 'presales') {
+    return (
+      <PageWrapper>
+        <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+          <ShieldAlert size={48} className="text-destructive opacity-80" />
+          <h2 className="text-2xl font-bold">Access Denied</h2>
+          <p className="text-muted-foreground text-sm max-w-md">
+            Your role ({user?.role}) does not have permission to view the Asset Knowledge Base. This section is restricted to Pre-Sales Architects and Administrators.
+          </p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   // ── Open modal ───────────────────────────────────────────
   const openAddModal = () => {

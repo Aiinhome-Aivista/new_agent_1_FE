@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuthStore } from '../../../store';
 import { ThemeToggle } from './ThemeToggle';
-import { LogOut, User as UserIcon, Shield } from 'lucide-react';
+import { LogOut, User as UserIcon, Shield, BarChart3 } from 'lucide-react';
 import { Button } from '../../ui/Button/Button';
 import { useRolePermissions } from '../../../hooks';
 
@@ -25,7 +25,7 @@ export const Header: React.FC = () => {
     <header className="sticky top-0 z-40 w-full border-b border-border bg-card/85 backdrop-blur-md px-6 py-3.5 flex items-center justify-between shadow-sm">
       <div className="flex items-center gap-3">
         <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-lg shadow-sm">
-          P
+          <BarChart3 size={18} />
         </div>
         <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
          Autonomous Proposal Creator
