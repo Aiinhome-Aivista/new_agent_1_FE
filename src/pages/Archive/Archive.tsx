@@ -269,7 +269,7 @@ const Archive: React.FC = () => {
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3 max-h-[640px] overflow-y-auto pr-1">
+                <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-1">
                   {proposals.map((proposal) => (
                     <div
                       key={proposal.id}
@@ -374,7 +374,7 @@ const Archive: React.FC = () => {
 
                 {/* Agent Reasoning Logs */}
                 {perms.canViewAgentLogs && (
-                  <div className="bg-muted p-4 rounded-xl border border-border flex flex-col gap-2 max-h-[220px] overflow-y-auto font-mono text-xs">
+                  <div className="bg-muted p-4 rounded-xl border border-border flex flex-col gap-2 max-h-[230px] overflow-y-auto font-mono text-xs">
                     <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1.5 font-sans mb-1 flex items-center gap-1.5">
                       <History size={13} className="text-primary" />
                       Agent Reasoning Logs & State Changes
@@ -456,7 +456,8 @@ const Archive: React.FC = () => {
                         {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
                         {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
                       </Button>
-                      <a
+                      {currentStatus === 'Published' && perms.canDownload && (
+                        <a
                         href={proposalApi.downloadUrl(statusDetails.proposal.id)}
                         className="flex-1"
                         download
@@ -466,6 +467,7 @@ const Archive: React.FC = () => {
                           Download PowerPoint Draft
                         </Button>
                       </a>
+                    )}
                     </div>
 
                     {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (

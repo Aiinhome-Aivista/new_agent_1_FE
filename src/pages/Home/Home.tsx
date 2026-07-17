@@ -314,7 +314,7 @@ const Home: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="max-w-4xl mx-auto flex flex-col gap-6">
+      <div className="max-w-6xl mx-auto flex flex-col gap-6">
         
         {/* Role access notice for restricted roles */}
         {(perms.isDelivery || perms.isPartner) && (
@@ -323,7 +323,7 @@ const Home: React.FC = () => {
               ? 'bg-amber-500/5 border-amber-500/20 text-amber-700 dark:text-amber-400'
               : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
           }`}>
-            {perms.isPartner ? <ShieldCheck size={18} className="flex-shrink-0 mt-0.5" /> : <Award size={18} className="flex-shrink-0 mt-0.5" />}
+            {perms.isPartner ? <ShieldCheck size={18} className="flex-0 mt-0.5" /> : <Award size={18} className="flex-0 mt-0.5" />}
             <div className="flex flex-col gap-0.5">
               <span className="font-bold">{perms.displayRole} — Restricted Mode</span>
               <span className="text-xs opacity-80">
@@ -343,9 +343,9 @@ const Home: React.FC = () => {
                 <Play size={18} className="text-primary" />
                 Initialize Specialist Agent Pipeline
               </CardTitle>
-              <CardDescription>
+              {/* <CardDescription>
                 Upload client RFP specification or questionnaires to run RAG grounding, solution design, estimation, and document assembly.
-              </CardDescription>
+              </CardDescription> */}
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(handleUpload)} className="flex flex-col gap-5">
@@ -386,7 +386,7 @@ const Home: React.FC = () => {
                   )}
                 </div>
 
-                <Button type="submit" variant="primary" isLoading={uploadLoading} disabled={selectedFiles.length === 0} className="w-full gap-2 mt-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:pointer-events-auto">
+                <Button type="submit" variant="primary" isLoading={uploadLoading} disabled={selectedFiles.length === 0} className="w-full gap-2 mt-2 disabled:opacity-80 disabled:cursor-not-allowed disabled:pointer-events-auto">
                   <Play size={15} />
                   Assemble Solution Advisory Deck
                 </Button>
@@ -457,7 +457,7 @@ const Home: React.FC = () => {
 
               {/* Agent Reasoning Logs */}
               {perms.canViewAgentLogs && (
-                <div className="bg-muted p-4 rounded-xl border border-border flex flex-col gap-2 max-h-[220px] overflow-y-auto font-mono text-xs">
+                <div className="bg-muted p-4 rounded-xl border border-border flex flex-col gap-2 max-h-55 overflow-y-auto font-mono text-xs">
                   <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1.5 font-sans mb-1 flex items-center gap-1.5">
                     <History size={13} className="text-primary" />
                     Agent Reasoning Logs & State Changes
@@ -553,23 +553,25 @@ const Home: React.FC = () => {
                       {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
                       {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
                     </Button>
-                    <a
-                      href={proposalApi.downloadUrl(statusDetails.proposal.id)}
-                      className="flex-1"
-                      download
-                    >
-                      <Button variant="primary" className="w-full gap-2">
-                        <Download size={15} />
-                        Download PowerPoint Draft
-                      </Button>
-                    </a>
+                    {currentStatus === 'Published' && perms.canDownload && (
+                      <a
+                        href={proposalApi.downloadUrl(statusDetails.proposal.id)}
+                        className="flex-1"
+                        download
+                      >
+                        <Button variant="primary" className="w-full gap-2">
+                          <Download size={15} />
+                          Download PowerPoint Draft
+                        </Button>
+                      </a>
+                    )}
                   </div>
 
                   {/* Partner — show audit logs inline */}
                   {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (
                     <div className="flex flex-col gap-2">
                       <span className="text-xs font-bold text-foreground border-b border-border pb-1">Audit Trail</span>
-                      <div className="bg-muted p-2 rounded-lg font-mono text-[9px] max-h-[120px] overflow-y-auto border border-border leading-relaxed">
+                      <div className="bg-muted p-2 rounded-lg font-mono text-[9px] max-h-30 overflow-y-auto border border-border leading-relaxed">
                         {auditLogs
                           .filter(log => log.proposal_id === statusDetails.proposal.id)
                           .map((log: any, idx: number) => (
@@ -606,7 +608,7 @@ const Home: React.FC = () => {
             {/* Read-only notice for partner */}
             {perms.isReadOnly && (
               <div className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-700 dark:text-amber-400">
-                <Lock size={14} className="flex-shrink-0" />
+                <Lock size={14} className="flex-0" />
                 <span><strong>Read-Only Access.</strong> As Reviewing Partner, you can view all content but cannot make edits. Use Approve / Reject buttons to action this proposal.</span>
               </div>
             )}
@@ -776,7 +778,7 @@ const Home: React.FC = () => {
                 Resource Distribution & Sizing Table (PPTX Slide 6 Layout)
                 {!perms.canEditDelivery && <span className="text-[10px] text-muted-foreground font-normal flex items-center gap-1"><Lock size={10} /> Delivery Lead editable</span>}
               </span>
-              <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
+              <div className="flex flex-col gap-2 max-h-55 overflow-y-auto pr-1">
                 {editableIr.resources?.map((res: any, idx: number) => (
                   <div key={idx} className="grid grid-cols-1 md:grid-cols-5 gap-2 bg-muted/20 p-2 border border-border rounded-lg items-center">
                     {[
@@ -809,7 +811,7 @@ const Home: React.FC = () => {
                 Skills Inventory & Competency Mapping (PPTX Slide 7 Layout)
                 {!perms.canEditDelivery && <span className="text-[10px] text-muted-foreground font-normal flex items-center gap-1"><Lock size={10} /> Delivery Lead editable</span>}
               </span>
-              <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
+              <div className="flex flex-col gap-2 max-h-55 overflow-y-auto pr-1">
                 {editableIr.skills_mapping?.map((mapping: any, idx: number) => (
                   <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-muted/20 p-2 border border-border rounded-lg items-center">
                     {[

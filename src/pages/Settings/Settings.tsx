@@ -140,9 +140,9 @@ const Settings: React.FC = () => {
             <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
               Organizational Knowledge Base
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            {/* <p className="text-sm text-muted-foreground mt-1">
               Manage competencies and technical assets queried by the Requirement RAG agent
-            </p>
+            </p> */}
 
             {/* Role access notice */}
             {(!perms.canUploadKnowledge) && (
@@ -157,7 +157,7 @@ const Settings: React.FC = () => {
 
           {/* Action buttons — gated */}
           <div className="flex items-center gap-2 flex-wrap">
-            {perms.canReindexKnowledge && (
+            {/* {perms.canReindexKnowledge && (
               <Button
                 variant="outline"
                 className="gap-2 text-sm"
@@ -168,7 +168,7 @@ const Settings: React.FC = () => {
                 <RefreshCw size={14} />
                 Re-index RAG Store
               </Button>
-            )}
+            )} */}
             {perms.canUploadKnowledge ? (
               <Button variant="primary" onClick={openAddModal} className="gap-2">
                 <Plus size={16} />
@@ -188,7 +188,7 @@ const Settings: React.FC = () => {
           <summary className="text-xs font-bold text-muted-foreground cursor-pointer select-none flex items-center gap-2 list-none pb-1">
             <ShieldAlert size={13} className="text-primary" />
             Role Access Matrix — Knowledge Base
-            <span className="ml-auto text-[10px] opacity-50 group-open:hidden">Click to expand</span>
+            <span className="ml-auto text-[12px] opacity-80 group-open:hidden">Click to expand</span>
           </summary>
           <div className="mt-3 border border-border rounded-xl overflow-hidden">
             <table className="w-full text-[11px]">

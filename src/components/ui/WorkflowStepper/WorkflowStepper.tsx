@@ -74,7 +74,11 @@ function getStepState(
 
   const currentIdx = STATUS_ORDER.indexOf(currentStatus);
 
-  if (step.statuses.includes(currentStatus)) return 'active';
+  if (step.statuses.includes(currentStatus)) {
+    // When proposal reaches Published, show the final step as done (green)
+    if (currentStatus === 'Published' && step.key === 'published') return 'done';
+    return 'active';
+  }
 
   // Check if any of the step's statuses come before current status in the order
   const stepMaxIdx = Math.max(...step.statuses.map((s) => STATUS_ORDER.indexOf(s)));
@@ -119,7 +123,7 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
                 {/* Circle */}
                 <div
                   className={`
-                    h-8 w-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-300 z-10
+                    h-8 w-8 rounded-full border-2 flex items-center justify-center flex-0 transition-all duration-300 z-10
                     ${state === 'done'    ? 'bg-emerald-500 border-emerald-500 text-white shadow-emerald-500/30 shadow-md' : ''}
                     ${state === 'active' && !isRejected ? 'bg-primary border-primary text-primary-foreground shadow-primary/30 shadow-md animate-pulse' : ''}
                     ${state === 'active' && isRejected  ? 'bg-rose-500 border-rose-500 text-white shadow-rose-500/30 shadow-md' : ''}
@@ -149,7 +153,7 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
 
               {/* Connector line */}
               {!isLast && (
-                <div className="flex-shrink-0 w-full max-w-[32px] mt-4 relative">
+                <div className="flex-0 w-full max-w-[32px] mt-4 relative">
                   <div
                     className={`h-0.5 w-full transition-colors duration-500 ${
                       getStepState(WORKFLOW_STEPS[idx + 1], currentStatus) !== 'pending' || state === 'done'
