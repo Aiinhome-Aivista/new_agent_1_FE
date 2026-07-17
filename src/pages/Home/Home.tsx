@@ -62,6 +62,7 @@ const Home: React.FC = () => {
 
   const [uploadLoading, setUploadLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isDragActive, setIsDragActive] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editableIr, setEditableIr] = useState<any>(null);
   const [savingIr, setSavingIr] = useState(false);
@@ -157,6 +158,27 @@ const Home: React.FC = () => {
   // ── File handling ───────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setSelectedFiles(Array.from(e.target.files));
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setSelectedFiles((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
   };
 
   const handleUpload = async (data: any) => {
@@ -330,7 +352,14 @@ const Home: React.FC = () => {
 
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-foreground/80">Support Documents (RFI, RFP, Questionnaire)</label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center gap-3 bg-muted/20 hover:bg-muted/40 transition-colors">
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${isDragActive ? 'border-primary bg-primary/10' : 'border-border bg-muted/20 hover:bg-muted/40'}`}
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragEnter={handleDragOver}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
                     <FileUp size={32} className="text-muted-foreground" />
                     <div className="text-xs text-muted-foreground text-center">
                       <span className="font-semibold text-primary cursor-pointer hover:underline" onClick={() => fileInputRef.current?.click()}>
@@ -357,7 +386,7 @@ const Home: React.FC = () => {
                   )}
                 </div>
 
-                <Button type="submit" variant="primary" isLoading={uploadLoading} className="w-full gap-2 mt-2">
+                <Button type="submit" variant="primary" isLoading={uploadLoading} disabled={selectedFiles.length === 0} className="w-full gap-2 mt-2">
                   <Play size={15} />
                   Assemble Solution Advisory Deck
                 </Button>
@@ -618,7 +647,8 @@ const Home: React.FC = () => {
                       <input
                         type="text"
                         disabled={!perms.canEditSolution}
-                        className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs"
+                        className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs truncate"
+                        title={req}
                         value={req}
                         onChange={(e) => editItemInList('requirements', idx, e.target.value)}
                       />
@@ -648,7 +678,8 @@ const Home: React.FC = () => {
                       <input
                         type="text"
                         disabled={!perms.canEditSolution}
-                        className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs"
+                        className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs truncate"
+                        title={gap}
                         value={gap}
                         onChange={(e) => editItemInList('gaps', idx, e.target.value)}
                       />
