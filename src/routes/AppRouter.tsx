@@ -6,6 +6,7 @@ import { ROUTES } from './routes.config';
 // Lazy load all page components
 const Home = lazy(() => import('../pages/Home/Home'));
 const Settings = lazy(() => import('../pages/Settings/Settings'));
+const Archive = lazy(() => import('../pages/Archive/Archive'));
 const Login = lazy(() => import('../pages/Login/Login'));
 const NotFound = lazy(() => import('../pages/NotFound/NotFound'));
 
@@ -40,6 +41,15 @@ export const AppRouter: React.FC = () => {
             element={
               <PrivateRoute>
                 <Settings />
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path={ROUTES.archive}
+            element={
+              <PrivateRoute>
+                <Archive />
               </PrivateRoute>
             }
           />
