@@ -3,12 +3,19 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Database, ShieldAlert, History } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 
+import { useAuthStore } from '../../../store';
+
 export const Sidebar: React.FC = () => {
+  const { user } = useAuthStore();
+  
   const menuItems = [
     { title: 'Proposal Dashboard', href: '/', icon: <LayoutDashboard size={18} /> },
     { title: 'Historical Drafts Archive', href: '/archive', icon: <History size={18} /> },
-    { title: 'Asset Knowledge Base', href: '/settings', icon: <Database size={18} /> },
   ];
+
+  if (user?.role === 'admin' || user?.role === 'presales') {
+    menuItems.push({ title: 'Asset Knowledge Base', href: '/settings', icon: <Database size={18} /> });
+  }
 
   return (
     <aside className="w-64 border-r border-border bg-card hidden md:flex flex-col h-[calc(100vh-73px)] sticky top-[73px] p-4 gap-6 justify-between">
