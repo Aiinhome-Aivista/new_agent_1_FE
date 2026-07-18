@@ -72,7 +72,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
           Requirement analysis is complete. Please select the technologies you want to use for this project to calculate the budget and proceed with the solution design.
         </p>
 
-        {options && (
+        {options && (options.ui.length > 0 || options.backend.length > 0 || options.database.length > 0) ? (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-bold text-foreground">Frontend / UI Technology</label>
@@ -98,7 +98,11 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
               </select>
             </div>
           </div>
-        )}
+        ) : options ? (
+          <div className="bg-destructive/10 text-destructive text-sm font-semibold p-4 rounded-lg border border-destructive/20 text-center">
+            No technologies/skills are currently available in the knowledge base. Please upload assets first.
+          </div>
+        ) : null}
 
         <div className="flex flex-col gap-3 pt-4 border-t border-border">
           <Button variant="outline" onClick={handleCalculateBudget} isLoading={isCalculating} disabled={!uiTech || !backendTech || !dbTech} className="gap-2">
