@@ -414,7 +414,7 @@ const Home: React.FC = () => {
         {/* Pipeline Status + Workflow Panel */}
         {statusDetails && (
           <Card className="border-primary/20 shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between !p-1.5 !px-3">
+            <CardHeader className="flex flex-row items-center justify-between !p-1.5 !px-3 gap-2">
               <div>
                 <CardTitle className="text-sm font-bold">
                   {AI_RUNNING_STATUSES.includes(currentStatus)
@@ -427,9 +427,29 @@ const Home: React.FC = () => {
                     : 'Business review workflow — human-in-the-loop approval chain'}
                 </CardDescription>
               </div>
-              <Badge variant={getProposalBadgeVariant(currentStatus)}>
-                {currentStatus}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {perms.canCreateProposal && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-[10px] py-1 h-7 gap-1"
+                    onClick={() => {
+                      setStatusDetails(null);
+                      setActiveProposalId(null);
+                      setPolling(false);
+                      setShowTechSelection(false);
+                      setSelectedFiles([]);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                  >
+                    <FileUp size={11} />
+                    Upload
+                  </Button>
+                )}
+                <Badge variant={getProposalBadgeVariant(currentStatus)}>
+                  {currentStatus}
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent className="flex flex-col gap-2 !p-2 !px-3">
 
