@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ShieldCheck, ChevronDown, ChevronUp, Zap } from 'lucide-react';
+import { ShieldCheck, ChevronDown, ChevronUp, Zap, BarChart3 } from 'lucide-react';
 import { useAuthStore } from '../../store';
 import { loginSchema } from '../../utils/validators';
 import { Button } from '../../components/ui/Button/Button';
@@ -107,7 +107,7 @@ const Login: React.FC = () => {
         <div className="p-8 bg-card border border-border rounded-2xl shadow-xl glass flex flex-col gap-6">
           <div className="flex flex-col items-center text-center gap-2">
             <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-2xl shadow-md">
-              P
+              <BarChart3/>
             </div>
             <h2 className="text-2xl font-extrabold tracking-tight mt-2 text-foreground">
               Advisory Proposal Creator

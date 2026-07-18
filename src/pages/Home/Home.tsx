@@ -301,6 +301,22 @@ const Home: React.FC = () => {
     return 'outline';
   };
 
+  const currentStepIndex = (() => {
+    const runningStep = statusDetails?.steps?.find((s) => s.status === 'running');
+    if (runningStep) {
+      return STEP_PHASES.findIndex((phase) => phase.name === runningStep.step_name);
+    }
+
+    const completedSteps = statusDetails?.steps?.filter((s) => s.status === 'completed') ?? [];
+    if (completedSteps.length > 0) {
+      const lastCompleted = completedSteps[completedSteps.length - 1];
+      const lastCompletedIndex = STEP_PHASES.findIndex((phase) => phase.name === lastCompleted.step_name);
+      return lastCompletedIndex >= 0 ? lastCompletedIndex + 1 : -1;
+    }
+
+    return -1;
+  })();
+
   const currentStatus = statusDetails?.proposal.status ?? '';
   const isBusinessWorkflow = BUSINESS_STATUSES.includes(currentStatus);
 
@@ -405,7 +421,7 @@ const Home: React.FC = () => {
                     ? `Pipeline Execution: ${statusDetails.proposal.client_name}`
                     : `Proposal Review: ${statusDetails.proposal.client_name}`}
                 </CardTitle>
-                <CardDescription className="text-[10px] mt-0.5">
+                <CardDescription className="text-[12px] mt-0.5">
                   {AI_RUNNING_STATUSES.includes(currentStatus)
                     ? 'Tracking multi-agent sequential/parallel orchestration'
                     : 'Business review workflow — human-in-the-loop approval chain'}
@@ -425,7 +441,7 @@ const Home: React.FC = () => {
                     return (
                       <React.Fragment key={phase.name}>
                         <div
-                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-2 rounded-lg border text-center gap-1 transition-all min-w-[120px] ${
+                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-[120px] ${
                             stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
                             stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
                             stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
@@ -437,7 +453,10 @@ const Home: React.FC = () => {
                           <span className="text-[9px] text-muted-foreground leading-none">{phase.label}</span>
                         </div>
                         {idx < STEP_PHASES.length - 1 && (
-                          <MoveRight size={18} className="text-muted-foreground flex-shrink-0" />
+                          <MoveRight
+                            size={20}
+                            className={idx < currentStepIndex ? 'text-emerald-500 flex-shrink-0' : 'text-muted-foreground flex-shrink-0'}
+                          />
                         )}
                       </React.Fragment>
                     );
@@ -457,7 +476,7 @@ const Home: React.FC = () => {
 
               {/* Agent Reasoning Logs */}
               {perms.canViewAgentLogs && (
-                <div className="bg-muted p-2 px-3 rounded-xl border border-border flex flex-col gap-1 max-h-55 overflow-y-auto font-mono text-xs">
+                <div className="bg-muted p-2 px-3 rounded-xl border border-border flex flex-col gap-1 max-h-85 overflow-y-auto font-mono text-xs">
                   <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1 font-sans mb-1 flex items-center gap-1.5">
                     <History size={13} className="text-primary" />
                     Agent Reasoning Logs & State Changes
@@ -474,7 +493,7 @@ const Home: React.FC = () => {
                           </Badge>
                         </div>
                         {step.log_message && (
-                          <p className="text-foreground/90 whitespace-pre-wrap pl-2 leading-relaxed text-[10px]">
+                          <p className="text-foreground/90 whitespace-pre-wrap pl-2 leading-relaxed text-[11px]">
                             {step.log_message}
                           </p>
                         )}

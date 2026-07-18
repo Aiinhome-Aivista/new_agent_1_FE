@@ -153,7 +153,13 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
 
               {/* Connector Arrow */}
               {!isLast && (
-                <div className="flex-0 flex items-center justify-center mt-1.5 px-2 text-muted-foreground opacity-50">
+                <div
+                  className={`flex-0 flex items-center justify-center mt-1.5 px-2 opacity-50 ${
+                    state === 'done'
+                      ? 'text-emerald-500 opacity-100'
+                      : 'text-muted-foreground'
+                  }`}
+                >
                   <MoveRight size={20} strokeWidth={2} />
                 </div>
               )}
