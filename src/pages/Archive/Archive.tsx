@@ -269,7 +269,7 @@ const Archive: React.FC = () => {
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-1">
+                <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
                   {proposals.map((proposal) => (
                     <div
                       key={proposal.id}
