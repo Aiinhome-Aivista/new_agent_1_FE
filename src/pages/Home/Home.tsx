@@ -22,7 +22,7 @@ import { TechSelectionModal } from '../../components/TechSelectionModal';
 
 const STEP_PHASES = [
   { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
-  { name: 'Analyzing',  label: 'RAG capability check',  icon: <Cpu size={16} /> },
+  { name: 'Analyzing',  label: 'Capability mapping',  icon: <Cpu size={16} /> },
   { name: 'Designing',  label: 'Solution architecture', icon: <Layers size={16} /> },
   { name: 'Planning',   label: 'Timeline & pricing',    icon: <Clock size={16} /> },
   { name: 'Assembling', label: 'Reflexion assembly',    icon: <CheckCircle2 size={16} /> },
@@ -360,7 +360,7 @@ const Home: React.FC = () => {
                 Initialize Specialist Agent Pipeline
               </CardTitle>
               {/* <CardDescription>
-                Upload client RFP specification or questionnaires to run RAG grounding, solution design, estimation, and document assembly.
+                Upload client RFP specification or questionnaires to run automated analysis, solution design, estimation, and document assembly.
               </CardDescription> */}
             </CardHeader>
             <CardContent>

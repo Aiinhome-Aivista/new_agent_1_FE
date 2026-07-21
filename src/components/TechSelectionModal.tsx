@@ -33,6 +33,16 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   const [originalBudget, setOriginalBudget] = useState<string>('$250,000');
   const [isLoading, setIsLoading] = useState(true);
   const [isResuming, setIsResuming] = useState(false);
+  const [selectedAiModel, setSelectedAiModel] = useState<string>('');
+
+  useEffect(() => {
+    const pkg = techOptions.find(opt => opt.id === selectedOptionId);
+    if (pkg && pkg.ai_models && pkg.ai_models.length > 0) {
+      setSelectedAiModel(pkg.ai_models[0]);
+    } else {
+      setSelectedAiModel('');
+    }
+  }, [selectedOptionId, techOptions]);
 
   useEffect(() => {
     if (isOpen && proposalId) {
@@ -178,7 +188,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   const selectedPkg = techOptions.find(opt => opt.id === selectedOptionId);
 
   return (
-    <Modal isOpen={isOpen} onClose={() => {}} title="Technology Stack & RAG Analysis" className="max-w-3xl">
+    <Modal isOpen={isOpen} onClose={() => {}} title="Technology Stack & Capability Analysis" className="max-w-3xl">
       <div className="flex flex-col gap-6">
         
         {isLoading ? (
@@ -192,7 +202,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 text-primary font-bold text-sm">
                 <Bot size={18} className="text-primary animate-pulse" />
-                <span>RAG Architect Assistant</span>
+                <span>AI Architecture Assistant</span>
                 <span className="text-[10px] bg-primary/10 border border-primary/20 text-primary px-1.5 py-0.5 rounded-full flex items-center gap-1 font-semibold">
                   <Sparkles size={8} /> Grounded Recommendation
                 </span>
@@ -294,16 +304,50 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
 
               {/* Recommended AI Models */}
               {selectedPkg && selectedPkg.ai_models && selectedPkg.ai_models.length > 0 && (
-                <div className="flex flex-col gap-2 mt-2 bg-primary/5 border border-primary/20 p-4 rounded-xl">
-                  <span className="text-[10px] font-bold text-primary uppercase flex items-center gap-1.5 font-semibold">
-                    <Bot size={11} className="text-primary animate-pulse" /> Recommended AI Models
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedPkg.ai_models.map((model, i) => (
-                      <span key={i} className="text-[10px] font-bold bg-primary/10 border border-primary/20 text-primary px-2.5 py-0.5 rounded-md">
-                        {model}
-                      </span>
-                    ))}
+                <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Bot size={14} className="text-primary animate-pulse" /> AI Model Selection (Choose one)
+                  </h4>
+                  <div className="flex flex-col gap-3">
+                    {selectedPkg.ai_models.map((model, i) => {
+                      const isSelected = selectedAiModel === model;
+                      const isRecommended = i === 0;
+                      return (
+                        <div 
+                          key={i}
+                          onClick={() => setSelectedAiModel(model)}
+                          className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
+                            isSelected 
+                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20' 
+                              : 'border-border bg-card hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between md:justify-center md:items-center">
+                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                              isSelected 
+                                ? 'border-primary bg-primary text-primary-foreground' 
+                                : 'border-muted-foreground/30 bg-muted/40'
+                            }`}>
+                              {isSelected && <Check size={12} strokeWidth={3} />}
+                            </div>
+                            <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                              {isRecommended ? 'Recommended' : 'Alternative'}
+                            </span>
+                          </div>
+
+                          <div className="flex-1 flex flex-col gap-1.5 justify-center">
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold text-sm text-foreground">{model}</span>
+                              <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${
+                                isRecommended ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {isRecommended ? 'Recommended' : 'Alternative'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

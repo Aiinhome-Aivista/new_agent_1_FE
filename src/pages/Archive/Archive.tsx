@@ -19,7 +19,7 @@ import { formatDate } from '../../utils/formatters';
 
 const STEP_PHASES = [
   { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
-  { name: 'Analyzing',  label: 'RAG capability check',  icon: <Cpu size={16} /> },
+  { name: 'Analyzing',  label: 'Capability mapping',  icon: <Cpu size={16} /> },
   { name: 'Designing',  label: 'Solution architecture', icon: <Layers size={16} /> },
   { name: 'Planning',   label: 'Timeline & pricing',    icon: <Clock size={16} /> },
   { name: 'Assembling', label: 'Reflexion assembly',    icon: <CheckCircle2 size={16} /> },
