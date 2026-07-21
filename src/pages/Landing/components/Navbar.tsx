@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { BarChart3, Menu, X } from 'lucide-react';
 import { ROUTES } from '../../../routes/routes.config';
 
 export const Navbar: React.FC = () => {
@@ -20,9 +20,8 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { name: 'Home', href: '#' },
     { name: 'Features', href: '#features' },
-    { name: 'Solutions', href: '#solutions' },
+    { name: 'How it works', href: '#workflow' },
     { name: 'Templates', href: '#templates' },
-    { name: 'Pricing', href: '#pricing' },
     { name: 'Contact', href: '#contact' },
   ];
 
@@ -40,22 +39,9 @@ export const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl">A</span>
+              <span className="text-white font-bold text-xl"><BarChart3/></span>
             </div>
-            <span className="font-bold text-xl tracking-tight">AutoProposal</span>
-          </div>
-
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors"
-              >
-                {link.name}
-              </a>
-            ))}
+            <span className="font-bold text-xl tracking-tight">Autonomous Proposal Creator</span>
           </div>
 
           {/* Desktop Actions */}
@@ -96,20 +82,10 @@ export const Navbar: React.FC = () => {
             className="md:hidden glass border-t border-border mt-4"
           >
             <div className="px-4 py-6 flex flex-col space-y-4">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-lg font-medium text-foreground hover:text-primary"
-                >
-                  {link.name}
-                </a>
-              ))}
               <hr className="border-border my-4" />
               <Link
                 to={ROUTES.login}
-                className="text-lg font-medium text-foreground hover:text-primary"
+                className="bg-primary px-6 py-3 text-center rounded-xl font-medium w-full mt-4 text-foreground hover:text-primary"
               >
                 Sign In
               </Link>

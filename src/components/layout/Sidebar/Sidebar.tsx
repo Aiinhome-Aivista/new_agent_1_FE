@@ -50,8 +50,6 @@ export const Sidebar: React.FC = () => {
           <ShieldAlert size={16} />
           <span className="text-xs font-bold uppercase tracking-wider">Agent Sandbox</span>
         </div>
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-        </p>
       </div>
     </aside>
   );

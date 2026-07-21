@@ -303,11 +303,11 @@ const Settings: React.FC = () => {
             </CardDescription>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filtered.map((asset) => (
               <Card key={asset.id} className="flex flex-col justify-between hoverable group transition-all">
                 <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex lg:flex-col xl:flex-row items-start justify-between gap-4">
                     <CardTitle className="text-base font-bold text-foreground leading-snug">
                       {asset.name}
                     </CardTitle>

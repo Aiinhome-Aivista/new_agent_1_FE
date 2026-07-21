@@ -5,27 +5,27 @@ import { Star } from 'lucide-react';
 const testimonials = [
   {
     quote: "AutoProposal has completely transformed how we respond to RFPs. What used to take two weeks now takes us two days, and the quality is even better.",
-    name: "Sarah Jenkins",
+    name: "Supriyo Dolai",
     role: "VP of Sales, TechCorp Enterprise",
-    initials: "SJ"
+    initials: "SD"
   },
   {
     quote: "The ability to generate a 50-page architecture document and instantly export a matching pitch deck is nothing short of magic. Incredible ROI.",
-    name: "David Chen",
+    name: "Arpan Dutta",
     role: "Chief Solutions Architect, CloudNine",
-    initials: "DC"
+    initials: "AD"
   },
   {
     quote: "Our win rate has increased by 40% since implementing this platform. The AI agents ensure we never miss a critical requirement.",
-    name: "Elena Rodriguez",
+    name: "Anirban Pal",
     role: "Director of Proposals, GlobalSystems",
-    initials: "ER"
+    initials: "AP"
   }
 ];
 
 export const Testimonials: React.FC = () => {
   return (
-    <section className="py-24 bg-background">
+    <section id="contact" className="py-12 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Trusted by Enterprise Leaders</h2>

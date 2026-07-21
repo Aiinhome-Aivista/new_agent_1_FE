@@ -13,9 +13,9 @@ const steps = [
 
 export const Workflow: React.FC = () => {
   return (
-    <section id="workflow" className="py-24 relative overflow-hidden">
+    <section id="workflow" className="py-12 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-20">
+        <div className="text-center max-w-3xl mx-auto mb-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Step-by-Step Workflow</h2>
           <p className="text-muted-foreground text-lg">
             From raw requirements to client-ready proposals in minutes, not days.
@@ -24,7 +24,7 @@ export const Workflow: React.FC = () => {
 
         <div className="relative">
           {/* Connecting Line */}
-          <div className="hidden lg:block absolute top-1/2 left-0 w-full h-1 bg-border -translate-y-1/2 z-0" />
+          <div className="hidden lg:block absolute top-6 left-0 w-full h-1 bg-border -translate-y-1/2 z-0" />
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 relative z-10">
             {steps.map((step, index) => (
