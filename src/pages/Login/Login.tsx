@@ -50,7 +50,7 @@ const Login: React.FC = () => {
       setLoading(true);
       await login(data);
       toast('Login successful! Welcome to PwC Advisory.', 'success');
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Invalid credentials.';
       toast(msg, 'error');

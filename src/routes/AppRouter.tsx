@@ -4,6 +4,7 @@ import { PrivateRoute } from './PrivateRoute';
 import { ROUTES } from './routes.config';
 
 // Lazy load all page components
+const Landing = lazy(() => import('../pages/Landing/Landing'));
 const Home = lazy(() => import('../pages/Home/Home'));
 const Settings = lazy(() => import('../pages/Settings/Settings'));
 const Archive = lazy(() => import('../pages/Archive/Archive'));
@@ -25,10 +26,11 @@ export const AppRouter: React.FC = () => {
     <BrowserRouter>
       <Suspense fallback={<PageSpinner />}>
         <Routes>
+          <Route path={ROUTES.landing} element={<Landing />} />
           <Route path={ROUTES.login} element={<Login />} />
           
           <Route
-            path={ROUTES.home}
+            path={ROUTES.dashboard}
             element={
               <PrivateRoute>
                 <Home />

@@ -9,7 +9,7 @@ export const Sidebar: React.FC = () => {
   const { user } = useAuthStore();
   
   const menuItems = [
-    { title: 'Proposal Dashboard', href: '/', icon: <LayoutDashboard size={18} /> },
+    { title: 'Proposal Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { title: 'Historical Drafts Archive', href: '/archive', icon: <History size={18} /> },
   ];
 
