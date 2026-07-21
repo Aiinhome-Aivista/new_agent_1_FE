@@ -45,8 +45,16 @@ export const proposalApi = {
     const res = await apiClient.post(API_ENDPOINTS.calculateBudget, { ui_tech, backend_tech, db_tech });
     return res.data;
   },
-  resumeProposal: async (id: string, ui_tech: string, backend_tech: string, db_tech: string, formatted_budget: string): Promise<any> => {
-    const res = await apiClient.post(API_ENDPOINTS.resumeProposal(id), { ui_tech, backend_tech, db_tech, formatted_budget });
+  resumeProposal: async (id: string, ui_tech: string, backend_tech: string, db_tech: string, formatted_budget: string, selected_rag?: string, selected_guardrail?: string, selected_action_engine?: string): Promise<any> => {
+    const res = await apiClient.post(API_ENDPOINTS.resumeProposal(id), { 
+      ui_tech, 
+      backend_tech, 
+      db_tech, 
+      formatted_budget,
+      selected_rag,
+      selected_guardrail,
+      selected_action_engine
+    });
     return res.data;
   },
 };

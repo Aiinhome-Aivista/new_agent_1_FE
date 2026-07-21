@@ -16,6 +16,11 @@ interface TechOptionPackage {
   ai_models?: string[];
 }
 
+interface AdvancedOption {
+  id: string;
+  name: string;
+}
+
 interface TechSelectionModalProps {
   isOpen: boolean;
   proposalId: string;
@@ -34,6 +39,16 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   const [isLoading, setIsLoading] = useState(true);
   const [isResuming, setIsResuming] = useState(false);
   const [selectedAiModel, setSelectedAiModel] = useState<string>('');
+
+  // Advanced Options State
+  const [ragOptions, setRagOptions] = useState<AdvancedOption[] | null>(null);
+  const [selectedRag, setSelectedRag] = useState<string>('');
+  
+  const [guardrailOptions, setGuardrailOptions] = useState<AdvancedOption[] | null>(null);
+  const [selectedGuardrail, setSelectedGuardrail] = useState<string>('');
+  
+  const [actionEngineOptions, setActionEngineOptions] = useState<AdvancedOption[] | null>(null);
+  const [selectedActionEngine, setSelectedActionEngine] = useState<string>('');
 
   useEffect(() => {
     const pkg = techOptions.find(opt => opt.id === selectedOptionId);
@@ -55,6 +70,20 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             setOriginalBudget(ir.budget || '$250,000');
             setExtractedTechs(ir.extracted_technologies || { ui: null, backend: null, database: null });
             setChatExplanation(ir.chat_explanation || 'Based on requirements and constraints, I have analyzed the document and prepared 3 optimal technology packages.');
+            
+            // Set advanced options
+            const rOpts = ir.rag_options || [];
+            const gOpts = ir.guardrail_options || [];
+            const aOpts = ir.action_engine_options || [];
+            
+            setRagOptions(rOpts);
+            if (rOpts.length > 0) setSelectedRag(rOpts[0].id);
+            
+            setGuardrailOptions(gOpts);
+            if (gOpts.length > 0) setSelectedGuardrail(gOpts[0].id);
+            
+            setActionEngineOptions(aOpts);
+            if (aOpts.length > 0) setSelectedActionEngine(aOpts[0].id);
             
             const options = ir.tech_options || [];
             if (options.length === 3) {
@@ -132,7 +161,10 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
         selectedPkg.ui, 
         selectedPkg.backend, 
         selectedPkg.database, 
-        originalBudget
+        originalBudget,
+        selectedRag,
+        selectedGuardrail,
+        selectedActionEngine
       );
       toast('Technology package confirmed. Resuming pipeline...', 'success');
       onComplete();
@@ -183,7 +215,11 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
     if (!extractedTechs) return false;
     const val = extractedTechs[category];
     if (!val) return false;
-    return val.toLowerCase().replace(/[^a-z0-9]/g, '') === tech.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // Safely handle if backend returned an array instead of a string
+    const valStr = Array.isArray(val) ? val.join(' ') : String(val);
+    
+    return valStr.toLowerCase().replace(/[^a-z0-9]/g, '').includes(tech.toLowerCase().replace(/[^a-z0-9]/g, ''));
   };
 
   const selectedPkg = techOptions.find(opt => opt.id === selectedOptionId);
@@ -350,6 +386,99 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                       );
                     })}
                   </div>
+                </div>
+              )}
+              
+              {/* Advanced Options Sections */}
+              {ragOptions !== null && (
+                <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-primary" /> RAG Strategy Selection
+                  </h4>
+                  {ragOptions.length === 0 ? (
+                    <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {ragOptions.map((opt) => (
+                        <div 
+                          key={opt.id}
+                          onClick={() => setSelectedRag(opt.id)}
+                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                            selectedRag === opt.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                            selectedRag === opt.id ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                          }`}>
+                            {selectedRag === opt.id && <Check size={10} strokeWidth={3} />}
+                          </div>
+                          <span className="text-sm font-medium">{opt.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {guardrailOptions !== null && (
+                <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Terminal size={14} className="text-primary" /> Guardrails (Data Protection)
+                  </h4>
+                  {guardrailOptions.length === 0 ? (
+                    <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {guardrailOptions.map((opt) => (
+                        <div 
+                          key={opt.id}
+                          onClick={() => setSelectedGuardrail(opt.id)}
+                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                            selectedGuardrail === opt.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                            selectedGuardrail === opt.id ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                          }`}>
+                            {selectedGuardrail === opt.id && <Check size={10} strokeWidth={3} />}
+                          </div>
+                          <span className="text-sm font-medium">{opt.name}</span>
+                        </div>
+                      ))}
+                      <span className="text-[10px] text-muted-foreground italic mt-1">* Cost Excluded</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {actionEngineOptions !== null && (
+                <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Cpu size={14} className="text-primary" /> Action Engine Framework
+                  </h4>
+                  {actionEngineOptions.length === 0 ? (
+                    <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {actionEngineOptions.map((opt) => (
+                        <div 
+                          key={opt.id}
+                          onClick={() => setSelectedActionEngine(opt.id)}
+                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                            selectedActionEngine === opt.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                            selectedActionEngine === opt.id ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                          }`}>
+                            {selectedActionEngine === opt.id && <Check size={10} strokeWidth={3} />}
+                          </div>
+                          <span className="text-sm font-medium">{opt.name}</span>
+                        </div>
+                      ))}
+                      <span className="text-[10px] text-muted-foreground italic mt-1">* Cost Excluded</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
