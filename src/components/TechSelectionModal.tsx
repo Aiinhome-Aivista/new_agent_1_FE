@@ -104,6 +104,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
       backend: "flask",
       database: "mysql",
       other_technologies: ["Docker", "Redis", "GitHub Actions", "Tailwind CSS", "Pydantic", "SQLAlchemy"],
+      ai_models: ["Claude 3.5 Sonnet and above", "Llama 3 8B and above", "GPT-4o and above", "Gemini 1.5 Pro and above"],
       rationale: "Leverages Python backend for seamless AI model execution, with MySQL as a robust metadata store."
     },
     {

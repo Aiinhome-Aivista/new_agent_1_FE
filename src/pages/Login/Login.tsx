@@ -22,43 +22,7 @@ const DEMO_USERS = [
     color: 'text-rose-500',
     dot: 'bg-rose-500',
     bg: 'hover:bg-rose-500/10 hover:border-rose-500/30',
-  },
-  {
-    username: 'presales',
-    password: 'password',
-    role: 'Pre-Sales Architect',
-    description: 'Create proposals, run pipeline',
-    color: 'text-blue-500',
-    dot: 'bg-blue-500',
-    bg: 'hover:bg-blue-500/10 hover:border-blue-500/30',
-  },
-  {
-    username: 'bidmanager',
-    password: 'password',
-    role: 'Bid Manager',
-    description: 'Manage proposals, edit budget',
-    color: 'text-violet-500',
-    dot: 'bg-violet-500',
-    bg: 'hover:bg-violet-500/10 hover:border-violet-500/30',
-  },
-  {
-    username: 'delivery',
-    password: 'password',
-    role: 'Delivery Lead',
-    description: 'Resource & timeline review',
-    color: 'text-emerald-500',
-    dot: 'bg-emerald-500',
-    bg: 'hover:bg-emerald-500/10 hover:border-emerald-500/30',
-  },
-  {
-    username: 'partner',
-    password: 'password',
-    role: 'Reviewing Partner',
-    description: 'Final approval & publish',
-    color: 'text-amber-500',
-    dot: 'bg-amber-500',
-    bg: 'hover:bg-amber-500/10 hover:border-amber-500/30',
-  },
+  }
 ];
 
 const Login: React.FC = () => {
