@@ -23,30 +23,16 @@ const WORKFLOW_STEPS: StepConfig[] = [
     statuses: ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Complete'],
   },
   {
-    key: 'draft',
-    label: 'Pre-Sales Draft',
-    sublabel: 'Solution Blueprint Review',
-    icon: <Send size={14} />,
-    statuses: ['Draft'],
-  },
-  {
-    key: 'delivery',
-    label: 'Delivery Review',
-    sublabel: 'Feasibility & Resource Check',
-    icon: <CheckCircle2 size={14} />,
-    statuses: ['DeliveryReview'],
-  },
-  {
-    key: 'partner',
-    label: 'Partner Review',
-    sublabel: 'Quality & Final Sign-off',
+    key: 'review',
+    label: 'Under Review',
+    sublabel: 'View, Edit, Approve',
     icon: <ShieldCheck size={14} />,
-    statuses: ['PartnerReview'],
+    statuses: ['InReview'],
   },
   {
     key: 'approved',
     label: 'Approved',
-    sublabel: 'Partner Signed',
+    sublabel: 'Approved by you',
     icon: <Award size={14} />,
     statuses: ['Approved'],
   },
@@ -62,15 +48,15 @@ const WORKFLOW_STEPS: StepConfig[] = [
 // Status ordering for "done" detection
 const STATUS_ORDER = [
   'Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Complete',
-  'Draft', 'DeliveryReview', 'PartnerReview', 'Approved', 'Published',
+  'InReview', 'Approved', 'Published',
 ];
 
 function getStepState(
   step: StepConfig,
   currentStatus: string
 ): 'done' | 'active' | 'pending' | 'rejected' {
-  // Rejected state: PartnerReview → Draft means "Draft after rejection"
-  if (currentStatus === 'Draft' && step.key === 'draft') return 'active';
+  // Rejected state: InReview → Rejected means "InReview after rejection"
+  if (currentStatus === 'Rejected' && step.key === 'review') return 'active';
 
   const currentIdx = STATUS_ORDER.indexOf(currentStatus);
 
@@ -95,7 +81,7 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
   const aiStatuses = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed'];
   if (aiStatuses.includes(currentStatus)) return null;
 
-  const isRejected = currentStatus === 'Draft' && submittedByRole === 'partner';
+  const isRejected = currentStatus === 'Rejected';
 
   return (
     <div className="flex flex-col gap-3">

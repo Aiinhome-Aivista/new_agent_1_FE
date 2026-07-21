@@ -27,13 +27,11 @@ const STEP_PHASES = [
 ];
 
 const AI_RUNNING_STATUSES = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed'];
-const BUSINESS_STATUSES = ['Complete', 'Draft', 'DeliveryReview', 'PartnerReview', 'Approved', 'Published'];
+const BUSINESS_STATUSES = ['Complete', 'InReview', 'Approved', 'Published', 'Rejected'];
 
 function getProposalBadgeVariant(status: string) {
   if (['Approved', 'Published'].includes(status)) return 'success';
-  if (status === 'Failed') return 'destructive';
-  if (['Draft', 'DeliveryReview', 'PartnerReview'].includes(status)) return 'warning';
-  if (BUSINESS_STATUSES.includes(status)) return 'success';
+  if (['Failed', 'Rejected'].includes(status)) return 'destructive';
   return 'warning';
 }
 
@@ -230,12 +228,9 @@ const Archive: React.FC = () => {
   const currentStatus = statusDetails?.proposal.status ?? '';
   const isBusinessWorkflow = BUSINESS_STATUSES.includes(currentStatus);
 
-  const canMoveToWorkflow     = currentStatus === 'Complete'       && perms.canMoveToDraft;
-  const canSubmitToDelivery   = currentStatus === 'Draft'          && perms.canSubmitToDelivery;
-  const canSubmitToPartnerNow = currentStatus === 'DeliveryReview' && perms.canSubmitToPartner;
-  const canApproveNow         = currentStatus === 'PartnerReview'  && perms.canApprove;
-  const canRejectNow          = currentStatus === 'PartnerReview'  && perms.canReject;
-  const canPublishNow         = currentStatus === 'Approved'       && perms.canPublish;
+  const canApproveNow = currentStatus === 'Complete' || currentStatus === 'Rejected';
+  const canRejectNow  = currentStatus === 'Complete';
+  const canPublishNow = currentStatus === 'Approved';
 
   return (
     <PageWrapper>
@@ -362,15 +357,7 @@ const Archive: React.FC = () => {
                   </div>
                 )}
 
-                {/* Business Workflow Stepper */}
-                {isBusinessWorkflow && (
-                  <div className="bg-muted/20 border border-border rounded-xl p-4">
-                    <WorkflowStepper
-                      currentStatus={currentStatus}
-                      submittedByRole={statusDetails.proposal.submitted_by_role}
-                    />
-                  </div>
-                )}
+                {/* Business Workflow Stepper removed */}
 
                 {/* Agent Reasoning Logs */}
                 {perms.canViewAgentLogs && (
@@ -414,34 +401,19 @@ const Archive: React.FC = () => {
                         )}
                       </span>
                       <div className="flex gap-2 flex-wrap">
-                        {canMoveToWorkflow && (
-                          <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Draft')}>
-                            <Send size={11} /> Start Review Workflow
-                          </Button>
-                        )}
-                        {canSubmitToDelivery && (
-                          <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('DeliveryReview')}>
-                            <Send size={11} /> Submit to Delivery Lead
-                          </Button>
-                        )}
-                        {canSubmitToPartnerNow && (
-                          <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('PartnerReview')}>
-                            <Send size={11} /> Submit to Partner
-                          </Button>
-                        )}
                         {canApproveNow && (
                           <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Approved')}>
                             <CheckCircle2 size={11} /> Approve
                           </Button>
                         )}
                         {canRejectNow && (
-                          <Button size="sm" variant="destructive" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Draft')}>
+                          <Button size="sm" variant="destructive" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Rejected')}>
                             <AlertTriangle size={11} /> Reject
                           </Button>
                         )}
                         {canPublishNow && (
-                          <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Published')}>
-                            <Award size={11} /> Publish Proposal
+                          <Button size="sm" variant="outline" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Published')}>
+                            <Award size={11} /> Mark as Published
                           </Button>
                         )}
                       </div>
@@ -456,15 +428,14 @@ const Archive: React.FC = () => {
                         {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
                         {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
                       </Button>
-                      {currentStatus === 'Published' && perms.canDownload && (
-                        <a
+                      {['Approved', 'Published'].includes(currentStatus) && perms.canDownload && (
+                      <a
                         href={proposalApi.downloadUrl(statusDetails.proposal.id)}
                         className="flex-1"
                         download
                       >
-                        <Button variant="primary" className="w-full gap-2">
-                          <Download size={15} />
-                          Download PowerPoint Draft
+                        <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
+                          <Download size={15} /> Download Solution PPTX
                         </Button>
                       </a>
                     )}

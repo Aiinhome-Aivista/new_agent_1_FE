@@ -33,15 +33,13 @@ const STEP_PHASES = [
 const AI_RUNNING_STATUSES = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed'];
 
 // Business workflow statuses (AI done, human review in progress)
-const BUSINESS_STATUSES = ['Complete', 'Draft', 'DeliveryReview', 'PartnerReview', 'Approved', 'Published'];
+const BUSINESS_STATUSES = ['Complete', 'InReview', 'Approved', 'Published', 'Rejected'];
 
 // Status badge variant helpers
 function getProposalBadgeVariant(status: string) {
   if (['Approved', 'Published'].includes(status)) return 'success';
-  if (status === 'Failed') return 'destructive';
-  if (['Draft', 'DeliveryReview', 'PartnerReview'].includes(status)) return 'warning';
-  if (BUSINESS_STATUSES.includes(status)) return 'success';
-  return 'warning'; // AI running
+  if (['Failed', 'Rejected'].includes(status)) return 'destructive';
+  return 'warning';
 }
 
 const Home: React.FC = () => {
@@ -321,35 +319,15 @@ const Home: React.FC = () => {
   const isBusinessWorkflow = BUSINESS_STATUSES.includes(currentStatus);
 
   // Transition button availability based on state machine + current role
-  const canMoveToWorkflow     = currentStatus === 'Complete'       && perms.canMoveToDraft;
-  const canSubmitToDelivery   = currentStatus === 'Draft'          && perms.canSubmitToDelivery;
-  const canSubmitToPartnerNow = currentStatus === 'DeliveryReview' && perms.canSubmitToPartner;
-  const canApproveNow         = currentStatus === 'PartnerReview'  && perms.canApprove;
-  const canRejectNow          = currentStatus === 'PartnerReview'  && perms.canReject;
-  const canPublishNow         = currentStatus === 'Approved'       && perms.canPublish;
+  const canApproveNow = currentStatus === 'Complete' || currentStatus === 'Rejected';
+  const canRejectNow  = currentStatus === 'Complete';
+  const canPublishNow = currentStatus === 'Approved';
 
   return (
     <PageWrapper>
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
         
-        {/* Role access notice for restricted roles */}
-        {(perms.isDelivery || perms.isPartner) && (
-          <div className={`flex items-start gap-3 p-4 rounded-xl border text-sm ${
-            perms.isPartner
-              ? 'bg-amber-500/5 border-amber-500/20 text-amber-700 dark:text-amber-400'
-              : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
-          }`}>
-            {perms.isPartner ? <ShieldCheck size={18} className="flex-0 mt-0.5" /> : <Award size={18} className="flex-0 mt-0.5" />}
-            <div className="flex flex-col gap-0.5">
-              <span className="font-bold">{perms.displayRole} — Restricted Mode</span>
-              <span className="text-xs opacity-80">
-                {perms.isPartner
-                  ? 'You can read the full proposal, view agent reasoning, and approve / reject / publish.'
-                  : 'You can review and edit resource planning, timeline phases, and skill matrix.'}
-              </span>
-            </div>
-          </div>
-        )}
+        {/* Role access notice removed as per single login simplification */}
 
         {/* Upload / Pipeline Card — hidden for delivery and partner, and hidden if active proposal exists */}
         {perms.canCreateProposal && !statusDetails && (
@@ -484,15 +462,7 @@ const Home: React.FC = () => {
                 </div>
               )}
 
-              {/* Business Workflow Stepper */}
-              {isBusinessWorkflow && (
-                <div className="bg-muted/20 border border-border rounded-xl p-2 px-3">
-                  <WorkflowStepper
-                    currentStatus={currentStatus}
-                    submittedByRole={statusDetails.proposal.submitted_by_role}
-                  />
-                </div>
-              )}
+              {/* Business Workflow Stepper removed as per user request */}
 
               {/* Agent Reasoning Logs */}
               {perms.canViewAgentLogs && (
@@ -538,45 +508,24 @@ const Home: React.FC = () => {
                     </span>
                     <div className="flex gap-2 flex-wrap">
 
-                      {/* Move Complete → Draft */}
-                      {canMoveToWorkflow && (
-                        <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Draft')}>
-                          <Send size={11} /> Start Review Workflow
-                        </Button>
-                      )}
-
-                      {/* Draft → DeliveryReview */}
-                      {canSubmitToDelivery && (
-                        <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('DeliveryReview')}>
-                          <Send size={11} /> Submit to Delivery Lead
-                        </Button>
-                      )}
-
-                      {/* DeliveryReview → PartnerReview */}
-                      {canSubmitToPartnerNow && (
-                        <Button size="sm" variant="primary" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('PartnerReview')}>
-                          <Send size={11} /> Submit to Partner
-                        </Button>
-                      )}
-
-                      {/* PartnerReview → Approved */}
+                      {/* Approve */}
                       {canApproveNow && (
                         <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Approved')}>
                           <CheckCircle2 size={11} /> Approve
                         </Button>
                       )}
 
-                      {/* PartnerReview → Draft (reject) */}
+                      {/* Reject */}
                       {canRejectNow && (
-                        <Button size="sm" variant="destructive" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Draft')}>
+                        <Button size="sm" variant="destructive" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Rejected')}>
                           <AlertTriangle size={11} /> Reject
                         </Button>
                       )}
 
-                      {/* Approved → Published */}
+                      {/* Publish (Optional) */}
                       {canPublishNow && (
-                        <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Published')}>
-                          <Award size={11} /> Publish Proposal
+                        <Button size="sm" variant="outline" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Published')}>
+                          <Award size={11} /> Mark as Published
                         </Button>
                       )}
                     </div>
@@ -592,15 +541,14 @@ const Home: React.FC = () => {
                       {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
                       {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
                     </Button>
-                    {currentStatus === 'Published' && perms.canDownload && (
+                    {['Approved', 'Published'].includes(currentStatus) && (
                       <a
                         href={proposalApi.downloadUrl(statusDetails.proposal.id)}
                         className="flex-1"
                         download
                       >
-                        <Button variant="primary" className="w-full gap-2">
-                          <Download size={15} />
-                          Download PowerPoint Draft
+                        <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
+                          <Download size={15} /> Download Solution PPTX
                         </Button>
                       </a>
                     )}
