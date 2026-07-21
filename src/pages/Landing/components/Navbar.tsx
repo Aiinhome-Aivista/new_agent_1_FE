@@ -41,7 +41,7 @@ export const Navbar: React.FC = () => {
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-xl"><BarChart3/></span>
             </div>
-            <span className="font-bold text-xl tracking-tight">AutoProposal</span>
+            <span className="font-bold text-xl tracking-tight">Autonomous Proposal Creator</span>
           </div>
 
           {/* Desktop Actions */}

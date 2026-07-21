@@ -8,7 +8,7 @@ export const CTA: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="py-24 bg-background relative overflow-hidden">
+    <section className="py-12 bg-background relative overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 50 }}

@@ -25,7 +25,7 @@ const testimonials = [
 
 export const Testimonials: React.FC = () => {
   return (
-    <section id="contact" className="py-24 bg-background">
+    <section id="contact" className="py-12 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Trusted by Enterprise Leaders</h2>
