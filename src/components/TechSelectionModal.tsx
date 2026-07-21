@@ -399,22 +399,40 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      {ragOptions.map((opt) => (
-                        <div 
-                          key={opt.id}
-                          onClick={() => setSelectedRag(opt.id)}
-                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                            selectedRag === opt.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
-                          }`}
-                        >
-                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                            selectedRag === opt.id ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
-                          }`}>
-                            {selectedRag === opt.id && <Check size={10} strokeWidth={3} />}
+                      {ragOptions.map((opt, i) => {
+                        const isSelected = selectedRag === opt.id;
+                        const isRecommended = i === 0;
+                        return (
+                          <div 
+                            key={opt.id}
+                            onClick={() => setSelectedRag(opt.id)}
+                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                              isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between md:justify-center md:items-center">
+                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                              }`}>
+                                {isSelected && <Check size={10} strokeWidth={3} />}
+                              </div>
+                              <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                                {isRecommended ? 'Recommended' : 'Alternative'}
+                              </span>
+                            </div>
+                            <div className="flex-1 flex flex-col gap-1 justify-center">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium">{opt.name}</span>
+                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${
+                                  isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                }`}>
+                                  {isRecommended ? 'Recommended' : 'Alternative'}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <span className="text-sm font-medium">{opt.name}</span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -429,22 +447,40 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      {guardrailOptions.map((opt) => (
-                        <div 
-                          key={opt.id}
-                          onClick={() => setSelectedGuardrail(opt.id)}
-                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                            selectedGuardrail === opt.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
-                          }`}
-                        >
-                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                            selectedGuardrail === opt.id ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
-                          }`}>
-                            {selectedGuardrail === opt.id && <Check size={10} strokeWidth={3} />}
+                      {guardrailOptions.map((opt, i) => {
+                        const isSelected = selectedGuardrail === opt.id;
+                        const isRecommended = i === 0;
+                        return (
+                          <div 
+                            key={opt.id}
+                            onClick={() => setSelectedGuardrail(opt.id)}
+                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                              isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between md:justify-center md:items-center">
+                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                              }`}>
+                                {isSelected && <Check size={10} strokeWidth={3} />}
+                              </div>
+                              <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                                {isRecommended ? 'Recommended' : 'Alternative'}
+                              </span>
+                            </div>
+                            <div className="flex-1 flex flex-col gap-1 justify-center">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium">{opt.name}</span>
+                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${
+                                  isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                }`}>
+                                  {isRecommended ? 'Recommended' : 'Alternative'}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <span className="text-sm font-medium">{opt.name}</span>
-                        </div>
-                      ))}
+                        );
+                      })}
                       <span className="text-[10px] text-muted-foreground italic mt-1">* Cost Excluded</span>
                     </div>
                   )}
@@ -460,22 +496,40 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      {actionEngineOptions.map((opt) => (
-                        <div 
-                          key={opt.id}
-                          onClick={() => setSelectedActionEngine(opt.id)}
-                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                            selectedActionEngine === opt.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
-                          }`}
-                        >
-                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                            selectedActionEngine === opt.id ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
-                          }`}>
-                            {selectedActionEngine === opt.id && <Check size={10} strokeWidth={3} />}
+                      {actionEngineOptions.map((opt, i) => {
+                        const isSelected = selectedActionEngine === opt.id;
+                        const isRecommended = i === 0;
+                        return (
+                          <div 
+                            key={opt.id}
+                            onClick={() => setSelectedActionEngine(opt.id)}
+                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                              isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between md:justify-center md:items-center">
+                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                              }`}>
+                                {isSelected && <Check size={10} strokeWidth={3} />}
+                              </div>
+                              <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                                {isRecommended ? 'Recommended' : 'Alternative'}
+                              </span>
+                            </div>
+                            <div className="flex-1 flex flex-col gap-1 justify-center">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium">{opt.name}</span>
+                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${
+                                  isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                }`}>
+                                  {isRecommended ? 'Recommended' : 'Alternative'}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <span className="text-sm font-medium">{opt.name}</span>
-                        </div>
-                      ))}
+                        );
+                      })}
                       <span className="text-[10px] text-muted-foreground italic mt-1">* Cost Excluded</span>
                     </div>
                   )}
