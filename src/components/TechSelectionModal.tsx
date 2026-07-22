@@ -226,7 +226,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   const selectedPkg = techOptions.find(opt => opt.id === selectedOptionId);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Technology Stack & Capability Analysis" className="max-w-4xl">
+    <Modal isOpen={isOpen} onClose={()=>{}} hideCloseButton={true} title="Technology Stack & Capability Analysis" className="max-w-4xl">
       <div className="flex flex-col gap-6">
 
         {isLoading ? (
@@ -247,7 +247,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
               </div>
 
               <div className="bg-muted/40 border border-border rounded-2xl px-6 py-2 shadow-inner">
-                <div className="max-h-48 overflow-y-auto pr-2 scrollbar-thin">
+                <div className="max-h-48 overflow-y-auto pr-2">
                   {renderMarkdown(chatExplanation)}
                 </div>
               </div>

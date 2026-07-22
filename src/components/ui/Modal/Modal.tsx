@@ -9,9 +9,10 @@ export interface ModalProps {
   title?: string;
   children: React.ReactNode;
   className?: string;
+  hideCloseButton?: boolean;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className, hideCloseButton = false }) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -39,12 +40,14 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
               {title && <h2 className="text-lg font-semibold text-foreground">{title}</h2>}
-              <button
-                onClick={onClose}
-                className="rounded-full p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
+              {!hideCloseButton && (
+                <button
+                  onClick={onClose}
+                  className="rounded-full p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
 
             {/* Body */}

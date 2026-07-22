@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { 
-  FileUp, Play, Download, History, Layers, Clock, 
-  CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save, Eye, 
+import {
+  FileUp, Play, Download, History, Layers, Clock,
+  CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save, Eye,
   Send, ShieldCheck, Award, AlertTriangle, Lock
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
@@ -21,12 +21,12 @@ import { WorkflowStepper } from '../../components/ui/WorkflowStepper/WorkflowSte
 import { TechSelectionModal } from '../../components/TechSelectionModal';
 
 const STEP_PHASES = [
-  { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
-  { name: 'Analyzing',  label: 'Capability mapping',  icon: <Cpu size={16} /> },
-  { name: 'Designing',  label: 'Solution architecture', icon: <Layers size={16} /> },
-  { name: 'Planning',   label: 'Timeline & pricing',    icon: <Clock size={16} /> },
-  { name: 'Assembling', label: 'Reflexion assembly',    icon: <CheckCircle2 size={16} /> },
-  { name: 'Complete',   label: 'Render PowerPoint',     icon: <Download size={16} /> },
+  { name: 'Ingesting', label: 'Document parsing', icon: <FileUp size={16} /> },
+  { name: 'Analyzing', label: 'Capability mapping', icon: <Cpu size={16} /> },
+  { name: 'Designing', label: 'Solution architecture', icon: <Layers size={16} /> },
+  { name: 'Planning', label: 'Timeline & pricing', icon: <Clock size={16} /> },
+  { name: 'Assembling', label: 'Reflexion assembly', icon: <CheckCircle2 size={16} /> },
+  { name: 'Complete', label: 'Render PowerPoint', icon: <Download size={16} /> },
 ];
 
 // Pipeline-only statuses (AI running, business workflow not yet started)
@@ -44,14 +44,14 @@ function getProposalBadgeVariant(status: string) {
 
 const Home: React.FC = () => {
   const { toast } = useToast();
-  const { 
-    activeProposalId, 
-    statusDetails, 
-    isPolling, 
-    fetchProposals, 
-    setActiveProposalId, 
-    setStatusDetails, 
-    setPolling 
+  const {
+    activeProposalId,
+    statusDetails,
+    isPolling,
+    fetchProposals,
+    setActiveProposalId,
+    setStatusDetails,
+    setPolling
   } = useProposalStore();
 
   // RBAC — all permission checks come from this hook
@@ -71,7 +71,7 @@ const Home: React.FC = () => {
   // Audit logs for partner review
   useEffect(() => {
     if (perms.isPartner && statusDetails) {
-      adminApi.getAuditLogs().then(setAuditLogs).catch(() => {});
+      adminApi.getAuditLogs().then(setAuditLogs).catch(() => { });
     }
   }, [perms.isPartner, statusDetails]);
 
@@ -122,7 +122,7 @@ const Home: React.FC = () => {
           setStatusDetails(details);
         }
         const proposalStatus = details.proposal.status;
-        
+
         if (proposalStatus === 'WaitingForTechSelection') {
           setPolling(false);
           setShowTechSelection(true);
@@ -194,7 +194,7 @@ const Home: React.FC = () => {
 
       const response = await proposalApi.upload(formData);
       toast('Document intake complete. Initiating specialist agents workflow.', 'info');
-      
+
       setActiveProposalId(response.proposal_id);
       setStatusDetails(null);
       setPolling(true);
@@ -320,13 +320,13 @@ const Home: React.FC = () => {
 
   // Transition button availability based on state machine + current role
   const canApproveNow = currentStatus === 'Complete' || currentStatus === 'Rejected';
-  const canRejectNow  = currentStatus === 'Complete';
+  const canRejectNow = currentStatus === 'Complete';
   const canPublishNow = currentStatus === 'Approved';
 
   return (
     <PageWrapper>
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
-        
+
         {/* Role access notice removed as per single login simplification */}
 
         {/* Upload / Pipeline Card — hidden for delivery and partner, and hidden if active proposal exists */}
@@ -439,12 +439,11 @@ const Home: React.FC = () => {
                     return (
                       <React.Fragment key={phase.name}>
                         <div
-                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-[120px] ${
-                            stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
-                            stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
-                            stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
-                            'bg-muted/40 border-border text-muted-foreground'
-                          }`}
+                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-[120px] ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
+                              stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
+                                stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                                  'bg-muted/40 border-border text-muted-foreground'
+                            }`}
                         >
                           {phase.icon}
                           <span className="text-xs font-bold leading-none">{phase.name}</span>
@@ -579,9 +578,9 @@ const Home: React.FC = () => {
       </div>
 
       {/* HITL SOLUTION REVIEW EDITOR MODAL */}
-      <Modal 
-        isOpen={isEditorOpen} 
-        onClose={() => setIsEditorOpen(false)} 
+      <Modal
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
         title={
           perms.isReadOnly
             ? 'Solution Blueprint Viewer (Read-Only — Reviewing Partner)'
@@ -695,7 +694,7 @@ const Home: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {editableIr.solution_pillars?.map((pillar: any, idx: number) => (
                   <div key={idx} className="p-3 bg-muted/30 border border-border rounded-xl flex flex-col gap-2">
-                    <span className="text-[11px] font-bold text-primary uppercase">Pillar 0{idx+1}</span>
+                    <span className="text-[11px] font-bold text-primary uppercase">Pillar 0{idx + 1}</span>
                     <input
                       type="text"
                       disabled={!perms.canEditSolution}
@@ -750,7 +749,7 @@ const Home: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {editableIr.timeline_phases?.map((phase: any, idx: number) => (
                   <div key={idx} className="p-3 bg-muted/20 border border-border rounded-xl flex flex-col gap-2">
-                    <span className="text-[11px] font-bold text-primary uppercase">Phase 0{idx+1}</span>
+                    <span className="text-[11px] font-bold text-primary uppercase">Phase 0{idx + 1}</span>
                     <input type="text" disabled={!perms.canEditDelivery} className="h-8 rounded-md border border-input bg-card px-2 text-xs font-semibold" value={phase.phase} onChange={(e) => updateTimelinePhase(idx, 'phase', e.target.value)} />
                     <input type="text" disabled={!perms.canEditDelivery} className="h-8 rounded-md border border-input bg-card px-2 text-xs" value={phase.duration} onChange={(e) => updateTimelinePhase(idx, 'duration', e.target.value)} />
                     <textarea rows={3} disabled={!perms.canEditDelivery} className="rounded-md border border-input bg-card p-2 text-[11px] leading-relaxed resize-none" value={phase.deliverables} onChange={(e) => updateTimelinePhase(idx, 'deliverables', e.target.value)} />
@@ -769,11 +768,11 @@ const Home: React.FC = () => {
                 {editableIr.resources?.map((res: any, idx: number) => (
                   <div key={idx} className="grid grid-cols-1 md:grid-cols-5 gap-2 bg-muted/20 p-2 border border-border rounded-lg items-center">
                     {[
-                      { label: 'Role',         field: 'role',  ph: 'Role' },
-                      { label: 'Location',     field: 'loc',   ph: 'Location' },
-                      { label: 'FTE Count',    field: 'fte',   ph: 'FTE' },
-                      { label: 'Monthly Rate', field: 'rate',  ph: 'Rate' },
-                      { label: 'Total Cost',   field: 'total', ph: 'Total' },
+                      { label: 'Role', field: 'role', ph: 'Role' },
+                      { label: 'Location', field: 'loc', ph: 'Location' },
+                      { label: 'FTE Count', field: 'fte', ph: 'FTE' },
+                      { label: 'Monthly Rate', field: 'rate', ph: 'Rate' },
+                      { label: 'Total Cost', field: 'total', ph: 'Total' },
                     ].map(({ label, field, ph }) => (
                       <div key={field} className="flex flex-col gap-0.5">
                         <span className="text-[9px] text-muted-foreground uppercase font-bold">{label}</span>
@@ -803,9 +802,9 @@ const Home: React.FC = () => {
                   <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-muted/20 p-2 border border-border rounded-lg items-center">
                     {[
                       { label: 'Skill Keyword', field: 'skill', ph: 'Skill' },
-                      { label: 'Target Role',   field: 'role',  ph: 'Role' },
-                      { label: 'PwC Competency',field: 'asset', ph: 'Asset' },
-                      { label: 'Confidence',    field: 'conf',  ph: 'Confidence' },
+                      { label: 'Target Role', field: 'role', ph: 'Role' },
+                      { label: 'PwC Competency', field: 'asset', ph: 'Asset' },
+                      { label: 'Confidence', field: 'conf', ph: 'Confidence' },
                     ].map(({ label, field, ph }) => (
                       <div key={field} className="flex flex-col gap-0.5">
                         <span className="text-[9px] text-muted-foreground uppercase font-bold">{label}</span>
