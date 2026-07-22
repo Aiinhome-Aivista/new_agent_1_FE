@@ -847,6 +847,7 @@ const Home: React.FC = () => {
             setShowTechSelection(false);
             setPolling(true); // resume polling to catch next phase
           }}
+          onClose={() => setShowTechSelection(false)}
         />
       )}
     </PageWrapper>

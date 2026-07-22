@@ -25,11 +25,12 @@ interface TechSelectionModalProps {
   isOpen: boolean;
   proposalId: string;
   onComplete: () => void;
+  onClose: () => void;
 }
 
-export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, proposalId, onComplete }) => {
+export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, proposalId, onComplete, onClose }) => {
   const { toast } = useToast();
-  
+
   // States
   const [techOptions, setTechOptions] = useState<TechOptionPackage[]>([]);
   const [selectedOptionId, setSelectedOptionId] = useState<string>('');
@@ -43,10 +44,10 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   // Advanced Options State
   const [ragOptions, setRagOptions] = useState<AdvancedOption[] | null>(null);
   const [selectedRag, setSelectedRag] = useState<string>('');
-  
+
   const [guardrailOptions, setGuardrailOptions] = useState<AdvancedOption[] | null>(null);
   const [selectedGuardrail, setSelectedGuardrail] = useState<string>('');
-  
+
   const [actionEngineOptions, setActionEngineOptions] = useState<AdvancedOption[] | null>(null);
   const [selectedActionEngine, setSelectedActionEngine] = useState<string>('');
 
@@ -62,7 +63,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   useEffect(() => {
     if (isOpen && proposalId) {
       setIsLoading(true);
-      
+
       proposalApi.status(proposalId)
         .then((res) => {
           if (res && res.structured_ir) {
@@ -70,21 +71,21 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             setOriginalBudget(ir.budget || '$250,000');
             setExtractedTechs(ir.extracted_technologies || { ui: null, backend: null, database: null });
             setChatExplanation(ir.chat_explanation || 'Based on requirements and constraints, I have analyzed the document and prepared 3 optimal technology packages.');
-            
+
             // Set advanced options
             const rOpts = ir.rag_options || [];
             const gOpts = ir.guardrail_options || [];
             const aOpts = ir.action_engine_options || [];
-            
+
             setRagOptions(rOpts);
             if (rOpts.length > 0) setSelectedRag(rOpts[0].id);
-            
+
             setGuardrailOptions(gOpts);
             if (gOpts.length > 0) setSelectedGuardrail(gOpts[0].id);
-            
+
             setActionEngineOptions(aOpts);
             if (aOpts.length > 0) setSelectedActionEngine(aOpts[0].id);
-            
+
             const options = ir.tech_options || [];
             if (options.length === 3) {
               setTechOptions(options);
@@ -153,14 +154,14 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
       toast('Please select a technology package.', 'error');
       return;
     }
-    
+
     setIsResuming(true);
     try {
       await proposalApi.resumeProposal(
-        proposalId, 
-        selectedPkg.ui, 
-        selectedPkg.backend, 
-        selectedPkg.database, 
+        proposalId,
+        selectedPkg.ui,
+        selectedPkg.backend,
+        selectedPkg.database,
         originalBudget,
         selectedRag,
         selectedGuardrail,
@@ -179,7 +180,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   const renderMarkdown = (text: string) => {
     if (!text) return null;
     let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
+
     const lines = formatted.split('\n');
     return lines.map((line, idx) => {
       const trimmed = line.trim();
@@ -215,19 +216,19 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
     if (!extractedTechs) return false;
     const val = extractedTechs[category];
     if (!val) return false;
-    
+
     // Safely handle if backend returned an array instead of a string
     const valStr = Array.isArray(val) ? val.join(' ') : String(val);
-    
+
     return valStr.toLowerCase().replace(/[^a-z0-9]/g, '').includes(tech.toLowerCase().replace(/[^a-z0-9]/g, ''));
   };
 
   const selectedPkg = techOptions.find(opt => opt.id === selectedOptionId);
 
   return (
-    <Modal isOpen={isOpen} onClose={() => {}} title="Technology Stack & Capability Analysis" className="max-w-4xl">
+    <Modal isOpen={isOpen} onClose={onClose} title="Technology Stack & Capability Analysis" className="max-w-4xl">
       <div className="flex flex-col gap-6">
-        
+
         {isLoading ? (
           <div className="flex flex-col gap-4 py-8 items-center justify-center">
             <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
@@ -237,14 +238,14 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
           <div className="flex flex-col gap-5">
             {/* RAG Chat Assistant Bubble */}
             <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 text-primary font-bold text-sm">
-                <Bot size={18} className="text-primary animate-pulse" />
+              <div className="flex items-center gap-2 text-primary font-bold text-base">
+                <Bot size={20} className="text-primary animate-pulse" />
                 <span>AI Architecture Assistant</span>
                 <span className="text-[10px] bg-primary/10 border border-primary/20 text-primary px-1.5 py-0.5 rounded-full flex items-center gap-1 font-semibold">
                   <Sparkles size={8} /> Grounded Recommendation
                 </span>
               </div>
-              
+
               <div className="bg-muted/40 border border-border rounded-2xl px-6 py-2 shadow-inner">
                 <div className="max-h-48 overflow-y-auto pr-2 scrollbar-thin">
                   {renderMarkdown(chatExplanation)}
@@ -254,30 +255,28 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
 
             {/* Choose 3 suggested packages */}
             <div className="flex flex-col gap-3 border-t border-border pt-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Cpu size={14} /> Suggested Technology Packages (Choose one)
+              <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Cpu size={20} /> Suggested Technology Packages (Choose one)
               </h4>
-              
+
               <div className="flex flex-col gap-3">
                 {techOptions.map((pkg) => {
                   const isSelected = selectedOptionId === pkg.id;
                   return (
-                    <div 
+                    <div
                       key={pkg.id}
                       onClick={() => setSelectedOptionId(pkg.id)}
-                      className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
-                        isSelected 
-                          ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20' 
+                      className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
+                          ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
                           : 'border-border bg-card hover:border-muted-foreground/30'
-                      }`}
+                        }`}
                     >
                       {/* Selection indicator */}
                       <div className="flex items-start justify-between md:justify-center md:items-center">
-                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
-                          isSelected 
-                            ? 'border-primary bg-primary text-primary-foreground' 
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected
+                            ? 'border-primary bg-primary text-primary-foreground'
                             : 'border-muted-foreground/30 bg-muted/40'
-                        }`}>
+                          }`}>
                           {isSelected && <Check size={12} strokeWidth={3} />}
                         </div>
                         <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
@@ -293,9 +292,9 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                             {pkg.id === 'option_1' ? 'Primary' : 'Alternative'}
                           </span>
                         </div>
-                        
+
                         <p className="text-xs text-muted-foreground leading-relaxed">{pkg.rationale}</p>
-                        
+
                         {/* Stack badges */}
                         <div className="flex flex-wrap gap-2 mt-1">
                           <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
@@ -326,8 +325,8 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
               {/* Other Recommended Tools Badges for currently selected package */}
               {selectedPkg && selectedPkg.other_technologies && selectedPkg.other_technologies.length > 0 && (
                 <div className="flex flex-col gap-2 mt-2 bg-muted/20 border border-border/60 p-4 rounded-xl">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-                    <Terminal size={10} /> Supporting Tooling & Frameworks for Selected Package
+                  <span className="text-base font-bold text-muted-foreground uppercase flex items-center gap-1">
+                    <Terminal size={14} /> Supporting Tooling & Frameworks for Selected Package
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedPkg.other_technologies.map((tech, i) => (
@@ -350,21 +349,19 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                       const isSelected = selectedAiModel === model;
                       const isRecommended = i === 0;
                       return (
-                        <div 
+                        <div
                           key={i}
                           onClick={() => setSelectedAiModel(model)}
-                          className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
-                            isSelected 
-                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20' 
+                          className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
+                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
                               : 'border-border bg-card hover:border-muted-foreground/30'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-start justify-between md:justify-center md:items-center">
-                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
-                              isSelected 
-                                ? 'border-primary bg-primary text-primary-foreground' 
+                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected
+                                ? 'border-primary bg-primary text-primary-foreground'
                                 : 'border-muted-foreground/30 bg-muted/40'
-                            }`}>
+                              }`}>
                               {isSelected && <Check size={12} strokeWidth={3} />}
                             </div>
                             <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
@@ -375,9 +372,8 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           <div className="flex-1 flex flex-col gap-1.5 justify-center">
                             <div className="flex justify-between items-center">
                               <span className="font-bold text-sm text-foreground">{model}</span>
-                              <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${
-                                isRecommended ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                              }`}>
+                              <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${isRecommended ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                }`}>
                                 {isRecommended ? 'Recommended' : 'Alternative'}
                               </span>
                             </div>
@@ -388,12 +384,12 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                   </div>
                 </div>
               )}
-              
+
               {/* Advanced Options Sections */}
               {ragOptions !== null && (
                 <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-primary" /> RAG Strategy Selection
+                  <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Sparkles size={20} className="text-primary" /> RAG Strategy Selection
                   </h4>
                   {ragOptions.length === 0 ? (
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
@@ -403,17 +399,15 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                         const isSelected = selectedRag === opt.id;
                         const isRecommended = i === 0;
                         return (
-                          <div 
+                          <div
                             key={opt.id}
                             onClick={() => setSelectedRag(opt.id)}
-                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                              isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
-                            }`}
+                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
+                              }`}
                           >
                             <div className="flex items-start justify-between md:justify-center md:items-center">
-                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                                isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
-                              }`}>
+                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                                }`}>
                                 {isSelected && <Check size={10} strokeWidth={3} />}
                               </div>
                               <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
@@ -423,9 +417,8 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                             <div className="flex-1 flex flex-col gap-1 justify-center">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm font-medium">{opt.name}</span>
-                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${
-                                  isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                                }`}>
+                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                  }`}>
                                   {isRecommended ? 'Recommended' : 'Alternative'}
                                 </span>
                               </div>
@@ -440,8 +433,8 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
 
               {guardrailOptions !== null && (
                 <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Terminal size={14} className="text-primary" /> Guardrails (Data Protection)
+                  <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Terminal size={20} className="text-primary" /> Guardrails (Data Protection)
                   </h4>
                   {guardrailOptions.length === 0 ? (
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
@@ -451,17 +444,15 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                         const isSelected = selectedGuardrail === opt.id;
                         const isRecommended = i === 0;
                         return (
-                          <div 
+                          <div
                             key={opt.id}
                             onClick={() => setSelectedGuardrail(opt.id)}
-                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                              isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
-                            }`}
+                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
+                              }`}
                           >
                             <div className="flex items-start justify-between md:justify-center md:items-center">
-                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                                isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
-                              }`}>
+                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                                }`}>
                                 {isSelected && <Check size={10} strokeWidth={3} />}
                               </div>
                               <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
@@ -471,9 +462,8 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                             <div className="flex-1 flex flex-col gap-1 justify-center">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm font-medium">{opt.name}</span>
-                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${
-                                  isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                                }`}>
+                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                  }`}>
                                   {isRecommended ? 'Recommended' : 'Alternative'}
                                 </span>
                               </div>
@@ -481,10 +471,6 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           </div>
                         );
                       })}
-                      <span className="text-[10px] text-muted-foreground italic mt-1 bg-primary/10 border px-2 py-1 rounded-md mt-1 text-center">* Cost Excluded</span>
-                      <div className="text-[10px] text-red-300 border px-2 py-1 rounded-md mt-1 text-center">
-                        This cost is excluded from the plan
-                      </div>
                     </div>
                   )}
                 </div>
@@ -492,8 +478,8 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
 
               {actionEngineOptions !== null && (
                 <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Cpu size={14} className="text-primary" /> Action Engine Framework
+                  <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Cpu size={20} className="text-primary" /> Action Engine Framework
                   </h4>
                   {actionEngineOptions.length === 0 ? (
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
@@ -503,17 +489,15 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                         const isSelected = selectedActionEngine === opt.id;
                         const isRecommended = i === 0;
                         return (
-                          <div 
+                          <div
                             key={opt.id}
                             onClick={() => setSelectedActionEngine(opt.id)}
-                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                              isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
-                            }`}
+                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
+                              }`}
                           >
                             <div className="flex items-start justify-between md:justify-center md:items-center">
-                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                                isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
-                              }`}>
+                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                                }`}>
                                 {isSelected && <Check size={10} strokeWidth={3} />}
                               </div>
                               <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
@@ -523,9 +507,8 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                             <div className="flex-1 flex flex-col gap-1 justify-center">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm font-medium">{opt.name}</span>
-                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${
-                                  isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                                }`}>
+                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                  }`}>
                                   {isRecommended ? 'Recommended' : 'Alternative'}
                                 </span>
                               </div>
@@ -533,9 +516,8 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           </div>
                         );
                       })}
-                      <span className="text-[10px] text-muted-foreground italic mt-1">* Cost Excluded</span>
-                      <div className="text-[10px] text-red-300 border px-2 py-1 rounded-md mt-1 text-center">
-                        This cost is excluded from the plan
+                      <div className="text-sm font-bold text-red-400 italic mt-1 bg-primary/10 border border-red-400 px-2 py-1 rounded-md mt-1">
+                       ⚠️ Disclaimer: Please note that this cost is not included in the current plan and will be charged separately if required.
                       </div>
                     </div>
                   )}
@@ -547,10 +529,10 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
 
         {/* Action Controls */}
         <div className="flex flex-col gap-3 pt-4 border-t border-border">
-          <Button 
-            variant="primary" 
-            className="w-full h-11 font-bold gap-2 text-sm shadow-sm" 
-            onClick={handleConfirm} 
+          <Button
+            variant="primary"
+            className="w-full h-11 font-bold gap-2 text-sm shadow-sm"
+            onClick={handleConfirm}
             disabled={isLoading || !selectedOptionId}
             isLoading={isResuming}
           >
