@@ -3,7 +3,7 @@ import { Modal } from './ui/Modal/Modal';
 import { Button } from './ui/Button/Button';
 import { useToast } from './ui/Toast/Toast';
 import { proposalApi } from '../services/api/endpoints';
-import { Bot, Sparkles, Cpu, CheckCircle2, Terminal, Check } from 'lucide-react';
+import { Bot, Sparkles, Cpu, CheckCircle2, Terminal, Check, AlertTriangle, Database, Shield } from 'lucide-react';
 
 interface TechOptionPackage {
   id: string;
@@ -226,7 +226,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   const selectedPkg = techOptions.find(opt => opt.id === selectedOptionId);
 
   return (
-    <Modal isOpen={isOpen} onClose={()=>{}} hideCloseButton={true} title="Technology Stack & Capability Analysis" className="max-w-4xl">
+    <Modal isOpen={isOpen} onClose={onClose} title="Technology Stack & Capability Analysis" className="max-w-4xl">
       <div className="flex flex-col gap-6">
 
         {isLoading ? (
@@ -247,7 +247,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
               </div>
 
               <div className="bg-muted/40 border border-border rounded-2xl px-6 py-2 shadow-inner">
-                <div className="max-h-48 overflow-y-auto pr-2">
+                <div className="max-h-48 overflow-y-auto pr-2 scrollbar-thin">
                   {renderMarkdown(chatExplanation)}
                 </div>
               </div>
@@ -341,7 +341,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
               {/* Recommended AI Models */}
               {selectedPkg && selectedPkg.ai_models && selectedPkg.ai_models.length > 0 && (
                 <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Bot size={14} className="text-primary animate-pulse" /> AI Model Selection (Choose one)
                   </h4>
                   <div className="flex flex-col gap-3">
@@ -394,7 +394,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                   {ragOptions.length === 0 ? (
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
                   ) : (
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3">
                       {ragOptions.map((opt, i) => {
                         const isSelected = selectedRag === opt.id;
                         const isRecommended = i === 0;
@@ -402,25 +402,38 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           <div
                             key={opt.id}
                             onClick={() => setSelectedRag(opt.id)}
-                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
+                            className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
+                                ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                                : 'border-border bg-card hover:border-muted-foreground/30'
                               }`}
                           >
                             <div className="flex items-start justify-between md:justify-center md:items-center">
-                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                              <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected
+                                  ? 'border-primary bg-primary text-primary-foreground'
+                                  : 'border-muted-foreground/30 bg-muted/40'
                                 }`}>
-                                {isSelected && <Check size={10} strokeWidth={3} />}
+                                {isSelected && <Check size={12} strokeWidth={3} />}
                               </div>
                               <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
                                 {isRecommended ? 'Recommended' : 'Alternative'}
                               </span>
                             </div>
-                            <div className="flex-1 flex flex-col gap-1 justify-center">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">{opt.name}</span>
-                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                                  }`}>
-                                  {isRecommended ? 'Recommended' : 'Alternative'}
-                                </span>
+
+                            <div className="flex-1 flex gap-3 items-center">
+                              <div className="bg-primary/10 p-2.5 rounded-xl text-primary flex items-center justify-center shrink-0">
+                                <Database size={20} />
+                              </div>
+                              <div className="flex-1 flex flex-col gap-1">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-bold text-sm text-foreground">{opt.name}</span>
+                                  <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${isRecommended ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                    }`}>
+                                    {isRecommended ? 'Recommended' : 'Alternative'}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                  Integrate {opt.name} as the core semantic indexing and retrieval strategy to power context-aware LLM answers.
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -439,7 +452,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                   {guardrailOptions.length === 0 ? (
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
                   ) : (
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3">
                       {guardrailOptions.map((opt, i) => {
                         const isSelected = selectedGuardrail === opt.id;
                         const isRecommended = i === 0;
@@ -447,25 +460,38 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           <div
                             key={opt.id}
                             onClick={() => setSelectedGuardrail(opt.id)}
-                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
+                            className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
+                                ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                                : 'border-border bg-card hover:border-muted-foreground/30'
                               }`}
                           >
                             <div className="flex items-start justify-between md:justify-center md:items-center">
-                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                              <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected
+                                  ? 'border-primary bg-primary text-primary-foreground'
+                                  : 'border-muted-foreground/30 bg-muted/40'
                                 }`}>
-                                {isSelected && <Check size={10} strokeWidth={3} />}
+                                {isSelected && <Check size={12} strokeWidth={3} />}
                               </div>
                               <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
                                 {isRecommended ? 'Recommended' : 'Alternative'}
                               </span>
                             </div>
-                            <div className="flex-1 flex flex-col gap-1 justify-center">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">{opt.name}</span>
-                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                                  }`}>
-                                  {isRecommended ? 'Recommended' : 'Alternative'}
-                                </span>
+
+                            <div className="flex-1 flex gap-3 items-center">
+                              <div className="bg-primary/10 p-2.5 rounded-xl text-primary flex items-center justify-center shrink-0">
+                                <Shield size={20} />
+                              </div>
+                              <div className="flex-1 flex flex-col gap-1">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-bold text-sm text-foreground">{opt.name}</span>
+                                  <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${isRecommended ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                    }`}>
+                                    {isRecommended ? 'Recommended' : 'Alternative'}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                  Configure {opt.name} to enforce enterprise-grade security policies, data privacy masking, and threat boundary protection.
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -478,13 +504,20 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
 
               {actionEngineOptions !== null && (
                 <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
-                  <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Cpu size={20} className="text-primary" /> Action Engine Framework
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Cpu size={20} className="text-primary" /> Action Engine Framework
+                    </h4>
+                    {actionEngineOptions.length > 0 && (
+                      <span className="text-[18px] bg-transparent border border-primary/30 text-primary px-3 py-0.5 rounded-full flex items-center gap-1.5 font-bold animate-pulse">
+                        <Bot size={22} className="animate-bounce shrink-0 text-primary" /> Agentic Solution Recommended
+                      </span>
+                    )}
+                  </div>
                   {actionEngineOptions.length === 0 ? (
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
                   ) : (
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3">
                       {actionEngineOptions.map((opt, i) => {
                         const isSelected = selectedActionEngine === opt.id;
                         const isRecommended = i === 0;
@@ -492,32 +525,53 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           <div
                             key={opt.id}
                             onClick={() => setSelectedActionEngine(opt.id)}
-                            className={`flex flex-col md:flex-row gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-muted-foreground/30'
+                            className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
+                                ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                                : 'border-border bg-card hover:border-muted-foreground/30'
                               }`}
                           >
                             <div className="flex items-start justify-between md:justify-center md:items-center">
-                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                              <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected
+                                  ? 'border-primary bg-primary text-primary-foreground'
+                                  : 'border-muted-foreground/30 bg-muted/40'
                                 }`}>
-                                {isSelected && <Check size={10} strokeWidth={3} />}
+                                {isSelected && <Check size={12} strokeWidth={3} />}
                               </div>
                               <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
                                 {isRecommended ? 'Recommended' : 'Alternative'}
                               </span>
                             </div>
-                            <div className="flex-1 flex flex-col gap-1 justify-center">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">{opt.name}</span>
-                                <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${isRecommended ? 'bg-primary/10 border border-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                                  }`}>
-                                  {isRecommended ? 'Recommended' : 'Alternative'}
-                                </span>
+
+                            <div className="flex-1 flex gap-3 items-center">
+                              <div className="bg-primary/10 p-2.5 rounded-xl text-primary flex items-center justify-center shrink-0">
+                                <Bot size={20} className={isRecommended ? 'animate-pulse' : ''} />
+                              </div>
+                              <div className="flex-1 flex flex-col gap-1">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-bold text-sm text-foreground">{opt.name}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={`hidden md:inline text-[9px] font-bold px-2 py-0.5 rounded-md ${isRecommended ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                      }`}>
+                                      {isRecommended ? 'Recommended' : 'Alternative'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                  Deploy a stateful multi-agent system utilizing {opt.name} to execute automated, complex workflows.
+                                </p>
                               </div>
                             </div>
                           </div>
                         );
                       })}
-                      <div className="text-sm font-bold text-red-400 italic mt-1 bg-primary/10 border border-red-400 px-2 py-1 rounded-md mt-1">
-                       ⚠️ Disclaimer: Please note that this cost is not included in the current plan and will be charged separately if required.
+                      <div className="flex gap-3 p-4 bg-red-500/5 border border-red-500/20 rounded-xl mt-2 shadow-inner">
+                        <AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs font-bold text-red-500 uppercase tracking-wider">Disclaimer</span>
+                          <span className="text-xs text-muted-foreground leading-relaxed">
+                            Please note that the deployment, infrastructure, and maintenance cost for this Action Engine Framework is not included in the current core plan and will be billed separately.
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
