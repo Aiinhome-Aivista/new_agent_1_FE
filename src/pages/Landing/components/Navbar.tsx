@@ -1,39 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { BarChart3, Menu, X, Sun, Moon } from 'lucide-react';
+import { BarChart3, Menu, X } from 'lucide-react';
 import { ROUTES } from '../../../routes/routes.config';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check initial theme
-    if (document.documentElement.classList.contains('dark')) {
-      setTheme('dark');
-    } else {
-      setTheme('light');
-    }
-
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const toggleTheme = () => {
-    if (theme === 'dark') {
-      document.documentElement.classList.remove('dark');
-      setTheme('light');
-    } else {
-      document.documentElement.classList.add('dark');
-      setTheme('dark');
-    }
-  };
 
   const navLinks = [
     { name: 'Home', href: '#' },
@@ -48,36 +30,28 @@ export const Navbar: React.FC = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-        isScrolled ? 'glass shadow-sm py-4' : 'bg-transparent py-6'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${isScrolled ? 'glass shadow-sm py-4' : 'bg-transparent py-6'
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl"><BarChart3/></span>
+              <span className="text-white font-bold text-xl"><BarChart3 /></span>
             </div>
             <span className="font-bold text-xl tracking-tight">Autonomous Proposal Creator</span>
           </div>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-accent/10 text-foreground transition-colors"
-              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
             <Link
               to={ROUTES.login}
               className="text-sm font-medium text-foreground hover:text-primary transition-colors px-4 py-2"
             >
               Sign In
             </Link>
-            <button 
+            <button
               onClick={() => navigate(ROUTES.login)}
               className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-full font-medium transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
@@ -86,13 +60,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-foreground"
-            >
-              {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
-            </button>
+          <div className="md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 text-foreground"
@@ -120,7 +88,7 @@ export const Navbar: React.FC = () => {
               >
                 Sign In
               </Link>
-              <button 
+              <button
                 onClick={() => navigate(ROUTES.login)}
                 className="bg-primary text-white px-6 py-3 rounded-xl font-medium w-full mt-4"
               >
