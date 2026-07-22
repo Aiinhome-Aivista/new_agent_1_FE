@@ -481,8 +481,8 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           </div>
                         );
                       })}
-                      <span className="text-[10px] text-muted-foreground italic mt-1">* Cost Excluded</span>
-                       <div className="text-[10px] text-muted-foreground bg-red-300 border border-red-300/30 px-2 py-1 rounded-md mt-1 text-center">
+                      <span className="text-[10px] text-muted-foreground italic mt-1 bg-primary/10 border px-2 py-1 rounded-md mt-1 text-center">* Cost Excluded</span>
+                      <div className="text-[10px] text-red-300 border px-2 py-1 rounded-md mt-1 text-center">
                         This cost is excluded from the plan
                       </div>
                     </div>
@@ -534,7 +534,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                         );
                       })}
                       <span className="text-[10px] text-muted-foreground italic mt-1">* Cost Excluded</span>
-                      <div className="text-[10px] text-muted-foreground bg-red-300 border border-red-300/30 px-2 py-1 rounded-md mt-1 text-center">
+                      <div className="text-[10px] text-red-300 border px-2 py-1 rounded-md mt-1 text-center">
                         This cost is excluded from the plan
                       </div>
                     </div>
