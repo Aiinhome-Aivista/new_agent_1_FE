@@ -37,25 +37,18 @@ export const Header: React.FC = () => {
         {user && (
           <div className="flex items-center gap-3 pl-4 border-l border-border">
             {/* User info + Role badge */}
-            <div className="flex flex-col items-end hidden sm:flex gap-1">
+            <div className="flex flex-col items-center hidden sm:flex gap-1">
               <span className="text-sm font-semibold text-foreground leading-none">{user.username}</span>
               {/* Colored role badge */}
               <span
                 className={`
-                  inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold
+                  inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold
                   border leading-none ${colors.bg} ${colors.text} ${colors.border}
                 `}
               >
                 <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${colors.dot}`} />
-                {displayRole}
+                {role === 'admin' ? 'Administrator' : displayRole}
               </span>
-            </div>
-
-            {/* Avatar */}
-            <div
-              className={`h-9 w-9 rounded-full border-2 flex items-center justify-center font-medium ${colors.bg} ${colors.text} ${colors.border}`}
-            >
-              {role === 'admin' ? <Shield size={15} /> : <UserIcon size={15} />}
             </div>
           </div>
         )}
