@@ -225,7 +225,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   const selectedPkg = techOptions.find(opt => opt.id === selectedOptionId);
 
   return (
-    <Modal isOpen={isOpen} onClose={() => {}} title="Technology Stack & Capability Analysis" className="max-w-3xl">
+    <Modal isOpen={isOpen} onClose={() => {}} title="Technology Stack & Capability Analysis" className="max-w-4xl">
       <div className="flex flex-col gap-6">
         
         {isLoading ? (
@@ -245,7 +245,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                 </span>
               </div>
               
-              <div className="bg-muted/40 border border-border rounded-2xl p-5 shadow-inner">
+              <div className="bg-muted/40 border border-border rounded-2xl px-6 py-2 shadow-inner">
                 <div className="max-h-48 overflow-y-auto pr-2 scrollbar-thin">
                   {renderMarkdown(chatExplanation)}
                 </div>
@@ -482,6 +482,9 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                         );
                       })}
                       <span className="text-[10px] text-muted-foreground italic mt-1">* Cost Excluded</span>
+                       <div className="text-[10px] text-muted-foreground bg-red-300 border border-red-300/30 px-2 py-1 rounded-md mt-1 text-center">
+                        This cost is excluded from the plan
+                      </div>
                     </div>
                   )}
                 </div>
@@ -531,6 +534,9 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                         );
                       })}
                       <span className="text-[10px] text-muted-foreground italic mt-1">* Cost Excluded</span>
+                      <div className="text-[10px] text-muted-foreground bg-red-300 border border-red-300/30 px-2 py-1 rounded-md mt-1 text-center">
+                        This cost is excluded from the plan
+                      </div>
                     </div>
                   )}
                 </div>
