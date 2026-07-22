@@ -1,40 +1,21 @@
 import React from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
-import { Button } from '../../ui/Button/Button';
 
 export const ThemeToggle: React.FC = () => {
   const { theme, setTheme } = useTheme();
 
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
   return (
-    <div className="flex items-center gap-1 bg-muted p-1 rounded-full border border-border">
-      <Button
-        variant={theme === 'light' ? 'primary' : 'ghost'}
-        size="sm"
-        className="rounded-full h-8 w-8 p-0"
-        onClick={() => setTheme('light')}
-        title="Light Mode"
-      >
-        <Sun size={15} />
-      </Button>
-      <Button
-        variant={theme === 'dark' ? 'primary' : 'ghost'}
-        size="sm"
-        className="rounded-full h-8 w-8 p-0"
-        onClick={() => setTheme('dark')}
-        title="Dark Mode"
-      >
-        <Moon size={15} />
-      </Button>
-      <Button
-        variant={theme === 'system' ? 'primary' : 'ghost'}
-        size="sm"
-        className="rounded-full h-8 w-8 p-0"
-        onClick={() => setTheme('system')}
-        title="System Mode"
-      >
-        <Monitor size={15} />
-      </Button>
-    </div>
+    <button
+      onClick={toggleTheme}
+      className="p-2 rounded-full hover:bg-accent/10 text-foreground transition-colors"
+      title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+    >
+      {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+    </button>
   );
 };
