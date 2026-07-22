@@ -517,7 +517,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                         );
                       })}
                       <div className="text-sm font-bold text-red-400 italic mt-1 bg-primary/10 border border-red-400 px-2 py-1 rounded-md mt-1">
-                       ⚠️ Disclaimer: Please note that this cost is not included in the current plan and will be charged separately if required.
+                       <span className='flex items-center justify-center w-9 h-9 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-inner'>⚠️</span> <strong>Disclaimer:</strong> Please note that this cost is not included in the current plan and will be charged separately if required.
                       </div>
                     </div>
                   )}

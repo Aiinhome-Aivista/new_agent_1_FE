@@ -1,8 +1,7 @@
 import React from 'react';
 import { useAuthStore } from '../../../store';
 import { ThemeToggle } from './ThemeToggle';
-import { LogOut, User as UserIcon, Shield, BarChart3 } from 'lucide-react';
-import { Button } from '../../ui/Button/Button';
+import { User as UserIcon, Shield, BarChart3 } from 'lucide-react';
 import { useRolePermissions } from '../../../hooks';
 
 // Per-role badge color config
@@ -17,7 +16,7 @@ const ROLE_COLORS: Record<string, { bg: string; text: string; border: string; do
 const DEFAULT_COLOR = { bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border', dot: 'bg-muted-foreground' };
 
 export const Header: React.FC = () => {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const { displayRole, role } = useRolePermissions();
   const colors = ROLE_COLORS[role] ?? DEFAULT_COLOR;
 
@@ -58,17 +57,6 @@ export const Header: React.FC = () => {
             >
               {role === 'admin' ? <Shield size={15} /> : <UserIcon size={15} />}
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 px-3 gap-2 border-border/80"
-              onClick={logout}
-              title="Sign Out"
-            >
-              <LogOut size={14} />
-              <span className="hidden md:inline">Sign Out</span>
-            </Button>
           </div>
         )}
       </div>

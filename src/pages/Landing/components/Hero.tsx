@@ -37,7 +37,7 @@ export const Hero: React.FC = () => {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="max-w-5xl flex flex-col items-center"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8 border border-primary/20 shadow-sm backdrop-blur-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6 border border-primary/20 shadow-sm backdrop-blur-sm">
               <Sparkles size={16} />
               <span className="text-sm font-semibold tracking-wide uppercase">AI-Powered Enterprise Solution</span>
             </div>
@@ -49,31 +49,57 @@ export const Hero: React.FC = () => {
               </span>
             </h1>
             
-            <p className="text-center text-lg md:text-xl text-muted-foreground mb-10 leading-relaxed max-w-4xl mx-auto">
+            <p className="text-center text-lg md:text-xl text-muted-foreground mb-6 leading-relaxed max-w-4xl mx-auto">
               Automate your RFP responses, architecture designs, and sales proposals with our multi-agent workflow. Deliver winning documents faster and with perfect accuracy.
             </p>
             
-            <div className="flex justify-center flex-col sm:flex-row gap-6 mb-12">
+            <div className="flex justify-center flex-col sm:flex-row gap-6 mb-10">
               <button 
                 onClick={() => navigate(ROUTES.login)}
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-orange-600 hover:from-primary hover:to-primary text-white px-10 py-4 rounded-xl font-semibold text-lg shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-1"
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-orange-600 hover:from-primary hover:to-primary text-white px-10 py-2 rounded-xl font-semibold text-lg shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-1"
               >
                 Create Proposal <ArrowRight size={20} />
               </button>
               
-              <button className="flex items-center justify-center gap-2 bg-card hover:bg-muted border border-border text-foreground px-10 py-4 rounded-xl font-semibold text-lg shadow-sm transition-all hover:-translate-y-1">
+              <button className="flex items-center justify-center gap-2 bg-card hover:bg-muted border border-border text-foreground px-10 py-2 rounded-xl font-semibold text-lg shadow-sm transition-all hover:-translate-y-1">
                 <Play size={20} className="text-primary" /> Watch Demo
               </button>
             </div>
 
-            <div className="flex justify-center items-center gap-8 text-sm text-muted-foreground font-medium mb-10 bg-background/50 backdrop-blur-sm px-8 py-3 rounded-2xl border border-border/50">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="text-green-500" size={18} /> No credit card required
-              </div>
-              <div className="w-1.5 h-1.5 rounded-full bg-border" />
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="text-green-500" size={18} /> 14-day free trial
-              </div>
+            {/* Premium Metrics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl mx-auto px-4">
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-b from-card/60 to-card/20 backdrop-blur-md border border-border/60 shadow-lg shadow-black/5"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 size={24} className="text-green-500" />
+                  <h3 className="text-3xl font-extrabold text-foreground">98%</h3>
+                </div>
+                <p className="text-sm font-medium text-muted-foreground text-center">Faster Generation Time</p>
+              </motion.div>
+              
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-b from-card/60 to-card/20 backdrop-blur-md border border-border/60 shadow-lg shadow-black/5"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Target size={24} className="text-primary" />
+                  <h3 className="text-3xl font-extrabold text-foreground">10x</h3>
+                </div>
+                <p className="text-sm font-medium text-muted-foreground text-center">Increase in Win Rate</p>
+              </motion.div>
+              
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-b from-card/60 to-card/20 backdrop-blur-md border border-border/60 shadow-lg shadow-black/5"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <ShieldCheck size={24} className="text-blue-500" />
+                  <h3 className="text-3xl font-extrabold text-foreground">Zero</h3>
+                </div>
+                <p className="text-sm font-medium text-muted-foreground text-center">Formatting Errors</p>
+              </motion.div>
             </div>
           </motion.div>
 
@@ -85,7 +111,7 @@ export const Hero: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8, duration: 1 }}
-        className="w-full mt-auto border-t border-border/50 bg-background/40 backdrop-blur-md pt-8"
+        className="w-full mt-auto bg-background/40 backdrop-blur-md pt-8"
       >
         <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-6">
           Trusted by Innovative Teams Worldwide
