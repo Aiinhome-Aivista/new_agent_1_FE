@@ -1,13 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Database, ShieldAlert, History } from 'lucide-react';
+import { LayoutDashboard, Database, ShieldAlert, History, LogOut } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 
 import { useAuthStore } from '../../../store';
+import { Button } from '@/components/ui';
 
 export const Sidebar: React.FC = () => {
-  const { user } = useAuthStore();
-  
+  const { user, logout } = useAuthStore();
+
   const menuItems = [
     { title: 'Proposal Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { title: 'Historical Drafts Archive', href: '/archive', icon: <History size={18} /> },
@@ -23,7 +24,7 @@ export const Sidebar: React.FC = () => {
         <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Solutions Advisory
         </div>
-        
+
         <nav className="flex flex-col gap-1">
           {menuItems.map((item) => (
             <NavLink
@@ -45,12 +46,16 @@ export const Sidebar: React.FC = () => {
         </nav>
       </div>
 
-      <div className="flex flex-col gap-3 p-3 bg-muted/50 rounded-xl border border-border/80">
-        <div className="flex items-center gap-2 text-primary">
-          <ShieldAlert size={16} />
-          <span className="text-xs font-bold uppercase tracking-wider">Agent Sandbox</span>
-        </div>
-      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-9 px-3 gap-2 border-border/80"
+        onClick={logout}
+        title="Sign Out"
+      >
+        <LogOut size={14} />
+        <span className="hidden md:inline">Sign Out</span>
+      </Button>
     </aside>
   );
 };
