@@ -73,9 +73,9 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             setChatExplanation(ir.chat_explanation || 'Based on requirements and constraints, I have analyzed the document and prepared 3 optimal technology packages.');
 
             // Set advanced options
-            const rOpts = ir.rag_options || [];
-            const gOpts = ir.guardrail_options || [];
-            const aOpts = ir.action_engine_options || [];
+            const rOpts = Array.isArray(ir.rag_options) ? ir.rag_options : [];
+            const gOpts = Array.isArray(ir.guardrail_options) ? ir.guardrail_options : [];
+            const aOpts = Array.isArray(ir.action_engine_options) ? ir.action_engine_options : [];
 
             setRagOptions(rOpts);
             if (rOpts.length > 0) setSelectedRag(rOpts[0].id);
@@ -86,7 +86,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             setActionEngineOptions(aOpts);
             if (aOpts.length > 0) setSelectedActionEngine(aOpts[0].id);
 
-            const options = ir.tech_options || [];
+            const options = Array.isArray(ir.tech_options) ? ir.tech_options : [];
             if (options.length === 3) {
               setTechOptions(options);
               setSelectedOptionId(options[0].id); // Select first option by default
@@ -206,16 +206,19 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   };
 
   // Format technology names to be user friendly
-  const formatTechName = (slug: string) => {
+  const formatTechName = (slug: any) => {
     if (!slug) return '';
-    return slug.replace('_', ' ').replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+    if (typeof slug !== 'string') slug = String(slug);
+    return slug.replace('_', ' ').replace('-', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
   };
 
   // Check if a technology matches the extracted technologies from document
-  const isExtracted = (category: 'ui' | 'backend' | 'database', tech: string) => {
+  const isExtracted = (category: 'ui' | 'backend' | 'database', tech: any) => {
     if (!extractedTechs) return false;
     const val = extractedTechs[category];
-    if (!val) return false;
+    if (!val || !tech) return false;
+    
+    if (typeof tech !== 'string') tech = String(tech);
 
     // Safely handle if backend returned an array instead of a string
     const valStr = Array.isArray(val) ? val.join(' ') : String(val);
@@ -260,8 +263,9 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
               </h4>
 
               <div className="flex flex-col gap-3">
-                {techOptions.map((pkg) => {
+                {techOptions.map((pkg, index) => {
                   const isSelected = selectedOptionId === pkg.id;
+                  const isPrimary = index === 0;
                   return (
                     <div
                       key={pkg.id}
@@ -280,7 +284,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           {isSelected && <Check size={12} strokeWidth={3} />}
                         </div>
                         <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                          {pkg.id === 'option_1' ? 'Primary' : 'Alternative'}
+                          {isPrimary ? 'Primary' : 'Alternative'}
                         </span>
                       </div>
 
@@ -289,7 +293,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-sm text-foreground">{pkg.name}</span>
                           <span className="hidden md:inline text-[9px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                            {pkg.id === 'option_1' ? 'Primary' : 'Alternative'}
+                            {isPrimary ? 'Primary' : 'Alternative'}
                           </span>
                         </div>
 
@@ -297,24 +301,30 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
 
                         {/* Stack badges */}
                         <div className="flex flex-wrap gap-2 mt-1">
-                          <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
-                            UI: <span className="font-bold text-primary">{formatTechName(pkg.ui)}</span>
-                            {isExtracted('ui', pkg.ui) && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
-                            )}
-                          </span>
-                          <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
-                            API: <span className="font-bold text-primary">{formatTechName(pkg.backend)}</span>
-                            {isExtracted('backend', pkg.backend) && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
-                            )}
-                          </span>
-                          <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
-                            DB: <span className="font-bold text-primary">{formatTechName(pkg.database)}</span>
-                            {isExtracted('database', pkg.database) && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
-                            )}
-                          </span>
+                          {pkg.ui && pkg.ui.trim() !== '' && pkg.ui.toLowerCase() !== 'null' && pkg.ui.toLowerCase() !== 'none' && (
+                            <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
+                              UI: <span className="font-bold text-primary">{formatTechName(pkg.ui)}</span>
+                              {isExtracted('ui', pkg.ui) && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
+                              )}
+                            </span>
+                          )}
+                          {pkg.backend && pkg.backend.trim() !== '' && pkg.backend.toLowerCase() !== 'null' && pkg.backend.toLowerCase() !== 'none' && (
+                            <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
+                              API: <span className="font-bold text-primary">{formatTechName(pkg.backend)}</span>
+                              {isExtracted('backend', pkg.backend) && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
+                              )}
+                            </span>
+                          )}
+                          {pkg.database && pkg.database.trim() !== '' && pkg.database.toLowerCase() !== 'null' && pkg.database.toLowerCase() !== 'none' && (
+                            <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
+                              DB: <span className="font-bold text-primary">{formatTechName(pkg.database)}</span>
+                              {isExtracted('database', pkg.database) && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
+                              )}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
