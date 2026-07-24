@@ -884,7 +884,7 @@ const Home: React.FC = () => {
                     {[
                       { label: 'Skill Keyword', field: 'skill', ph: 'Skill' },
                       { label: 'Target Role', field: 'role', ph: 'Role' },
-                      { label: 'PwC Competency', field: 'asset', ph: 'Asset' },
+                      { label: 'Internal Competency', field: 'asset', ph: 'Asset' },
                       { label: 'Confidence', field: 'conf', ph: 'Confidence' },
                     ].map(({ label, field, ph }) => (
                       <div key={field} className="flex flex-col gap-0.5">

@@ -49,7 +49,7 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       await login(data);
-      toast('Login successful! Welcome to PwC Advisory.', 'success');
+      toast('Login successful! Welcome to Solution Advisory.', 'success');
       navigate('/dashboard');
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Invalid credentials.';
@@ -77,7 +77,7 @@ const Login: React.FC = () => {
               Advisory Proposal Creator
             </h2>
             <p className="text-xs text-muted-foreground">
-              Sign in using your PwC domain credentials to access orchestrator agents
+              Sign in using your corporate domain credentials to access orchestrator agents
             </p>
           </div>
 

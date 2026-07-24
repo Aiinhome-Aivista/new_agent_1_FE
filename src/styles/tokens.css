@@ -82,10 +82,10 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --color-pwc-orange: var(--color-brand-orange);
-  --color-pwc-charcoal: var(--color-brand-charcoal);
-  --color-pwc-gold: var(--color-brand-gold);
-  --color-pwc-red: var(--color-brand-red);
+  --color-org-orange: var(--color-brand-orange);
+  --color-org-charcoal: var(--color-brand-charcoal);
+  --color-org-gold: var(--color-brand-gold);
+  --color-org-red: var(--color-brand-red);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);

@@ -3,13 +3,13 @@ import { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } 
 export function setupInterceptors(instance: AxiosInstance): AxiosInstance {
   instance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-      const token = localStorage.getItem('pwc_auth_token');
+      const token = localStorage.getItem('org_auth_token');
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
       // Auto-inject role header for backend RBAC middleware (require_role decorator)
-      const rawUser = localStorage.getItem('pwc_auth_user');
+      const rawUser = localStorage.getItem('org_auth_user');
       if (rawUser && config.headers) {
         try {
           const user = JSON.parse(rawUser);
@@ -35,8 +35,8 @@ export function setupInterceptors(instance: AxiosInstance): AxiosInstance {
     (error: AxiosError) => {
       if (error.response && error.response.status === 401) {
         // Handle token expiration / unauthorized
-        localStorage.removeItem('pwc_auth_token');
-        localStorage.removeItem('pwc_auth_user');
+        localStorage.removeItem('org_auth_token');
+        localStorage.removeItem('org_auth_user');
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }
