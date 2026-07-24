@@ -60,6 +60,8 @@ const Home: React.FC = () => {
 
   const [uploadLoading, setUploadLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [requirementsText, setRequirementsText] = useState('');
+  const [activeUploadTab, setActiveUploadTab] = useState<'upload' | 'text'>('upload');
   const [isDragActive, setIsDragActive] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editableIr, setEditableIr] = useState<any>(null);
@@ -190,7 +192,12 @@ const Home: React.FC = () => {
       formData.append('client_name', data.clientName);
       formData.append('project_duration', data.projectDuration);
       formData.append('budget', data.budget);
-      selectedFiles.forEach((file) => formData.append('files', file));
+      
+      if (activeUploadTab === 'text') {
+        formData.append('requirements_text', requirementsText);
+      } else {
+        selectedFiles.forEach((file) => formData.append('files', file));
+      }
 
       const response = await proposalApi.upload(formData);
       toast('Document intake complete. Initiating specialist agents workflow.', 'info');
@@ -199,6 +206,8 @@ const Home: React.FC = () => {
       setStatusDetails(null);
       setPolling(true);
       setSelectedFiles([]);
+      setRequirementsText('');
+      setActiveUploadTab('upload');
       reset();
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
@@ -344,43 +353,88 @@ const Home: React.FC = () => {
             <CardContent>
               <form onSubmit={handleSubmit(handleUpload)} className="flex flex-col gap-5">
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-foreground/80">Support Documents (RFI, RFP, Questionnaire)</label>
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${isDragActive ? 'border-primary bg-primary/10' : 'border-border bg-muted/20 hover:bg-muted/40'}`}
-                    onClick={() => fileInputRef.current?.click()}
-                    onDragEnter={handleDragOver}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
+                <div className="flex border-b border-border/80 gap-2 mb-2">
+                  <button
+                    type="button"
+                    className={`flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold border-b-2 transition-all outline-none ${
+                      activeUploadTab === 'upload'
+                        ? 'border-primary text-primary font-bold'
+                        : 'border-transparent text-muted-foreground hover:text-foreground/80'
+                    }`}
+                    onClick={() => setActiveUploadTab('upload')}
                   >
-                    <FileUp size={32} className="text-muted-foreground" />
-                    <div className="text-xs text-muted-foreground text-center">
-                      <span className="font-semibold text-primary cursor-pointer hover:underline" onClick={() => fileInputRef.current?.click()}>
-                        Click to upload
-                      </span> or drag & drop files here
-                    </div>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      multiple
-                      className="hidden"
-                      onChange={handleFileChange}
-                    />
-                  </div>
-                  {selectedFiles.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedFiles.map((file, idx) => (
-                        <Badge key={idx} variant="secondary" className="gap-1">
-                          {file.name}
-                          <X size={12} className="cursor-pointer" onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))} />
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+                    <FileUp size={14} />
+                    Upload Documents
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold border-b-2 transition-all outline-none ${
+                      activeUploadTab === 'text'
+                        ? 'border-primary text-primary font-bold'
+                        : 'border-transparent text-muted-foreground hover:text-foreground/80'
+                    }`}
+                    onClick={() => setActiveUploadTab('text')}
+                  >
+                    <Edit size={14} />
+                    Write/Paste Requirements
+                  </button>
                 </div>
 
-                <Button type="submit" variant="primary" isLoading={uploadLoading} disabled={selectedFiles.length === 0} className="w-full gap-2 mt-2 disabled:opacity-80 disabled:cursor-not-allowed disabled:pointer-events-auto">
+                {activeUploadTab === 'upload' && (
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-foreground/80">Support Documents (Txt,PDF,Docx)</label>
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${isDragActive ? 'border-primary bg-primary/10' : 'border-border bg-muted/20 hover:bg-muted/40'}`}
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragEnter={handleDragOver}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
+                      <FileUp size={32} className="text-muted-foreground" />
+                      <div className="text-xs text-muted-foreground text-center">
+                        <span className="font-semibold text-primary cursor-pointer hover:underline" onClick={() => fileInputRef.current?.click()}>
+                          Click to upload
+                        </span> or drag & drop files here
+                      </div>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        multiple
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
+                    </div>
+                    {selectedFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {selectedFiles.map((file, idx) => (
+                          <Badge key={idx} variant="secondary" className="gap-1">
+                            {file.name}
+                            <X size={12} className="cursor-pointer" onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))} />
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeUploadTab === 'text' && (
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-foreground/80 flex items-center gap-1.5">
+                      <Edit size={14} className="text-primary" />
+                      Write your Requirements
+                    </label>
+                    <textarea
+                      rows={6}
+                      className="w-full rounded-lg border border-border bg-card/50 p-3 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary transition-all resize-y placeholder:text-muted-foreground/60"
+                      placeholder="Describe client requirements, paste the email MoM, list features, or outline specific project goals here..."
+                      value={requirementsText}
+                      onChange={(e) => setRequirementsText(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <Button type="submit" variant="primary" isLoading={uploadLoading} disabled={activeUploadTab === 'upload' ? selectedFiles.length === 0 : !requirementsText.trim()} className="w-full gap-2 mt-2 disabled:opacity-80 disabled:cursor-not-allowed disabled:pointer-events-auto">
                   <Play size={15} />
                   Assemble Solution Advisory Deck
                 </Button>
@@ -417,6 +471,8 @@ const Home: React.FC = () => {
                       setPolling(false);
                       setShowTechSelection(false);
                       setSelectedFiles([]);
+                      setRequirementsText('');
+                      setActiveUploadTab('upload');
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
                   >
