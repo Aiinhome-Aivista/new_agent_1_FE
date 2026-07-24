@@ -156,8 +156,32 @@ const Home: React.FC = () => {
   }, [isPolling, activeProposalId]);
 
   // ── File handling ───────────────────────────────────────
+  const validateFiles = (files: File[]) => {
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const validFiles = files.filter(file => {
+      const isAllowedType = 
+        file.name.toLowerCase().endsWith('.doc') || 
+        file.name.toLowerCase().endsWith('.docx') || 
+        file.name.toLowerCase().endsWith('.txt') || 
+        file.name.toLowerCase().endsWith('.pdf');
+      const isWithinSize = file.size <= MAX_FILE_SIZE;
+      
+      if (!isAllowedType) {
+        toast(`File ${file.name} is not supported. Only .doc, .txt, .pdf are allowed.`, 'error');
+      } else if (!isWithinSize) {
+        toast(`File ${file.name} exceeds the 10MB limit.`, 'error');
+      }
+      
+      return isAllowedType && isWithinSize;
+    });
+    return validFiles;
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setSelectedFiles(Array.from(e.target.files));
+    if (e.target.files) {
+      const validFiles = validateFiles(Array.from(e.target.files));
+      setSelectedFiles((prev) => [...prev, ...validFiles]);
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -165,7 +189,8 @@ const Home: React.FC = () => {
     e.stopPropagation();
     setIsDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setSelectedFiles((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
+      const validFiles = validateFiles(Array.from(e.dataTransfer.files));
+      setSelectedFiles((prev) => [...prev, ...validFiles]);
     }
   };
 
@@ -328,7 +353,7 @@ const Home: React.FC = () => {
   const isBusinessWorkflow = BUSINESS_STATUSES.includes(currentStatus);
 
   // Transition button availability based on state machine + current role
-  const canApproveNow = currentStatus === 'Complete' || currentStatus === 'Rejected';
+  const canApproveNow = currentStatus === 'Complete' ;
   const canRejectNow = currentStatus === 'Complete';
   const canPublishNow = currentStatus === 'Approved';
 
