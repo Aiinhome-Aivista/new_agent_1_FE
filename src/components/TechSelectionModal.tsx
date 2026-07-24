@@ -439,6 +439,15 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           </div>
                         );
                       })}
+                  <div className="flex gap-3 p-4 bg-red-500/5 border border-red-500/20 rounded-xl mt-2 shadow-inner">
+                        <AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs font-bold text-red-500 uppercase tracking-wider">Future Document Integration Suggestion</span>
+                          <span className="text-xs text-muted-foreground leading-relaxed">
+                            If in the future text or PDF documents are used for retrieval, a vectorless RAG approach should be implemented to handle keyword-based and metadata-driven semantic search efficiently.
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
