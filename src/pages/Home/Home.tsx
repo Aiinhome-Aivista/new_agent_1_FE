@@ -475,8 +475,16 @@ const Home: React.FC = () => {
               <div>
                 <CardTitle className="text-sm font-bold">
                   {AI_RUNNING_STATUSES.includes(currentStatus)
-                    ? `Pipeline Execution: ${statusDetails.proposal.client_name}`
-                    : `Proposal Review: ${statusDetails.proposal.client_name}`}
+                    ? 
+                     <div className='flex gap-2'>
+      <span>Pipeline Execution</span>
+      <span className="flex items-end gap-0.5">
+        <span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:0ms]" />
+        <span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:150ms]" />
+        <span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:300ms]" />
+      </span>
+    </div>
+                    : `Proposal Review: comp ${statusDetails.proposal.client_name}`}
                 </CardTitle>
                 <CardDescription className="text-[12px] mt-0.5">
                   {AI_RUNNING_STATUSES.includes(currentStatus)
