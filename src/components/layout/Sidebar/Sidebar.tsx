@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Database, ShieldAlert, History, LogOut } from 'lucide-react';
+import { LayoutDashboard, Database, ShieldAlert, History, LogOut, FileText } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 
 import { useAuthStore } from '../../../store';
@@ -15,6 +15,7 @@ export const Sidebar: React.FC = () => {
   ];
 
   if (user?.role === 'admin' || user?.role === 'presales') {
+    menuItems.push({ title: 'Case Study Upload', href: '/case-studies', icon: <FileText size={18} /> });
     menuItems.push({ title: 'Asset Knowledge Base', href: '/settings', icon: <Database size={18} /> });
   }
 

@@ -8,6 +8,7 @@ const Landing = lazy(() => import('../pages/Landing/Landing'));
 const Home = lazy(() => import('../pages/Home/Home'));
 const Settings = lazy(() => import('../pages/Settings/Settings'));
 const Archive = lazy(() => import('../pages/Archive/Archive'));
+const CaseStudies = lazy(() => import('../pages/CaseStudies/CaseStudies'));
 const Login = lazy(() => import('../pages/Login/Login'));
 const NotFound = lazy(() => import('../pages/NotFound/NotFound'));
 
@@ -52,6 +53,15 @@ export const AppRouter: React.FC = () => {
             element={
               <PrivateRoute>
                 <Archive />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.caseStudies}
+            element={
+              <PrivateRoute>
+                <CaseStudies />
               </PrivateRoute>
             }
           />
