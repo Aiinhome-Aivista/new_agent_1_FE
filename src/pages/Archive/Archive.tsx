@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   History, RefreshCw, Download, Edit, Eye, Plus, Save,
   AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Send, Lock, Trash2, Play
@@ -37,6 +38,7 @@ function getProposalBadgeVariant(status: string) {
 
 const Archive: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { 
     proposals, 
     activeProposalId, 
@@ -336,16 +338,19 @@ const Archive: React.FC = () => {
                         className="h-7 px-2 text-[10px] gap-1"
                         onClick={async () => {
                           try {
-                            if (currentStatus === 'Failed' || !isPolling) {
+                            setActiveProposalId(statusDetails.proposal.id);
+                            
+                            if (currentStatus === 'Failed') {
                               await proposalApi.resumeFailedProposal(statusDetails.proposal.id);
                               toast('Pipeline resumed successfully.', 'success');
-                              setPolling(true);
-                              fetchProposals();
                             } else {
-                              // Just re-enable polling if it was already running but UI lost state
-                              setPolling(true);
-                              toast('Polling resumed.', 'success');
+                              // If it's WaitingForTechSelection or already running, just navigate
+                              toast('Switched to live tracking.', 'success');
                             }
+                            
+                            setPolling(true);
+                            if (currentStatus === 'Failed') fetchProposals();
+                            navigate('/dashboard');
                           } catch (err: any) {
                             toast('Failed to resume: ' + (err.response?.data?.error || err.message), 'error');
                           }
