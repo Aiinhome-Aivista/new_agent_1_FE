@@ -9,15 +9,53 @@ import { Button } from '@/components/ui';
 export const Sidebar: React.FC = () => {
   const { user, logout } = useAuthStore();
 
-  const menuItems = [
-    { title: 'Proposal Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
-    { title: 'Historical Drafts Archive', href: '/archive', icon: <History size={18} /> },
-  ];
+  // const menuItems = [
+  //   { title: 'Proposal Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
 
-  if (user?.role === 'admin' || user?.role === 'presales') {
-    menuItems.push({ title: 'Case Study Upload', href: '/case-studies', icon: <FileText size={18} /> });
-    menuItems.push({ title: 'Asset Knowledge Base', href: '/settings', icon: <Database size={18} /> });
-  }
+  //   { title: 'Historical Drafts Archive', href: '/archive', icon: <History size={18} /> },
+  // ];
+
+  // if (user?.role === 'admin' || user?.role === 'presales') {
+  //   menuItems.push({ title: 'Case Study Upload', href: '/case-studies', icon: <FileText size={18} /> });
+  //   menuItems.push({ title: 'Asset Knowledge Base', href: '/settings', icon: <Database size={18} /> });
+  // }
+
+  const menuItems =
+  user?.role === 'admin' || user?.role === 'presales'
+    ? [
+        {
+          title: 'Proposal Dashboard',
+          href: '/dashboard',
+          icon: <LayoutDashboard size={18} />,
+        },
+        {
+          title: 'Case Study Upload',
+          href: '/case-studies',
+          icon: <FileText size={18} />,
+        },
+        {
+          title: 'Historical Drafts Archive',
+          href: '/archive',
+          icon: <History size={18} />,
+        },
+        {
+          title: 'Asset Knowledge Base',
+          href: '/settings',
+          icon: <Database size={18} />,
+        },
+      ]
+    : [
+        {
+          title: 'Proposal Dashboard',
+          href: '/dashboard',
+          icon: <LayoutDashboard size={18} />,
+        },
+        {
+          title: 'Historical Drafts Archive',
+          href: '/archive',
+          icon: <History size={18} />,
+        },
+      ];
 
   return (
     <aside className="w-64 border-r border-border bg-card hidden md:flex flex-col h-[calc(100vh-73px)] sticky top-[73px] p-4 gap-6 justify-between">
