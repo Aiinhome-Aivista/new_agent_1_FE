@@ -177,9 +177,10 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   };
 
   // Helper to render basic markdown bolding & lists into React elements
-  const renderMarkdown = (text: string) => {
+  const renderMarkdown = (text: any) => {
     if (!text) return null;
-    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    const strText = Array.isArray(text) ? text.join('\n') : String(text);
+    let formatted = strText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     const lines = formatted.split('\n');
     return lines.map((line, idx) => {
@@ -397,7 +398,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <div className="flex flex-col gap-3">
                       {ragOptions.map((opt, i) => {
                         const isSelected = selectedRag === opt.id;
-                        const isRecommended = i === 0;
+                        const isRecommended = opt.name.toLowerCase().includes("mentioned in hla") || (i === 0 && !ragOptions.some(o => o.name.toLowerCase().includes("mentioned in hla")));
                         return (
                           <div
                             key={opt.id}
@@ -464,7 +465,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <div className="flex flex-col gap-3">
                       {guardrailOptions.map((opt, i) => {
                         const isSelected = selectedGuardrail === opt.id;
-                        const isRecommended = i === 0;
+                        const isRecommended = opt.name.toLowerCase().includes("mentioned in hla") || (i === 0 && !guardrailOptions.some(o => o.name.toLowerCase().includes("mentioned in hla")));
                         return (
                           <div
                             key={opt.id}
@@ -529,7 +530,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <div className="flex flex-col gap-3">
                       {actionEngineOptions.map((opt, i) => {
                         const isSelected = selectedActionEngine === opt.id;
-                        const isRecommended = i === 0;
+                        const isRecommended = opt.name.toLowerCase().includes("mentioned in hla") || (i === 0 && !actionEngineOptions.some(o => o.name.toLowerCase().includes("mentioned in hla")));
                         return (
                           <div
                             key={opt.id}

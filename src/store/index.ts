@@ -22,21 +22,21 @@ interface ProposalState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  token: localStorage.getItem('pwc_auth_token'),
+  token: localStorage.getItem('org_auth_token'),
   user: (() => {
-    const raw = localStorage.getItem('pwc_auth_user');
+    const raw = localStorage.getItem('org_auth_user');
     try { return raw ? JSON.parse(raw) : null; } catch { return null; }
   })(),
-  isAuthenticated: !!localStorage.getItem('pwc_auth_token'),
+  isAuthenticated: !!localStorage.getItem('org_auth_token'),
   login: async (credentials) => {
     const data = await authApi.login(credentials);
-    localStorage.setItem('pwc_auth_token', data.token);
-    localStorage.setItem('pwc_auth_user', JSON.stringify(data.user));
+    localStorage.setItem('org_auth_token', data.token);
+    localStorage.setItem('org_auth_user', JSON.stringify(data.user));
     set({ token: data.token, user: data.user, isAuthenticated: true });
   },
   logout: () => {
-    localStorage.removeItem('pwc_auth_token');
-    localStorage.removeItem('pwc_auth_user');
+    localStorage.removeItem('org_auth_token');
+    localStorage.removeItem('org_auth_user');
     set({ token: null, user: null, isAuthenticated: false });
   },
 }));

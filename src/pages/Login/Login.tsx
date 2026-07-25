@@ -49,7 +49,7 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       await login(data);
-      toast('Login successful! Welcome to PwC Advisory.', 'success');
+      toast('Login successful! Welcome to Solution Advisory.', 'success');
       navigate('/dashboard');
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Invalid credentials.';
@@ -77,13 +77,13 @@ const Login: React.FC = () => {
               Advisory Proposal Creator
             </h2>
             <p className="text-xs text-muted-foreground">
-              Sign in using your PwC domain credentials to access orchestrator agents
+              Sign in using your corporate domain credentials to access orchestrator agents
             </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <Input
-              label="Domain Username"
+              label="Username"
               type="text"
               placeholder="e.g. admin"
               error={errors.username?.message as string}
@@ -91,7 +91,7 @@ const Login: React.FC = () => {
             />
             
             <Input
-              label="Security Password"
+              label="Password"
               type="password"
               placeholder="••••••••"
               error={errors.password?.message as string}

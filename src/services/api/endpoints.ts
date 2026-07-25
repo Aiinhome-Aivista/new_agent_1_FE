@@ -86,6 +86,25 @@ export const knowledgeApi = {
   },
 };
 
+export const caseStudiesApi = {
+  list: async (): Promise<any[]> => {
+    const res = await apiClient.get('/api/case-studies');
+    return res.data;
+  },
+  upload: async (formData: FormData): Promise<any> => {
+    const res = await apiClient.post('/api/case-studies/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
+  delete: async (id: number): Promise<any> => {
+    const res = await apiClient.delete(`/api/case-studies/${id}`);
+    return res.data;
+  },
+};
+
 export const adminApi = {
   getUsers: async (): Promise<any[]> => {
     const res = await apiClient.get('/admin/users');
