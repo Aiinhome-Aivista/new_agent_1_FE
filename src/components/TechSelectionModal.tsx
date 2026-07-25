@@ -73,9 +73,17 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             setChatExplanation(ir.chat_explanation || 'Based on requirements and constraints, I have analyzed the document and prepared 3 optimal technology packages.');
 
             // Set advanced options
-            const rOpts = Array.isArray(ir.rag_options) ? ir.rag_options : [];
-            const gOpts = Array.isArray(ir.guardrail_options) ? ir.guardrail_options : [];
-            const aOpts = Array.isArray(ir.action_engine_options) ? ir.action_engine_options : [];
+            const sortFn = (a: any, b: any) => {
+              const aMentioned = a.name.toLowerCase().includes("mentioned in hla");
+              const bMentioned = b.name.toLowerCase().includes("mentioned in hla");
+              if (aMentioned && !bMentioned) return -1;
+              if (!aMentioned && bMentioned) return 1;
+              return 0;
+            };
+
+            const rOpts = Array.isArray(ir.rag_options) ? ir.rag_options.sort(sortFn) : [];
+            const gOpts = Array.isArray(ir.guardrail_options) ? ir.guardrail_options.sort(sortFn) : [];
+            const aOpts = Array.isArray(ir.action_engine_options) ? ir.action_engine_options.sort(sortFn) : [];
 
             setRagOptions(rOpts);
             if (rOpts.length > 0) setSelectedRag(rOpts[0].id);
@@ -177,9 +185,10 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   };
 
   // Helper to render basic markdown bolding & lists into React elements
-  const renderMarkdown = (text: string) => {
+  const renderMarkdown = (text: any) => {
     if (!text) return null;
-    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    const strText = Array.isArray(text) ? text.join('\n') : String(text);
+    let formatted = strText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     const lines = formatted.split('\n');
     return lines.map((line, idx) => {
@@ -407,7 +416,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <div className="flex flex-col gap-3">
                       {ragOptions.map((opt, i) => {
                         const isSelected = selectedRag === opt.id;
-                        const isRecommended = i === 0;
+                        const isRecommended = opt.name.toLowerCase().includes("mentioned in hla") || (i === 0 && !ragOptions.some(o => o.name.toLowerCase().includes("mentioned in hla")));
                         return (
                           <div
                             key={opt.id}
@@ -474,7 +483,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <div className="flex flex-col gap-3">
                       {guardrailOptions.map((opt, i) => {
                         const isSelected = selectedGuardrail === opt.id;
-                        const isRecommended = i === 0;
+                        const isRecommended = opt.name.toLowerCase().includes("mentioned in hla") || (i === 0 && !guardrailOptions.some(o => o.name.toLowerCase().includes("mentioned in hla")));
                         return (
                           <div
                             key={opt.id}
@@ -539,7 +548,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <div className="flex flex-col gap-3">
                       {actionEngineOptions.map((opt, i) => {
                         const isSelected = selectedActionEngine === opt.id;
-                        const isRecommended = i === 0;
+                        const isRecommended = opt.name.toLowerCase().includes("mentioned in hla") || (i === 0 && !actionEngineOptions.some(o => o.name.toLowerCase().includes("mentioned in hla")));
                         return (
                           <div
                             key={opt.id}
