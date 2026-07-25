@@ -73,9 +73,9 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             setChatExplanation(ir.chat_explanation || 'Based on requirements and constraints, I have analyzed the document and prepared 3 optimal technology packages.');
 
             // Set advanced options
-            const rOpts = Array.isArray(ir.rag_options) ? ir.rag_options : [];
-            const gOpts = Array.isArray(ir.guardrail_options) ? ir.guardrail_options : [];
-            const aOpts = Array.isArray(ir.action_engine_options) ? ir.action_engine_options : [];
+            const rOpts = ir.rag_options || [];
+            const gOpts = ir.guardrail_options || [];
+            const aOpts = ir.action_engine_options || [];
 
             setRagOptions(rOpts);
             if (rOpts.length > 0) setSelectedRag(rOpts[0].id);
@@ -86,7 +86,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             setActionEngineOptions(aOpts);
             if (aOpts.length > 0) setSelectedActionEngine(aOpts[0].id);
 
-            const options = Array.isArray(ir.tech_options) ? ir.tech_options : [];
+            const options = ir.tech_options || [];
             if (options.length === 3) {
               setTechOptions(options);
               setSelectedOptionId(options[0].id); // Select first option by default
@@ -206,19 +206,16 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   };
 
   // Format technology names to be user friendly
-  const formatTechName = (slug: any) => {
+  const formatTechName = (slug: string) => {
     if (!slug) return '';
-    if (typeof slug !== 'string') slug = String(slug);
-    return slug.replace('_', ' ').replace('-', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+    return slug.replace('_', ' ').replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
   // Check if a technology matches the extracted technologies from document
-  const isExtracted = (category: 'ui' | 'backend' | 'database', tech: any) => {
+  const isExtracted = (category: 'ui' | 'backend' | 'database', tech: string) => {
     if (!extractedTechs) return false;
     const val = extractedTechs[category];
-    if (!val || !tech) return false;
-    
-    if (typeof tech !== 'string') tech = String(tech);
+    if (!val) return false;
 
     // Safely handle if backend returned an array instead of a string
     const valStr = Array.isArray(val) ? val.join(' ') : String(val);
@@ -263,28 +260,27 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
               </h4>
 
               <div className="flex flex-col gap-3">
-                {techOptions.map((pkg, index) => {
+                {techOptions.map((pkg) => {
                   const isSelected = selectedOptionId === pkg.id;
-                  const isPrimary = index === 0;
                   return (
                     <div
                       key={pkg.id}
                       onClick={() => setSelectedOptionId(pkg.id)}
                       className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
-                          ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
-                          : 'border-border bg-card hover:border-muted-foreground/30'
+                        ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                        : 'border-border bg-card hover:border-muted-foreground/30'
                         }`}
                     >
                       {/* Selection indicator */}
                       <div className="flex items-start justify-between md:justify-center md:items-center">
                         <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-muted-foreground/30 bg-muted/40'
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-muted-foreground/30 bg-muted/40'
                           }`}>
                           {isSelected && <Check size={12} strokeWidth={3} />}
                         </div>
                         <span className="md:hidden text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                          {isPrimary ? 'Primary' : 'Alternative'}
+                          {pkg.id === 'option_1' ? 'Primary' : 'Alternative'}
                         </span>
                       </div>
 
@@ -293,7 +289,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-sm text-foreground">{pkg.name}</span>
                           <span className="hidden md:inline text-[9px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                            {isPrimary ? 'Primary' : 'Alternative'}
+                            {pkg.id === 'option_1' ? 'Primary' : 'Alternative'}
                           </span>
                         </div>
 
@@ -301,30 +297,24 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
 
                         {/* Stack badges */}
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {pkg.ui && pkg.ui.trim() !== '' && pkg.ui.toLowerCase() !== 'null' && pkg.ui.toLowerCase() !== 'none' && (
-                            <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
-                              UI: <span className="font-bold text-primary">{formatTechName(pkg.ui)}</span>
-                              {isExtracted('ui', pkg.ui) && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
-                              )}
-                            </span>
-                          )}
-                          {pkg.backend && pkg.backend.trim() !== '' && pkg.backend.toLowerCase() !== 'null' && pkg.backend.toLowerCase() !== 'none' && (
-                            <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
-                              API: <span className="font-bold text-primary">{formatTechName(pkg.backend)}</span>
-                              {isExtracted('backend', pkg.backend) && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
-                              )}
-                            </span>
-                          )}
-                          {pkg.database && pkg.database.trim() !== '' && pkg.database.toLowerCase() !== 'null' && pkg.database.toLowerCase() !== 'none' && (
-                            <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
-                              DB: <span className="font-bold text-primary">{formatTechName(pkg.database)}</span>
-                              {isExtracted('database', pkg.database) && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
-                              )}
-                            </span>
-                          )}
+                          <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
+                            UI: <span className="font-bold text-primary">{formatTechName(pkg.ui)}</span>
+                            {isExtracted('ui', pkg.ui) && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
+                            )}
+                          </span>
+                          <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
+                            API: <span className="font-bold text-primary">{formatTechName(pkg.backend)}</span>
+                            {isExtracted('backend', pkg.backend) && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
+                            )}
+                          </span>
+                          <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
+                            DB: <span className="font-bold text-primary">{formatTechName(pkg.database)}</span>
+                            {isExtracted('database', pkg.database) && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
+                            )}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -363,14 +353,14 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           key={i}
                           onClick={() => setSelectedAiModel(model)}
                           className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
-                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
-                              : 'border-border bg-card hover:border-muted-foreground/30'
+                            ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                            : 'border-border bg-card hover:border-muted-foreground/30'
                             }`}
                         >
                           <div className="flex items-start justify-between md:justify-center md:items-center">
                             <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected
-                                ? 'border-primary bg-primary text-primary-foreground'
-                                : 'border-muted-foreground/30 bg-muted/40'
+                              ? 'border-primary bg-primary text-primary-foreground'
+                              : 'border-muted-foreground/30 bg-muted/40'
                               }`}>
                               {isSelected && <Check size={12} strokeWidth={3} />}
                             </div>
@@ -413,14 +403,14 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                             key={opt.id}
                             onClick={() => setSelectedRag(opt.id)}
                             className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
-                                ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
-                                : 'border-border bg-card hover:border-muted-foreground/30'
+                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                              : 'border-border bg-card hover:border-muted-foreground/30'
                               }`}
                           >
                             <div className="flex items-start justify-between md:justify-center md:items-center">
                               <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected
-                                  ? 'border-primary bg-primary text-primary-foreground'
-                                  : 'border-muted-foreground/30 bg-muted/40'
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-muted-foreground/30 bg-muted/40'
                                 }`}>
                                 {isSelected && <Check size={12} strokeWidth={3} />}
                               </div>
@@ -449,7 +439,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           </div>
                         );
                       })}
-                  <div className="flex gap-3 p-4 bg-red-500/5 border border-red-500/20 rounded-xl mt-2 shadow-inner">
+                      <div className="flex gap-3 p-4 bg-red-500/5 border border-red-500/20 rounded-xl mt-2 shadow-inner">
                         <AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
                         <div className="flex flex-col gap-0.5">
                           <span className="text-xs font-bold text-red-500 uppercase tracking-wider">Future Document Integration Suggestion</span>
@@ -480,14 +470,14 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                             key={opt.id}
                             onClick={() => setSelectedGuardrail(opt.id)}
                             className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
-                                ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
-                                : 'border-border bg-card hover:border-muted-foreground/30'
+                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                              : 'border-border bg-card hover:border-muted-foreground/30'
                               }`}
                           >
                             <div className="flex items-start justify-between md:justify-center md:items-center">
                               <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected
-                                  ? 'border-primary bg-primary text-primary-foreground'
-                                  : 'border-muted-foreground/30 bg-muted/40'
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-muted-foreground/30 bg-muted/40'
                                 }`}>
                                 {isSelected && <Check size={12} strokeWidth={3} />}
                               </div>
@@ -545,14 +535,14 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                             key={opt.id}
                             onClick={() => setSelectedActionEngine(opt.id)}
                             className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
-                                ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
-                                : 'border-border bg-card hover:border-muted-foreground/30'
+                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                              : 'border-border bg-card hover:border-muted-foreground/30'
                               }`}
                           >
                             <div className="flex items-start justify-between md:justify-center md:items-center">
                               <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected
-                                  ? 'border-primary bg-primary text-primary-foreground'
-                                  : 'border-muted-foreground/30 bg-muted/40'
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-muted-foreground/30 bg-muted/40'
                                 }`}>
                                 {isSelected && <Check size={12} strokeWidth={3} />}
                               </div>
