@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   History, RefreshCw, Download, Edit, Eye, Plus, Save,
-  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Send, Lock, Trash2
+  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Send, Lock, Trash2, Play
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
 import { useProposalStore, useAuthStore } from '../../store';
@@ -328,9 +328,36 @@ const Archive: React.FC = () => {
                       : 'Business review workflow — human-in-the-loop approval chain'}
                   </CardDescription>
                 </div>
-                <Badge variant={getProposalBadgeVariant(currentStatus)}>
-                  {currentStatus}
-                </Badge>
+                  <div className="flex items-center gap-2">
+                    {(currentStatus === 'Failed' || currentStatus === 'WaitingForTechSelection' || AI_RUNNING_STATUSES.includes(currentStatus)) && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-7 px-2 text-[10px] gap-1"
+                        onClick={async () => {
+                          try {
+                            if (currentStatus === 'Failed' || !isPolling) {
+                              await proposalApi.resumeFailedProposal(statusDetails.proposal.id);
+                              toast('Pipeline resumed successfully.', 'success');
+                              setPolling(true);
+                              fetchProposals();
+                            } else {
+                              // Just re-enable polling if it was already running but UI lost state
+                              setPolling(true);
+                              toast('Polling resumed.', 'success');
+                            }
+                          } catch (err: any) {
+                            toast('Failed to resume: ' + (err.response?.data?.error || err.message), 'error');
+                          }
+                        }}
+                      >
+                        <Play size={12} className="text-primary fill-primary/20" /> Resume
+                      </Button>
+                    )}
+                    <Badge variant={getProposalBadgeVariant(currentStatus)}>
+                      {currentStatus}
+                    </Badge>
+                  </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-6">
                 {/* AI Pipeline Stepper */}
