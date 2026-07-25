@@ -83,7 +83,7 @@ const Login: React.FC = () => {
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <Input
-              label="Domain Username"
+              label="Username"
               type="text"
               placeholder="e.g. admin"
               error={errors.username?.message as string}
@@ -91,7 +91,7 @@ const Login: React.FC = () => {
             />
             
             <Input
-              label="Security Password"
+              label="Password"
               type="password"
               placeholder="••••••••"
               error={errors.password?.message as string}
