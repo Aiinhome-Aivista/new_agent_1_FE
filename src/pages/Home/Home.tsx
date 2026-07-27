@@ -70,6 +70,19 @@ const Home: React.FC = () => {
 
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
+  const [dots, setDots] = useState("");
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setDots((prev) => {
+      if (prev === "...") return "";
+      return prev + ".";
+    });
+  }, 400);
+
+  return () => clearInterval(interval);
+}, []);
+
   // Audit logs for partner review
   useEffect(() => {
     if (perms.isPartner && statusDetails) {
@@ -159,19 +172,19 @@ const Home: React.FC = () => {
   const validateFiles = (files: File[]) => {
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     const validFiles = files.filter(file => {
-      const isAllowedType = 
-        file.name.toLowerCase().endsWith('.doc') || 
-        file.name.toLowerCase().endsWith('.docx') || 
-        file.name.toLowerCase().endsWith('.txt') || 
+      const isAllowedType =
+        file.name.toLowerCase().endsWith('.doc') ||
+        file.name.toLowerCase().endsWith('.docx') ||
+        file.name.toLowerCase().endsWith('.txt') ||
         file.name.toLowerCase().endsWith('.pdf');
       const isWithinSize = file.size <= MAX_FILE_SIZE;
-      
+
       if (!isAllowedType) {
         toast(`File ${file.name} is not supported. Only .doc, .txt, .pdf are allowed.`, 'error');
       } else if (!isWithinSize) {
         toast(`File ${file.name} exceeds the 10MB limit.`, 'error');
       }
-      
+
       return isAllowedType && isWithinSize;
     });
     return validFiles;
@@ -217,7 +230,7 @@ const Home: React.FC = () => {
       formData.append('client_name', data.clientName);
       formData.append('project_duration', data.projectDuration);
       formData.append('budget', data.budget);
-      
+
       if (activeUploadTab === 'text') {
         formData.append('requirements_text', requirementsText);
       } else {
@@ -353,7 +366,7 @@ const Home: React.FC = () => {
   const isBusinessWorkflow = BUSINESS_STATUSES.includes(currentStatus);
 
   // Transition button availability based on state machine + current role
-  const canApproveNow = currentStatus === 'Complete' ;
+  const canApproveNow = currentStatus === 'Complete';
   const canRejectNow = currentStatus === 'Complete';
   const canPublishNow = currentStatus === 'Approved';
 
@@ -381,11 +394,10 @@ const Home: React.FC = () => {
                 <div className="flex border-b border-border/80 gap-2 mb-2">
                   <button
                     type="button"
-                    className={`flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold border-b-2 transition-all outline-none ${
-                      activeUploadTab === 'upload'
+                    className={`flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold border-b-2 transition-all outline-none ${activeUploadTab === 'upload'
                         ? 'border-primary text-primary font-bold'
                         : 'border-transparent text-muted-foreground hover:text-foreground/80'
-                    }`}
+                      }`}
                     onClick={() => setActiveUploadTab('upload')}
                   >
                     <FileUp size={14} />
@@ -393,11 +405,10 @@ const Home: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    className={`flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold border-b-2 transition-all outline-none ${
-                      activeUploadTab === 'text'
+                    className={`flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold border-b-2 transition-all outline-none ${activeUploadTab === 'text'
                         ? 'border-primary text-primary font-bold'
                         : 'border-transparent text-muted-foreground hover:text-foreground/80'
-                    }`}
+                      }`}
                     onClick={() => setActiveUploadTab('text')}
                   >
                     <Edit size={14} />
@@ -471,20 +482,15 @@ const Home: React.FC = () => {
         {/* Pipeline Status + Workflow Panel */}
         {statusDetails && (
           <Card className="border-primary/20 shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between !p-1.5 !px-3 gap-2">
+            <CardHeader className="flex flex-row items-center justify-between p-1.5! px-3! gap-2">
               <div>
                 <CardTitle className="text-sm font-bold">
                   {AI_RUNNING_STATUSES.includes(currentStatus)
-                    ? 
-                     <div className='flex gap-2'>
-      <span>Pipeline Execution</span>
-      <span className="flex items-end gap-0.5">
-        <span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:0ms]" />
-        <span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:150ms]" />
-        <span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:300ms]" />
-      </span>
-    </div>
-                    : `Proposal Review: comp ${statusDetails.proposal.client_name}`}
+                    ?
+                    <div className="flex items-center gap-1">
+                    <span>Pipeline Execution{dots}</span>
+</div>
+                    : `Proposal Review: Completed`}
                 </CardTitle>
                 <CardDescription className="text-[12px] mt-0.5">
                   {AI_RUNNING_STATUSES.includes(currentStatus)
@@ -528,10 +534,10 @@ const Home: React.FC = () => {
                     return (
                       <React.Fragment key={phase.name}>
                         <div
-                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-[120px] ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
-                              stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
-                                stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
-                                  'bg-muted/40 border-border text-muted-foreground'
+                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-30 ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
+                            stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
+                              stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                                'bg-muted/40 border-border text-muted-foreground'
                             }`}
                         >
                           {phase.icon}
@@ -541,7 +547,7 @@ const Home: React.FC = () => {
                         {idx < STEP_PHASES.length - 1 && (
                           <MoveRight
                             size={20}
-                            className={idx < currentStepIndex ? 'text-emerald-500 flex-shrink-0' : 'text-muted-foreground flex-shrink-0'}
+                            className={idx < currentStepIndex ? 'text-emerald-500 shrink-0' : 'text-muted-foreground shrink-0'}
                           />
                         )}
                       </React.Fragment>
@@ -554,7 +560,7 @@ const Home: React.FC = () => {
 
               {/* Agent Reasoning Logs */}
               {perms.canViewAgentLogs && (
-                <div className="bg-muted p-2 px-3 rounded-xl border border-border flex flex-col gap-1 max-h-85 overflow-y-auto font-mono text-xs">
+                <div className="bg-muted p-2 px-3 rounded-xl border border-border flex flex-col gap-1 max-h-90 overflow-y-auto font-mono text-xs">
                   <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1 font-sans mb-1 flex items-center gap-1.5">
                     <History size={13} className="text-primary" />
                     Agent Reasoning Logs & State Changes

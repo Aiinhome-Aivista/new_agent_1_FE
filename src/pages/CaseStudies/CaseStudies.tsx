@@ -89,8 +89,8 @@ const CaseStudies: React.FC = () => {
     try {
       setUploadLoading(true);
       const formData = new FormData();
-      formData.append('files', selectedFiles[0]);
-
+      // formData.append('files', selectedFiles[0]);
+selectedFiles.forEach((file) =>  formData.append("files", file));
       toast('Parsing and summarizing case study via specialist Solution Architect LLM. Please wait...', 'info');
       await caseStudiesApi.upload(formData);
       toast('Case study analyzed and stored in vector database successfully!', 'success');
@@ -165,11 +165,12 @@ const CaseStudies: React.FC = () => {
                       type="file"
                       ref={fileInputRef}
                       className="hidden"
+                      multiple
                       onChange={handleFileChange}
                     />
                   </div>
 
-                  {selectedFiles.length > 0 && (
+                  {/* {selectedFiles.length > 0 && (
                     <div className="flex items-center justify-between p-2.5 bg-muted/40 border border-border rounded-lg">
                       <div className="flex items-center gap-2 text-xs truncate max-w-[80%]">
                         <FileText size={16} className="text-primary" />
@@ -184,8 +185,32 @@ const CaseStudies: React.FC = () => {
                         }}
                       />
                     </div>
-                  )}
+                  )} */}
+{selectedFiles.length > 0 && (
+  <div className="space-y-2">
+    {selectedFiles.map((file, index) => (
+      <div
+        key={index}
+        className="flex items-center justify-between p-2.5 bg-muted/40 border rounded-lg"
+      >
+        <div className="flex items-center gap-2 text-xs truncate">
+          <FileText size={16} className="text-primary" />
+          <span className="truncate">{file.name}</span>
+        </div>
 
+        <X
+          size={16}
+          className="cursor-pointer"
+          onClick={() =>
+            setSelectedFiles(files =>
+              files.filter((_, i) => i !== index)
+            )
+          }
+        />
+      </div>
+    ))}
+  </div>
+)}
                   <Button
                     type="submit"
                     variant="primary"
@@ -247,7 +272,7 @@ const CaseStudies: React.FC = () => {
                             <td className="p-3 text-muted-foreground truncate max-w-[150px]" title={cs.client_industry}>
                               {cs.client_industry}
                             </td>
-                            <td className="p-3 truncate max-w-[200px]">
+                            <td className="p-3 truncate max-w-50">
                               <div className="flex flex-wrap gap-1">
                                 {cs.key_technologies.split(',').slice(0, 3).map((tech: string, i: number) => (
                                   <Badge key={i} variant="secondary" className="text-[9px] py-0 px-1.5">

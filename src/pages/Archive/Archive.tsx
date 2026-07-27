@@ -58,6 +58,19 @@ const Archive: React.FC = () => {
   const [savingIr, setSavingIr] = useState(false);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
+  const [dots, setDots] = useState("");
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setDots((prev) => {
+      if (prev === "...") return "";
+      return prev + ".";
+    });
+  }, 400);
+
+  return () => clearInterval(interval);
+}, []);
+
   // ── Fetch on mount ──────────────────────────────────────
   useEffect(() => {
     fetchProposals();
@@ -259,7 +272,7 @@ const Archive: React.FC = () => {
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <History size={32} className="text-muted-foreground mb-3" />
                   <p className="text-sm font-semibold text-foreground">No proposal archives yet</p>
-                  <p className="text-xs text-muted-foreground max-w-[200px] mt-1">
+                  <p className="text-xs text-muted-foreground max-w-50 mt-1">
                     {perms.canCreateProposal
                       ? 'Upload an RFP specification to create your first client-presentable PPTX proposal deck.'
                       : 'No proposals are available for review yet.'}
@@ -321,8 +334,10 @@ const Archive: React.FC = () => {
                 <div>
                   <CardTitle className="text-base font-bold">
                     {AI_RUNNING_STATUSES.includes(currentStatus)
-                      ? `Pipeline Execution: ${statusDetails.proposal.client_name}`
-                      : `Proposal Review: ${statusDetails.proposal.client_name}`}
+                      ? <div className="flex items-center gap-1">
+                      <span>Pipeline Execution{dots}</span>
+                    </div>
+                      : `Proposal Review: completed`}
                   </CardTitle>
                   <CardDescription className="text-xs">
                     {AI_RUNNING_STATUSES.includes(currentStatus)
@@ -393,7 +408,7 @@ const Archive: React.FC = () => {
 
                 {/* Agent Reasoning Logs */}
                 {perms.canViewAgentLogs && (
-                  <div className="bg-muted p-4 rounded-xl border border-border flex flex-col gap-2 max-h-[230px] overflow-y-auto font-mono text-xs">
+                  <div className="bg-muted p-4 rounded-xl border border-border flex flex-col gap-2 max-h-57 overflow-y-auto font-mono text-xs">
                     <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1.5 font-sans mb-1 flex items-center gap-1.5">
                       <History size={13} className="text-primary" />
                       Agent Reasoning Logs & State Changes
