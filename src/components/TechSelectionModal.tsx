@@ -72,10 +72,19 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             setExtractedTechs(ir.extracted_technologies || { ui: null, backend: null, database: null });
             setChatExplanation(ir.chat_explanation || 'Based on requirements and constraints, I have analyzed the document and prepared 3 optimal technology packages.');
 
+            // Helper to sort recommended options to the top
+            const sortOpts = (opts: any[]) => {
+              return [...opts].sort((a, b) => {
+                const aRec = a.name.toLowerCase().includes("mentioned in hla") ? 1 : 0;
+                const bRec = b.name.toLowerCase().includes("mentioned in hla") ? 1 : 0;
+                return bRec - aRec;
+              });
+            };
+            
             // Set advanced options
-            const rOpts = ir.rag_options || [];
-            const gOpts = ir.guardrail_options || [];
-            const aOpts = ir.action_engine_options || [];
+            const rOpts = sortOpts(ir.rag_options || []);
+            const gOpts = sortOpts(ir.guardrail_options || []);
+            const aOpts = sortOpts(ir.action_engine_options || []);
 
             setRagOptions(rOpts);
             if (rOpts.length > 0) setSelectedRag(rOpts[0].id);

@@ -687,18 +687,20 @@ useEffect(() => {
 
                   {/* Edit / View + Download row */}
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      variant="outline"
-                      className="flex-1 gap-2"
-                      onClick={() => openEditor(statusDetails.structured_ir)}
-                    >
-                      {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
-                      {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
-                    </Button>
+                    {!['Approved', 'Published'].includes(currentStatus) && (
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        onClick={() => openEditor(statusDetails.structured_ir)}
+                      >
+                        {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
+                        {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
+                      </Button>
+                    )}
                     {['Approved', 'Published'].includes(currentStatus) && (
                       <a
                         href={proposalApi.downloadUrl(statusDetails.proposal.id)}
-                        className="flex-1"
+                        className="w-full"
                         download
                       >
                         <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
