@@ -10,7 +10,7 @@ export const authApi = {
 };
 
 export const proposalApi = {
-  upload: async (formData: FormData): Promise<{ message: string; proposal_id: string }> => {
+  upload: async (formData: FormData): Promise<{ message: string; proposal_id: string; status?: string }> => {
     const res = await apiClient.post(API_ENDPOINTS.uploadProposal, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -37,8 +37,16 @@ export const proposalApi = {
     const res = await apiClient.post(`/api/proposals/transition/${id}`, { status, user_role: userRole });
     return res.data;
   },
+  pauseProposal: async (id: string): Promise<any> => {
+    const res = await apiClient.post(`/api/proposals/${id}/pause`);
+    return res.data;
+  },
   resumeFailedProposal: async (id: string): Promise<any> => {
     const res = await apiClient.post(`/api/proposals/${id}/resume`);
+    return res.data;
+  },
+  prioritizeProposal: async (id: string): Promise<any> => {
+    const res = await apiClient.post(`/api/proposals/${id}/prioritize`);
     return res.data;
   },
   getTechOptions: async (): Promise<any> => {
@@ -50,10 +58,10 @@ export const proposalApi = {
     return res.data;
   },
   resumeProposal: async (id: string, ui_tech: string, backend_tech: string, db_tech: string, formatted_budget: string, selected_rag?: string, selected_guardrail?: string, selected_action_engine?: string): Promise<any> => {
-    const res = await apiClient.post(API_ENDPOINTS.resumeProposal(id), { 
-      ui_tech, 
-      backend_tech, 
-      db_tech, 
+    const res = await apiClient.post(API_ENDPOINTS.resumeProposal(id), {
+      ui_tech,
+      backend_tech,
+      db_tech,
       formatted_budget,
       selected_rag,
       selected_guardrail,
@@ -99,8 +107,20 @@ export const caseStudiesApi = {
     });
     return res.data;
   },
-  delete: async (id: number): Promise<any> => {
+  delete: async (id: number | string): Promise<any> => {
     const res = await apiClient.delete(`/api/case-studies/${id}`);
+    return res.data;
+  },
+  pause: async (id: number | string): Promise<any> => {
+    const res = await apiClient.post(`/api/case-studies/queue/${id}/pause`);
+    return res.data;
+  },
+  resume: async (id: number | string): Promise<any> => {
+    const res = await apiClient.post(`/api/case-studies/queue/${id}/resume`);
+    return res.data;
+  },
+  prioritize: async (id: number | string): Promise<any> => {
+    const res = await apiClient.post(`/api/case-studies/queue/${id}/prioritize`);
     return res.data;
   },
 };
