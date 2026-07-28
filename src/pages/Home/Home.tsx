@@ -64,6 +64,7 @@ const Home: React.FC = () => {
   const [activeUploadTab, setActiveUploadTab] = useState<'upload' | 'text'>('upload');
   const [isDragActive, setIsDragActive] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<'full' | 'rates_only'>('full');
   const [editableIr, setEditableIr] = useState<any>(null);
   const [savingIr, setSavingIr] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -121,6 +122,7 @@ useEffect(() => {
   }, []);
 
   const [showTechSelection, setShowTechSelection] = useState(false);
+  const [showRateConfirmation, setShowRateConfirmation] = useState(false);
 
   // ── Poll active proposal status ─────────────────────────
   useEffect(() => {
@@ -141,6 +143,9 @@ useEffect(() => {
         if (proposalStatus === 'WaitingForTechSelection') {
           setPolling(false);
           setShowTechSelection(true);
+        } else if (proposalStatus === 'WaitingForRateConfirmation') {
+          setPolling(false);
+          setShowRateConfirmation(true);
         } else {
           const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
           if (!isRunning) {
@@ -261,6 +266,7 @@ useEffect(() => {
   const openEditor = (structuredIr: any) => {
     if (!structuredIr) return;
     setEditableIr(JSON.parse(JSON.stringify(structuredIr)));
+    setEditorMode('full');
     setIsEditorOpen(true);
   };
 
@@ -268,19 +274,26 @@ useEffect(() => {
     if (!statusDetails?.proposal.id || !editableIr) return;
     try {
       setSavingIr(true);
-      const response = await proposalApi.edit(statusDetails.proposal.id, editableIr);
-      toast('Solution blueprint updated. PowerPoint deck regenerated.', 'success');
-      setStatusDetails({
-        ...statusDetails,
-        proposal: {
-          ...statusDetails.proposal,
-          generated_file_path: response.file_path,
-          structured_json_ir: JSON.stringify(response.structured_ir),
-        },
-        structured_ir: response.structured_ir
-      });
-      setIsEditorOpen(false);
-      fetchProposals();
+      if (statusDetails.proposal.status === 'WaitingForRateConfirmation') {
+        await proposalApi.resumeRate(statusDetails.proposal.id, editableIr.resources);
+        toast('Rate changes saved. Resuming proposal generation...', 'success');
+        setIsEditorOpen(false);
+        setPolling(true);
+      } else {
+        const response = await proposalApi.edit(statusDetails.proposal.id, editableIr);
+        toast('Solution blueprint updated. PowerPoint deck regenerated.', 'success');
+        setStatusDetails({
+          ...statusDetails,
+          proposal: {
+            ...statusDetails.proposal,
+            generated_file_path: response.file_path,
+            structured_json_ir: JSON.stringify(response.structured_ir),
+          },
+          structured_ir: response.structured_ir
+        });
+        setIsEditorOpen(false);
+        fetchProposals();
+      }
     } catch (err: any) {
       toast('Failed to save changes: ' + (err.response?.data?.error || err.message), 'error');
     } finally {
@@ -324,9 +337,24 @@ useEffect(() => {
     setEditableIr({ ...editableIr, timeline_phases: phases });
   };
 
-  const updateResource = (index: number, field: 'role' | 'loc' | 'fte' | 'rate' | 'total', val: string) => {
+  const updateResource = (index: number, field: string, val: string) => {
     if (!editableIr?.resources) return;
-    const res = [...editableIr.resources]; res[index][field] = val;
+    const res = [...editableIr.resources]; 
+    res[index][field] = val;
+    
+    // Auto calculate total if rate or person_hours changes
+    if (field === 'rate' || field === 'person_hours') {
+      try {
+        const rateStr = String(res[index].rate || '0').replace(/[^0-9.]/g, '');
+        const rate = parseFloat(rateStr) || 0;
+        const hours = parseFloat(res[index].person_hours) || 0;
+        const total = rate * hours;
+        res[index].total = '$' + total.toLocaleString('en-US');
+      } catch (e) {
+        // ignore
+      }
+    }
+    
     setEditableIr({ ...editableIr, resources: res });
   };
 
@@ -695,6 +723,8 @@ useEffect(() => {
             )}
 
             {/* Meta Sizing */}
+            {editorMode === 'full' && (
+              <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/40 p-4 rounded-xl border border-border">
               <Input
                 label="Target Client Name"
@@ -852,6 +882,8 @@ useEffect(() => {
                 ))}
               </div>
             </div>
+            </>
+            )}
 
             {/* Resources */}
             <div className="flex flex-col gap-3 border-t border-border pt-4">
@@ -861,12 +893,11 @@ useEffect(() => {
               </span>
               <div className="flex flex-col gap-2 max-h-55 overflow-y-auto pr-1">
                 {editableIr.resources?.map((res: any, idx: number) => (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-5 gap-2 bg-muted/20 p-2 border border-border rounded-lg items-center">
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-muted/20 p-2 border border-border rounded-lg items-center">
                     {[
                       { label: 'Role', field: 'role', ph: 'Role' },
-                      { label: 'Location', field: 'loc', ph: 'Location' },
-                      { label: 'FTE Count', field: 'fte', ph: 'FTE' },
-                      { label: 'Monthly Rate', field: 'rate', ph: 'Rate' },
+                      { label: 'Person Hours', field: 'person_hours', ph: 'Hours' },
+                      { label: 'Hourly Rate', field: 'rate', ph: 'Rate' },
                       { label: 'Total Cost', field: 'total', ph: 'Total' },
                     ].map(({ label, field, ph }) => (
                       <div key={field} className="flex flex-col gap-0.5">
@@ -887,6 +918,8 @@ useEffect(() => {
             </div>
 
             {/* Skills Mapping */}
+            {editorMode === 'full' && (
+              <>
             <div className="flex flex-col gap-3 border-t border-border pt-4">
               <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5 flex items-center justify-between">
                 Skills Inventory & Competency Mapping (PPTX Slide 7 Layout)
@@ -917,6 +950,8 @@ useEffect(() => {
                 ))}
               </div>
             </div>
+            </>
+            )}
 
             {/* Save / Close */}
             <div className="flex gap-3 justify-end border-t border-border pt-5 mt-2">
@@ -932,6 +967,32 @@ useEffect(() => {
             </div>
           </div>
         )}
+      </Modal>
+            <Modal isOpen={showRateConfirmation} onClose={() => setShowRateConfirmation(false)} title="Effort and Person-Hour Rates">
+        <div className="flex flex-col gap-4 py-4">
+          <p className="text-sm">
+            Do you want to keep the default values?
+          </p>
+          <div className="flex gap-3 justify-end mt-4">
+            <Button variant="outline" onClick={async () => {
+                setShowRateConfirmation(false);
+                const details = await proposalApi.status(activeProposalId!);
+                setEditableIr(details.structured_ir);
+                setEditorMode('rates_only');
+                setIsEditorOpen(true);
+            }}>
+              No (Edit Rates)
+            </Button>
+            <Button variant="primary" onClick={async () => {
+                setShowRateConfirmation(false);
+                const details = await proposalApi.status(activeProposalId!);
+                await proposalApi.resumeRate(activeProposalId!, details.structured_ir?.resources || []);
+                setPolling(true);
+            }}>
+              Yes (Continue)
+            </Button>
+          </div>
+        </div>
       </Modal>
       {activeProposalId && (
         <TechSelectionModal
