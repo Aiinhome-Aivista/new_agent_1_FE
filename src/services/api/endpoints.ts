@@ -69,6 +69,10 @@ export const proposalApi = {
     });
     return res.data;
   },
+  resumeRate: async (id: string, resources: any[]): Promise<any> => {
+    const res = await apiClient.post(`/api/proposals/resume-rate/${id}`, { resources });
+    return res.data;
+  },
 };
 
 export const knowledgeApi = {
