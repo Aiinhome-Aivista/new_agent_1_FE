@@ -67,6 +67,15 @@ const Home: React.FC = () => {
   const [editableIr, setEditableIr] = useState<any>(null);
   const [savingIr, setSavingIr] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Extra upload modal states
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [pendingUploadData, setPendingUploadData] = useState<any>(null);
+  const [caseStudyFiles, setCaseStudyFiles] = useState<File[]>([]);
+  const [skipCaseStudy, setSkipCaseStudy] = useState(false);
+  const [pptTemplateFile, setPptTemplateFile] = useState<File | null>(null);
+  const caseStudyInputRef = useRef<HTMLInputElement>(null);
+  const templateInputRef = useRef<HTMLInputElement>(null);
 
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
@@ -224,17 +233,40 @@ useEffect(() => {
       toast('Your role does not have permission to create proposals.', 'error');
       return;
     }
+    // Instead of directly uploading, save the data and open the extra files modal
+    setPendingUploadData(data);
+    setCaseStudyFiles([]);
+    setSkipCaseStudy(false);
+    setPptTemplateFile(null);
+    setIsUploadModalOpen(true);
+  };
+  
+  const confirmUpload = async () => {
+    if (!pendingUploadData) return;
+    
+    // Validation
+    if (!skipCaseStudy && caseStudyFiles.length === 0) {
+      toast('Please upload a case study or check "Skip if you don\'t have any".', 'warning');
+      return;
+    }
+
     try {
+      setIsUploadModalOpen(false);
       setUploadLoading(true);
       const formData = new FormData();
-      formData.append('client_name', data.clientName);
-      formData.append('project_duration', data.projectDuration);
-      formData.append('budget', data.budget);
+      formData.append('client_name', pendingUploadData.clientName);
+      formData.append('project_duration', pendingUploadData.projectDuration);
+      formData.append('budget', pendingUploadData.budget);
 
       if (activeUploadTab === 'text') {
         formData.append('requirements_text', requirementsText);
       } else {
         selectedFiles.forEach((file) => formData.append('files', file));
+      }
+      
+      caseStudyFiles.forEach(f => formData.append('case_study_files', f));
+      if (pptTemplateFile) {
+        formData.append('ppt_template', pptTemplateFile);
       }
 
       const response = await proposalApi.upload(formData);
@@ -671,6 +703,98 @@ useEffect(() => {
           </Card>
         )}
       </div>
+
+      {/* ADDITIONAL UPLOAD MODAL */}
+      <Modal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        title="Additional Information"
+        className="max-w-xl"
+      >
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <label className="text-sm font-bold text-foreground">Do you want to upload any case studies?</label>
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${skipCaseStudy ? 'opacity-50 pointer-events-none' : ''} border-border bg-muted/20 hover:bg-muted/40`}
+              onClick={() => caseStudyInputRef.current?.click()}
+            >
+              <FileUp size={24} className="text-muted-foreground" />
+              <div className="text-xs text-muted-foreground text-center">
+                <span className="font-semibold text-primary">Click to upload</span> case study documents
+              </div>
+              <input
+                type="file"
+                ref={caseStudyInputRef}
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setCaseStudyFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                  }
+                }}
+              />
+            </div>
+            {caseStudyFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {caseStudyFiles.map((file, idx) => (
+                  <Badge key={idx} variant="secondary" className="gap-1">
+                    {file.name}
+                    <X size={12} className="cursor-pointer" onClick={() => setCaseStudyFiles(prev => prev.filter((_, i) => i !== idx))} />
+                  </Badge>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-2 mt-1">
+              <input 
+                type="checkbox" 
+                id="skipCaseStudy" 
+                checked={skipCaseStudy} 
+                onChange={(e) => {
+                    setSkipCaseStudy(e.target.checked);
+                    if (e.target.checked) setCaseStudyFiles([]);
+                }}
+                className="rounded border-input text-primary focus:ring-primary"
+              />
+              <label htmlFor="skipCaseStudy" className="text-xs text-muted-foreground cursor-pointer">Skip if you don't have any</label>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-4 border-t border-border">
+            <label className="text-sm font-bold text-foreground">Upload a PPT template format (optional)</label>
+            <div
+              className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer border-border bg-muted/20 hover:bg-muted/40"
+              onClick={() => templateInputRef.current?.click()}
+            >
+              <FileUp size={24} className="text-muted-foreground" />
+              <div className="text-xs text-muted-foreground text-center">
+                <span className="font-semibold text-primary">Click to upload</span> .pptx template
+              </div>
+              <input
+                type="file"
+                ref={templateInputRef}
+                accept=".pptx"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    setPptTemplateFile(e.target.files[0]);
+                  }
+                }}
+              />
+            </div>
+            {pptTemplateFile && (
+              <Badge variant="secondary" className="gap-1 w-fit">
+                {pptTemplateFile.name}
+                <X size={12} className="cursor-pointer" onClick={() => setPptTemplateFile(null)} />
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setIsUploadModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={confirmUpload} disabled={uploadLoading}>Confirm & Assemble</Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* HITL SOLUTION REVIEW EDITOR MODAL */}
       <Modal
