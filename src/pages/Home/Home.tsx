@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  FileUp, Play, Download, History, Layers, Clock,
+  FileUp, Pause, Play, Download, History, Layers, Clock,
   CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save, Eye,
   Send, ShieldCheck, Award, AlertTriangle, Lock
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
+import { ProposalStatusDetails } from '../../types/api.types';
 import { useProposalStore, useAuthStore } from '../../store';
 import { useRolePermissions } from '../../hooks';
 import { proposalUploadSchema } from '../../utils/validators';
@@ -137,12 +138,15 @@ useEffect(() => {
   useEffect(() => {
     let timerId: any = null;
     let isFetching = false;
+    let isCancelled = false;
 
     const poll = async () => {
-      if (!activeProposalId || isFetching) return;
+      if (!activeProposalId || isFetching || isCancelled) return;
       isFetching = true;
       try {
         const details = await proposalApi.status(activeProposalId);
+        if (isCancelled) return;
+        
         const currentDetails = useProposalStore.getState().statusDetails;
         if (!currentDetails || currentDetails.proposal.id === activeProposalId) {
           setStatusDetails(details);
@@ -167,19 +171,22 @@ useEffect(() => {
             }
             fetchProposals();
           } else {
-            timerId = setTimeout(poll, 3000);
+            if (!isCancelled) timerId = setTimeout(poll, 3000);
           }
         }
       } catch (err) {
         console.error('Polling status failed:', err);
-        timerId = setTimeout(poll, 3000);
+        if (!isCancelled) timerId = setTimeout(poll, 3000);
       } finally {
         isFetching = false;
       }
     };
 
     if (isPolling && activeProposalId) poll();
-    return () => { if (timerId) clearTimeout(timerId); };
+    return () => {
+      isCancelled = true;
+      if (timerId) clearTimeout(timerId);
+    };
   }, [isPolling, activeProposalId]);
 
   // ── File handling ───────────────────────────────────────
@@ -406,7 +413,42 @@ useEffect(() => {
     return 'outline';
   };
 
+  const getProposalBadgeVariant = (status: string) => {
+    if (status === 'Complete' || status === 'Published') return 'success';
+    if (status === 'Failed') return 'destructive';
+    if (status === 'Pending') return 'warning';
+    return 'secondary';
+  };
+
+
+  const handlePause = async () => {
+    if (!statusDetails) return;
+    try {
+      // @ts-ignore
+      await proposalApi.pauseProposal(statusDetails.proposal.id);
+      toast('Proposal paused', 'success');
+      const details = await proposalApi.status(statusDetails.proposal.id);
+      setStatusDetails(details);
+    } catch (e) {
+      toast('Failed to pause proposal', 'error');
+    }
+  };
+
+  const handleStart = async () => {
+    if (!statusDetails) return;
+    try {
+      // @ts-ignore
+      await proposalApi.resumeFailedProposal(statusDetails.proposal.id);
+      toast('Proposal started', 'success');
+      const details = await proposalApi.status(statusDetails.proposal.id);
+      setStatusDetails(details);
+    } catch (e) {
+      toast('Failed to start proposal', 'error');
+    }
+  };
+
   const currentStepIndex = (() => {
+
     const runningStep = statusDetails?.steps?.find((s) => s.status === 'running');
     if (runningStep) {
       return STEP_PHASES.findIndex((phase) => phase.name === runningStep.step_name);
@@ -423,7 +465,6 @@ useEffect(() => {
   })();
 
   const currentStatus = statusDetails?.proposal.status ?? '';
-  const isBusinessWorkflow = BUSINESS_STATUSES.includes(currentStatus);
 
   // Transition button availability based on state machine + current role
   const canApproveNow = currentStatus === 'Complete';
@@ -434,8 +475,6 @@ useEffect(() => {
     <PageWrapper>
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
 
-        {/* Role access notice removed as per single login simplification */}
-
         {/* Upload / Pipeline Card — hidden for delivery and partner, and hidden if active proposal exists */}
         {perms.canCreateProposal && !statusDetails && (
           <Card>
@@ -444,9 +483,6 @@ useEffect(() => {
                 <Play size={18} className="text-primary" />
                 Initialize Specialist Agent Pipeline
               </CardTitle>
-              {/* <CardDescription>
-                Upload client RFP specification or questionnaires to run automated analysis, solution design, estimation, and document assembly.
-              </CardDescription> */}
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(handleUpload)} className="flex flex-col gap-5">
@@ -579,6 +615,16 @@ useEffect(() => {
                     Upload
                   </Button>
                 )}
+                {currentStatus === 'Paused' || currentStatus === 'Queued' ? (
+                  <Button variant="primary" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={handleStart}>
+                    <Play size={10} /> Start
+                  </Button>
+                ) : null}
+                {(AI_RUNNING_STATUSES.includes(currentStatus) && currentStatus !== 'Complete' && currentStatus !== 'Failed') ? (
+                  <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2 border-border text-foreground hover:bg-muted" onClick={handlePause}>
+                    <Pause size={10} /> Pause
+                  </Button>
+                ) : null}
                 <Badge variant={getProposalBadgeVariant(currentStatus)}>
                   {currentStatus}
                 </Badge>
@@ -615,8 +661,6 @@ useEffect(() => {
                   })}
                 </div>
               )}
-
-              {/* Business Workflow Stepper removed as per user request */}
 
               {/* Agent Reasoning Logs */}
               {perms.canViewAgentLogs && (
@@ -732,6 +776,7 @@ useEffect(() => {
             </CardContent>
           </Card>
         )}
+
       </div>
 
       {/* ADDITIONAL UPLOAD MODAL */}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   History, RefreshCw, Download, Edit, Eye, Plus, Save,
-  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Send, Lock, Trash2, Play
+  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Send, Lock, Trash2, Play, Pause
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
 import { useProposalStore, useAuthStore } from '../../store';
@@ -346,7 +346,33 @@ useEffect(() => {
                   </CardDescription>
                 </div>
                   <div className="flex items-center gap-2">
-                    {(currentStatus === 'Failed' || currentStatus === 'WaitingForTechSelection' || AI_RUNNING_STATUSES.includes(currentStatus)) && (
+                    {currentStatus === 'Paused' || currentStatus === 'Queued' ? (
+                      <Button variant="primary" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
+                        try {
+                          await proposalApi.resumeProposal(statusDetails.proposal.id);
+                          toast('Proposal pipeline resumed.', 'success');
+                          fetchProposals();
+                        } catch(e) {
+                          toast('Failed to resume.', 'error');
+                        }
+                      }}>
+                        <Play size={10} /> Start
+                      </Button>
+                    ) : null}
+                    {(AI_RUNNING_STATUSES.includes(currentStatus) && currentStatus !== 'Complete' && currentStatus !== 'Failed') ? (
+                      <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2 border-border text-foreground hover:bg-muted" onClick={async () => {
+                        try {
+                          await proposalApi.pauseProposal(statusDetails.proposal.id);
+                          toast('Proposal pipeline paused.', 'success');
+                          fetchProposals();
+                        } catch(e) {
+                          toast('Failed to pause.', 'error');
+                        }
+                      }}>
+                        <Pause size={10} /> Pause
+                      </Button>
+                    ) : null}
+                    {(currentStatus === 'Failed' || currentStatus === 'WaitingForTechSelection' || currentStatus === 'WaitingForRateConfirmation' || AI_RUNNING_STATUSES.includes(currentStatus)) && (
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -359,7 +385,6 @@ useEffect(() => {
                               await proposalApi.resumeFailedProposal(statusDetails.proposal.id);
                               toast('Pipeline resumed successfully.', 'success');
                             } else {
-                              // If it's WaitingForTechSelection or already running, just navigate
                               toast('Switched to live tracking.', 'success');
                             }
                             
@@ -371,7 +396,11 @@ useEffect(() => {
                           }
                         }}
                       >
-                        <Play size={12} className="text-primary fill-primary/20" /> Resume
+                        {currentStatus === 'WaitingForTechSelection' || currentStatus === 'WaitingForRateConfirmation' ? (
+                          <>Review Details</>
+                        ) : (
+                          <><Play size={12} className="text-primary fill-primary/20" /> Resume</>
+                        )}
                       </Button>
                     )}
                     <Badge variant={getProposalBadgeVariant(currentStatus)}>

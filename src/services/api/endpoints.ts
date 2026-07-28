@@ -37,6 +37,10 @@ export const proposalApi = {
     const res = await apiClient.post(`/api/proposals/transition/${id}`, { status, user_role: userRole });
     return res.data;
   },
+  pauseProposal: async (id: string): Promise<any> => {
+    const res = await apiClient.post(API_ENDPOINTS.pauseProposal(id));
+    return res.data;
+  },
   resumeFailedProposal: async (id: string): Promise<any> => {
     const res = await apiClient.post(`/api/proposals/${id}/resume`);
     return res.data;
