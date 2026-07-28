@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
+import {
   History, RefreshCw, Download, Edit, Eye, Plus, Save,
-  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Send, Lock, Trash2, Play
+  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Lock, Trash2, Play, Pause
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
 import { useProposalStore, useAuthStore } from '../../store';
@@ -15,39 +14,37 @@ import { Input } from '../../components/ui/Input/Input';
 import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
-import { WorkflowStepper } from '../../components/ui/WorkflowStepper/WorkflowStepper';
 import { formatDate } from '../../utils/formatters';
 
 const STEP_PHASES = [
-  { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
-  { name: 'Analyzing',  label: 'Capability mapping',  icon: <Cpu size={16} /> },
-  { name: 'Designing',  label: 'Solution architecture', icon: <Layers size={16} /> },
-  { name: 'Planning',   label: 'Timeline & pricing',    icon: <Clock size={16} /> },
-  { name: 'Assembling', label: 'Reflexion assembly',    icon: <CheckCircle2 size={16} /> },
-  { name: 'Complete',   label: 'Render PowerPoint',     icon: <Download size={16} /> },
+  { name: 'Ingesting', label: 'Document parsing', icon: <FileUp size={16} /> },
+  { name: 'Analyzing', label: 'Capability mapping', icon: <Cpu size={16} /> },
+  { name: 'Designing', label: 'Solution architecture', icon: <Layers size={16} /> },
+  { name: 'Planning', label: 'Timeline & pricing', icon: <Clock size={16} /> },
+  { name: 'Assembling', label: 'Reflexion assembly', icon: <CheckCircle2 size={16} /> },
+  { name: 'Complete', label: 'Render PowerPoint', icon: <Download size={16} /> },
 ];
 
-const AI_RUNNING_STATUSES = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed'];
+const AI_RUNNING_STATUSES = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed', 'Paused'];
 const BUSINESS_STATUSES = ['Complete', 'InReview', 'Approved', 'Published', 'Rejected'];
 
 function getProposalBadgeVariant(status: string) {
   if (['Approved', 'Published'].includes(status)) return 'success';
-  if (['Failed', 'Rejected'].includes(status)) return 'destructive';
+  if (['Failed', 'Rejected', 'Paused'].includes(status)) return 'destructive';
   return 'warning';
 }
 
 const Archive: React.FC = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const { 
-    proposals, 
-    activeProposalId, 
-    statusDetails, 
-    isPolling, 
-    fetchProposals, 
-    setActiveProposalId, 
-    setStatusDetails, 
-    setPolling 
+  const {
+    proposals,
+    activeProposalId,
+    statusDetails,
+    isPolling,
+    fetchProposals,
+    setActiveProposalId,
+    setStatusDetails,
+    setPolling
   } = useProposalStore();
 
   const perms = useRolePermissions();
@@ -60,16 +57,16 @@ const Archive: React.FC = () => {
 
   const [dots, setDots] = useState("");
 
-useEffect(() => {
-  const interval = setInterval(() => {
-    setDots((prev) => {
-      if (prev === "...") return "";
-      return prev + ".";
-    });
-  }, 400);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prev) => {
+        if (prev === "...") return "";
+        return prev + ".";
+      });
+    }, 400);
 
-  return () => clearInterval(interval);
-}, []);
+    return () => clearInterval(interval);
+  }, []);
 
   // ── Fetch on mount ──────────────────────────────────────
   useEffect(() => {
@@ -121,7 +118,7 @@ useEffect(() => {
   // Audit logs for partner review
   useEffect(() => {
     if (perms.isPartner && statusDetails) {
-      adminApi.getAuditLogs().then(setAuditLogs).catch(() => {});
+      adminApi.getAuditLogs().then(setAuditLogs).catch(() => { });
     }
   }, [perms.isPartner, statusDetails]);
 
@@ -241,10 +238,9 @@ useEffect(() => {
   };
 
   const currentStatus = statusDetails?.proposal.status ?? '';
-  const isBusinessWorkflow = BUSINESS_STATUSES.includes(currentStatus);
 
-  const canApproveNow = currentStatus === 'Complete' || currentStatus === 'Rejected';
-  const canRejectNow  = currentStatus === 'Complete';
+  const canApproveNow = currentStatus === 'Complete';
+  const canRejectNow = currentStatus === 'Complete';
   const canPublishNow = currentStatus === 'Approved';
 
   return (
@@ -284,11 +280,10 @@ useEffect(() => {
                     <div
                       key={proposal.id}
                       onClick={() => handleViewStatus(proposal)}
-                      className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${
-                        statusDetails?.proposal.id === proposal.id
-                          ? 'border-primary bg-primary/5 shadow-sm'
-                          : 'border-border bg-card hover:border-primary/20 hover:bg-muted/10'
-                      }`}
+                      className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${statusDetails?.proposal.id === proposal.id
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-border bg-card hover:border-primary/20 hover:bg-muted/10'
+                        }`}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex flex-col gap-0.5">
@@ -305,7 +300,7 @@ useEffect(() => {
                           <span>Timeline: <strong>{proposal.project_duration}</strong></span>
                           <span>Budget: <strong>{proposal.budget}</strong></span>
                         </div>
-                        
+
                         {BUSINESS_STATUSES.includes(proposal.status) && perms.canDownload && (
                           <a
                             href={proposalApi.downloadUrl(proposal.id)}
@@ -335,8 +330,8 @@ useEffect(() => {
                   <CardTitle className="text-base font-bold">
                     {AI_RUNNING_STATUSES.includes(currentStatus)
                       ? <div className="flex items-center gap-1">
-                      <span>Pipeline Execution{dots}</span>
-                    </div>
+                        <span>Pipeline Execution{dots}</span>
+                      </div>
                       : `Proposal Review: completed`}
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -345,39 +340,52 @@ useEffect(() => {
                       : 'Business review workflow — human-in-the-loop approval chain'}
                   </CardDescription>
                 </div>
-                  <div className="flex items-center gap-2">
-                    {(currentStatus === 'Failed' || currentStatus === 'WaitingForTechSelection' || AI_RUNNING_STATUSES.includes(currentStatus)) && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-7 px-2 text-[10px] gap-1"
-                        onClick={async () => {
-                          try {
-                            setActiveProposalId(statusDetails.proposal.id);
-                            
-                            if (currentStatus === 'Failed') {
-                              await proposalApi.resumeFailedProposal(statusDetails.proposal.id);
-                              toast('Pipeline resumed successfully.', 'success');
-                            } else {
-                              // If it's WaitingForTechSelection or already running, just navigate
-                              toast('Switched to live tracking.', 'success');
-                            }
-                            
-                            setPolling(true);
-                            if (currentStatus === 'Failed') fetchProposals();
-                            navigate('/dashboard');
-                          } catch (err: any) {
-                            toast('Failed to resume: ' + (err.response?.data?.error || err.message), 'error');
-                          }
-                        }}
-                      >
-                        <Play size={12} className="text-primary fill-primary/20" /> Resume
-                      </Button>
-                    )}
-                    <Badge variant={getProposalBadgeVariant(currentStatus)}>
-                      {currentStatus}
-                    </Badge>
-                  </div>
+                <div className="flex items-center gap-2">
+                  {(currentStatus === 'Failed' || currentStatus === 'Paused' || currentStatus === 'Rejected') ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-[10px] gap-1 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
+                      onClick={async () => {
+                        try {
+                          setActiveProposalId(statusDetails.proposal.id);
+                          await proposalApi.resumeFailedProposal(statusDetails.proposal.id);
+                          toast('Pipeline resumed successfully.', 'success');
+                          setPolling(true);
+                          fetchProposals();
+                          const updated = await proposalApi.status(statusDetails.proposal.id);
+                          setStatusDetails(updated);
+                        } catch (err: any) {
+                          toast('Failed to resume: ' + (err.response?.data?.error || err.message), 'error');
+                        }
+                      }}
+                    >
+                      <Play size={12} className="text-emerald-600 fill-emerald-600/20" /> Resume
+                    </Button>
+                  ) : (currentStatus !== 'Complete' && AI_RUNNING_STATUSES.includes(currentStatus)) ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-[10px] gap-1 text-amber-600 border-amber-500/30 hover:bg-amber-500/10"
+                      onClick={async () => {
+                        try {
+                          await proposalApi.pauseProposal(statusDetails.proposal.id);
+                          toast('Pipeline paused (Stop Ache).', 'success');
+                          fetchProposals();
+                          const updated = await proposalApi.status(statusDetails.proposal.id);
+                          setStatusDetails(updated);
+                        } catch (err: any) {
+                          toast('Failed to pause: ' + (err.response?.data?.error || err.message), 'error');
+                        }
+                      }}
+                    >
+                      <Pause size={12} className="text-amber-600" /> Pause
+                    </Button>
+                  ) : null}
+                  <Badge variant={getProposalBadgeVariant(currentStatus)}>
+                    {currentStatus}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-6">
                 {/* AI Pipeline Stepper */}
@@ -388,12 +396,11 @@ useEffect(() => {
                       return (
                         <div
                           key={phase.name}
-                          className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${
-                            stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
-                            stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
-                            stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
-                            'bg-muted/40 border-border text-muted-foreground'
-                          }`}
+                          className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
+                            stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
+                              stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                                'bg-muted/40 border-border text-muted-foreground'
+                            }`}
                         >
                           {phase.icon}
                           <span className="text-xs font-bold leading-none">{phase.name}</span>
@@ -476,16 +483,16 @@ useEffect(() => {
                         {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
                       </Button>
                       {['Approved', 'Published'].includes(currentStatus) && perms.canDownload && (
-                      <a
-                        href={proposalApi.downloadUrl(statusDetails.proposal.id)}
-                        className="flex-1"
-                        download
-                      >
-                        <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
-                          <Download size={15} /> Download Solution PPTX
-                        </Button>
-                      </a>
-                    )}
+                        <a
+                          href={proposalApi.downloadUrl(statusDetails.proposal.id)}
+                          className="flex-1"
+                          download
+                        >
+                          <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
+                            <Download size={15} /> Download Solution PPTX
+                          </Button>
+                        </a>
+                      )}
                     </div>
 
                     {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (
@@ -521,9 +528,9 @@ useEffect(() => {
       </div>
 
       {/* HITL SOLUTION REVIEW EDITOR MODAL */}
-      <Modal 
-        isOpen={isEditorOpen} 
-        onClose={() => setIsEditorOpen(false)} 
+      <Modal
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
         title={
           perms.isReadOnly
             ? 'Solution Blueprint Viewer (Read-Only — Reviewing Partner)'
