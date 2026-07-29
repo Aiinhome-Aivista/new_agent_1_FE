@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  FileUp, Play, Download, History, Layers, Clock,
+  FileUp, Pause, Play, Download, History, Layers, Clock,
   CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save, Eye,
-  Award, AlertTriangle, Lock, Pause
+  Send, ShieldCheck, Award, AlertTriangle, Lock
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
+import { ProposalStatusDetails } from '../../types/api.types';
 import { useProposalStore, useAuthStore } from '../../store';
 import { useRolePermissions } from '../../hooks';
 import { proposalUploadSchema } from '../../utils/validators';
@@ -17,6 +18,7 @@ import { Input } from '../../components/ui/Input/Input';
 import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
+import { WorkflowStepper } from '../../components/ui/WorkflowStepper/WorkflowStepper';
 import { TechSelectionModal } from '../../components/TechSelectionModal';
 
 const STEP_PHASES = [
@@ -31,6 +33,9 @@ const STEP_PHASES = [
 // Pipeline-only statuses (AI running, business workflow not yet started)
 const AI_RUNNING_STATUSES = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed'];
 
+// Business workflow statuses (AI done, human review in progress)
+const BUSINESS_STATUSES = ['Complete', 'InReview', 'Approved', 'Published', 'Rejected'];
+
 // Status badge variant helpers
 function getProposalBadgeVariant(status: string) {
   if (['Approved', 'Published'].includes(status)) return 'success';
@@ -41,7 +46,6 @@ function getProposalBadgeVariant(status: string) {
 const Home: React.FC = () => {
   const { toast } = useToast();
   const {
-    proposals,
     activeProposalId,
     statusDetails,
     isPolling,
@@ -60,13 +64,12 @@ const Home: React.FC = () => {
   const [requirementsText, setRequirementsText] = useState('');
   const [activeUploadTab, setActiveUploadTab] = useState<'upload' | 'text'>('upload');
   const [isDragActive, setIsDragActive] = useState(false);
-  const [showUploadForm, setShowUploadForm] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<'full' | 'rates_only'>('full');
   const [editableIr, setEditableIr] = useState<any>(null);
   const [savingIr, setSavingIr] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  
   // Extra upload modal states
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [pendingUploadData, setPendingUploadData] = useState<any>(null);
@@ -80,16 +83,16 @@ const Home: React.FC = () => {
 
   const [dots, setDots] = useState("");
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDots((prev) => {
-        if (prev === "...") return "";
-        return prev + ".";
-      });
-    }, 400);
+useEffect(() => {
+  const interval = setInterval(() => {
+    setDots((prev) => {
+      if (prev === "...") return "";
+      return prev + ".";
+    });
+  }, 400);
 
-    return () => clearInterval(interval);
-  }, []);
+  return () => clearInterval(interval);
+}, []);
 
   // Audit logs for partner review
   useEffect(() => {
@@ -135,12 +138,15 @@ const Home: React.FC = () => {
   useEffect(() => {
     let timerId: any = null;
     let isFetching = false;
+    let isCancelled = false;
 
     const poll = async () => {
-      if (!activeProposalId || isFetching) return;
+      if (!activeProposalId || isFetching || isCancelled) return;
       isFetching = true;
       try {
         const details = await proposalApi.status(activeProposalId);
+        if (isCancelled) return;
+        
         const currentDetails = useProposalStore.getState().statusDetails;
         if (!currentDetails || currentDetails.proposal.id === activeProposalId) {
           setStatusDetails(details);
@@ -154,36 +160,33 @@ const Home: React.FC = () => {
           setPolling(false);
           setShowRateConfirmation(true);
         } else {
-          const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus) || proposalStatus === 'Queued';
+          const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
           if (!isRunning) {
             setPolling(false);
+            setActiveProposalId(null);
             if (proposalStatus === 'Failed') {
-              setActiveProposalId(null);
               toast('Proposal generation failed. Check step logs.', 'error');
-            } else if (proposalStatus === 'Complete') {
-              setActiveProposalId(null);
-              toast('Proposal PowerPoint generation completed!', 'success');
-            } else if (proposalStatus === 'Paused') {
-              // Just stop polling, keep activeProposalId so user can see it paused
             } else {
-              // For other statuses like Draft, Approved, Rejected, etc.
-              setActiveProposalId(null);
+              toast('Proposal PowerPoint generation completed!', 'success');
             }
             fetchProposals();
           } else {
-            timerId = setTimeout(poll, 3000);
+            if (!isCancelled) timerId = setTimeout(poll, 3000);
           }
         }
       } catch (err) {
         console.error('Polling status failed:', err);
-        timerId = setTimeout(poll, 3000);
+        if (!isCancelled) timerId = setTimeout(poll, 3000);
       } finally {
         isFetching = false;
       }
     };
 
     if (isPolling && activeProposalId) poll();
-    return () => { if (timerId) clearTimeout(timerId); };
+    return () => {
+      isCancelled = true;
+      if (timerId) clearTimeout(timerId);
+    };
   }, [isPolling, activeProposalId]);
 
   // ── File handling ───────────────────────────────────────
@@ -249,10 +252,10 @@ const Home: React.FC = () => {
     setPptTemplateFile(null);
     setIsUploadModalOpen(true);
   };
-
+  
   const confirmUpload = async () => {
     if (!pendingUploadData) return;
-
+    
     // Validation
     if (!skipCaseStudy && caseStudyFiles.length === 0) {
       toast('Please upload a case study or check "Skip if you don\'t have any".', 'warning');
@@ -272,19 +275,14 @@ const Home: React.FC = () => {
       } else {
         selectedFiles.forEach((file) => formData.append('files', file));
       }
-
+      
       caseStudyFiles.forEach(f => formData.append('case_study_files', f));
       if (pptTemplateFile) {
         formData.append('ppt_template', pptTemplateFile);
       }
 
       const response = await proposalApi.upload(formData);
-      if (response.status === 'Queued') {
-        toast('Proposal added to serial queue (1st upload runs 1st, others wait in line).', 'info');
-      } else {
-        toast('Document intake complete. Initiating specialist agents workflow.', 'info');
-      }
-      fetchProposals();
+      toast('Document intake complete. Initiating specialist agents workflow.', 'info');
 
       setActiveProposalId(response.proposal_id);
       setStatusDetails(null);
@@ -292,7 +290,6 @@ const Home: React.FC = () => {
       setSelectedFiles([]);
       setRequirementsText('');
       setActiveUploadTab('upload');
-      setShowUploadForm(false);
       reset();
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
@@ -381,9 +378,9 @@ const Home: React.FC = () => {
 
   const updateResource = (index: number, field: string, val: string) => {
     if (!editableIr?.resources) return;
-    const res = [...editableIr.resources];
+    const res = [...editableIr.resources]; 
     res[index][field] = val;
-
+    
     // Auto calculate total if rate or person_hours changes
     if (field === 'rate' || field === 'person_hours') {
       try {
@@ -396,7 +393,7 @@ const Home: React.FC = () => {
         // ignore
       }
     }
-
+    
     setEditableIr({ ...editableIr, resources: res });
   };
 
@@ -412,12 +409,46 @@ const Home: React.FC = () => {
     if (!step) return 'outline';
     if (step.status === 'completed') return 'success';
     if (step.status === 'running') return 'warning';
-    if (step.status === 'paused') return 'warning';
     if (step.status === 'failed') return 'destructive';
     return 'outline';
   };
 
+  const getProposalBadgeVariant = (status: string) => {
+    if (status === 'Complete' || status === 'Published') return 'success';
+    if (status === 'Failed') return 'destructive';
+    if (status === 'Pending') return 'warning';
+    return 'secondary';
+  };
+
+
+  const handlePause = async () => {
+    if (!statusDetails) return;
+    try {
+      // @ts-ignore
+      await proposalApi.pauseProposal(statusDetails.proposal.id);
+      toast('Proposal paused', 'success');
+      const details = await proposalApi.status(statusDetails.proposal.id);
+      setStatusDetails(details);
+    } catch (e) {
+      toast('Failed to pause proposal', 'error');
+    }
+  };
+
+  const handleStart = async () => {
+    if (!statusDetails) return;
+    try {
+      // @ts-ignore
+      await proposalApi.resumeFailedProposal(statusDetails.proposal.id);
+      toast('Proposal started', 'success');
+      const details = await proposalApi.status(statusDetails.proposal.id);
+      setStatusDetails(details);
+    } catch (e) {
+      toast('Failed to start proposal', 'error');
+    }
+  };
+
   const currentStepIndex = (() => {
+
     const runningStep = statusDetails?.steps?.find((s) => s.status === 'running');
     if (runningStep) {
       return STEP_PHASES.findIndex((phase) => phase.name === runningStep.step_name);
@@ -444,19 +475,14 @@ const Home: React.FC = () => {
     <PageWrapper>
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
 
-        {/* Role access notice removed as per single login simplification */}
-
         {/* Upload / Pipeline Card — hidden for delivery and partner, and hidden if active proposal exists */}
-        {perms.canCreateProposal && (!statusDetails || showUploadForm) && (
+        {perms.canCreateProposal && !statusDetails && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Play size={18} className="text-primary" />
                 Initialize Specialist Agent Pipeline
               </CardTitle>
-              {/* <CardDescription>
-                Upload client RFP specification or questionnaires to run automated analysis, solution design, estimation, and document assembly.
-              </CardDescription> */}
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(handleUpload)} className="flex flex-col gap-5">
@@ -465,8 +491,8 @@ const Home: React.FC = () => {
                   <button
                     type="button"
                     className={`flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold border-b-2 transition-all outline-none ${activeUploadTab === 'upload'
-                      ? 'border-primary text-primary font-bold'
-                      : 'border-transparent text-muted-foreground hover:text-foreground/80'
+                        ? 'border-primary text-primary font-bold'
+                        : 'border-transparent text-muted-foreground hover:text-foreground/80'
                       }`}
                     onClick={() => setActiveUploadTab('upload')}
                   >
@@ -476,8 +502,8 @@ const Home: React.FC = () => {
                   <button
                     type="button"
                     className={`flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold border-b-2 transition-all outline-none ${activeUploadTab === 'text'
-                      ? 'border-primary text-primary font-bold'
-                      : 'border-transparent text-muted-foreground hover:text-foreground/80'
+                        ? 'border-primary text-primary font-bold'
+                        : 'border-transparent text-muted-foreground hover:text-foreground/80'
                       }`}
                     onClick={() => setActiveUploadTab('text')}
                   >
@@ -549,33 +575,36 @@ const Home: React.FC = () => {
           </Card>
         )}
 
-        {/* Pipeline Status + Workflow Panel — hidden while upload form is open, but pipeline keeps running in background */}
-        {!showUploadForm && (statusDetails || proposals.some(p => !['Complete', 'Approved', 'Published'].includes(p.status))) && (
+        {/* Pipeline Status + Workflow Panel */}
+        {statusDetails && (
           <Card className="border-primary/20 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between p-1.5! px-3! gap-2">
               <div>
                 <CardTitle className="text-sm font-bold">
-                  {(AI_RUNNING_STATUSES.includes(currentStatus) || !statusDetails)
+                  {AI_RUNNING_STATUSES.includes(currentStatus)
                     ?
                     <div className="flex items-center gap-1">
-                      <span>Pipeline Execution{dots}</span>
-                    </div>
+                    <span>Pipeline Execution{dots}</span>
+</div>
                     : `Proposal Review: Completed`}
                 </CardTitle>
                 <CardDescription className="text-[12px] mt-0.5">
-                  {(AI_RUNNING_STATUSES.includes(currentStatus) || !statusDetails)
+                  {AI_RUNNING_STATUSES.includes(currentStatus)
                     ? 'Tracking multi-agent sequential/parallel orchestration'
                     : 'Business review workflow — human-in-the-loop approval chain'}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 {perms.canCreateProposal && (
                   <Button
                     size="sm"
                     variant="outline"
                     className="text-[10px] py-1 h-7 gap-1"
                     onClick={() => {
-                      setShowUploadForm(prev => !prev);
+                      setStatusDetails(null);
+                      setActiveProposalId(null);
+                      setPolling(false);
+                      setShowTechSelection(false);
                       setSelectedFiles([]);
                       setRequirementsText('');
                       setActiveUploadTab('upload');
@@ -586,46 +615,16 @@ const Home: React.FC = () => {
                     Upload
                   </Button>
                 )}
-                {perms.canCreateProposal && currentStatus === 'WaitingForTechSelection' && (
-                  <Button
-                    size="sm"
-                    className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs py-1 h-7 animate-pulse"
-                    onClick={() => setShowTechSelection(true)}
-                  >
-                    Select Tech & Resume
+                {currentStatus === 'Paused' || currentStatus === 'Queued' ? (
+                  <Button variant="primary" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={handleStart}>
+                    <Play size={10} /> Start
                   </Button>
-                )}
-                {perms.canCreateProposal && currentStatus === 'Failed' && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs py-1 h-7 border-destructive text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      if (statusDetails?.proposal.id) {
-                        proposalApi.resumeFailedProposal(statusDetails.proposal.id)
-                          .then(() => {
-                            toast('Retrying failed proposal pipeline...', 'info');
-                            setPolling(true);
-                            fetchProposals();
-                          })
-                          .catch(() => toast('Failed to resume pipeline', 'error'));
-                      }
-                    }}
-                  >
-                    <Play size={12} className="mr-1" />
-                    Retry Pipeline
+                ) : null}
+                {(AI_RUNNING_STATUSES.includes(currentStatus) && currentStatus !== 'Complete' && currentStatus !== 'Failed') ? (
+                  <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2 border-border text-foreground hover:bg-muted" onClick={handlePause}>
+                    <Pause size={10} /> Pause
                   </Button>
-                )}
-                {perms.canDownload && statusDetails?.proposal.generated_file_path && (
-                  <a
-                    href={proposalApi.downloadUrl(statusDetails.proposal.id)}
-                    download
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors h-7"
-                  >
-                    <Download size={13} />
-                    Download PPTX
-                  </a>
-                )}
+                ) : null}
                 <Badge variant={getProposalBadgeVariant(currentStatus)}>
                   {currentStatus}
                 </Badge>
@@ -633,286 +632,151 @@ const Home: React.FC = () => {
             </CardHeader>
             <CardContent className="flex flex-col gap-2 !p-2 !px-3">
 
-              {/* ── UNCOMPLETED PIPELINES TRACKER (Cholche vs Stop Ache vs Queue) ── */}
-              {/* {proposals.filter(p => !['Complete', 'Approved', 'Published'].includes(p.status)).length > 0 && (
-                <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col gap-2 shadow-sm my-1">
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <div className="flex items-center gap-2">
-                      <Cpu size={15} className="text-primary animate-pulse" />
-                      <span className="text-xs font-bold text-foreground">
-                        Uncompleted Pipelines Tracker (Cholche / Stop Ache / Queue)
-                      </span>
-                      <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-bold">
-                        {proposals.filter(p => !['Complete', 'Approved', 'Published'].includes(p.status)).length} Active
-                      </Badge>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground font-medium">
-                      Select pipeline to inspect stepper & order
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    {proposals
-                      .filter(p => !['Complete', 'Approved', 'Published'].includes(p.status))
-                      .map((p, index) => {
-                        const isPaused = p.status === 'Paused';
-                        const isFailed = p.status === 'Failed' || p.status === 'Rejected';
-                        const isWaiting = p.status === 'Queued' || p.status === 'WaitingForTechSelection' || p.status === 'Draft';
-                        const isRunning = !isPaused && !isFailed && !isWaiting;
-                        const isSelected = p.id === statusDetails?.proposal.id;
-
-                        return (
-                          <div
-                            key={p.id}
-                            onClick={() => {
-                              setActiveProposalId(p.id);
-                              setPolling(true);
-                            }}
-                            className={`flex items-center justify-between p-2.5 rounded-lg border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'border-primary bg-primary/10 font-medium shadow-sm'
-                                : 'border-border/60 bg-card/60 hover:bg-muted/40'
+              {/* AI Pipeline Stepper — only show when AI is running or just finished */}
+              {(AI_RUNNING_STATUSES.includes(currentStatus) || currentStatus === 'Complete') && (
+                <div className="flex items-center justify-between gap-2 py-1 w-full overflow-x-auto">
+                  {STEP_PHASES.map((phase, idx) => {
+                    const stepStatus = getStepStatusVariant(phase.name);
+                    return (
+                      <React.Fragment key={phase.name}>
+                        <div
+                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-30 ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
+                            stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
+                              stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                                'bg-muted/40 border-border text-muted-foreground'
                             }`}
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-bold text-[10px] flex items-center justify-center border border-primary/20" title={`Serial Order #${index + 1}`}>
-                                #{index + 1}
-                              </span>
-                              <span className="font-bold text-xs text-foreground">
-                                {p.client_name || `Proposal #${p.id.slice(0, 6)}`}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground font-mono">
-                                ({p.id.slice(0, 8)})
-                              </span>
-                              {isSelected && (
-                                <Badge variant="outline" className="text-[9px] py-0 px-1 border-primary/50 text-primary">
-                                  Viewing
-                                </Badge>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-2.5" onClick={(e) => e.stopPropagation()}>
-                              {isPaused ? (
-                                <Badge className="bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 text-[10px]">
-                                  <Pause size={10} />
-                                  ⏸ STOPPED (Stop Ache)
-                                </Badge>
-                              ) : isFailed ? (
-                                <Badge variant="destructive" className="font-bold flex items-center gap-1 text-[10px]">
-                                  <AlertTriangle size={10} />
-                                  🔴 STOPPED (Error)
-                                </Badge>
-                              ) : isWaiting ? (
-                                <Badge className="bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1 text-[10px]">
-                                  <Clock size={10} />
-                                  ⏳ WAITING (Queue)
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5 text-[10px]">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                                  ⚡ RUNNING (Cholche)
-                                </Badge>
-                              )}
-
-                              {isRunning ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 px-2 text-[10px] font-bold text-amber-600 border-amber-500/30 hover:bg-amber-500/10 gap-1"
-                                  onClick={async () => {
-                                    try {
-                                      await proposalApi.pauseProposal(p.id);
-                                      toast('Pipeline paused (Stop Ache). Next in queue started.', 'success');
-                                      fetchProposals();
-                                      if (statusDetails?.proposal.id === p.id) {
-                                        const updated = await proposalApi.status(p.id);
-                                        setStatusDetails(updated);
-                                      }
-                                    } catch (err: any) {
-                                      toast('Failed to pause: ' + (err.response?.data?.error || err.message), 'error');
-                                    }
-                                  }}
-                                >
-                                  <Pause size={10} /> Pause
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 px-2 text-[10px] font-bold text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10 gap-1"
-                                  onClick={async () => {
-                                    try {
-                                      await proposalApi.prioritizeProposal(p.id);
-                                      toast('Pipeline prioritized & started (Cholche).', 'success');
-                                      setPolling(true);
-                                      setActiveProposalId(p.id);
-                                      fetchProposals();
-                                      const updated = await proposalApi.status(p.id);
-                                      setStatusDetails(updated);
-                                    } catch (err: any) {
-                                      toast('Failed to continue: ' + (err.response?.data?.error || err.message), 'error');
-                                    }
-                                  }}
-                                >
-                                  <Play size={10} /> Continue / Run Now
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              )} */}
-
-              {statusDetails && (
-                <>
-                  {/* AI Pipeline Stepper — only show when AI is running or just finished */}
-                  {(AI_RUNNING_STATUSES.includes(currentStatus) || currentStatus === 'Complete') && (
-                    <div className="flex items-center justify-between gap-2 py-1 w-full overflow-x-auto">
-                      {STEP_PHASES.map((phase, idx) => {
-                        const stepStatus = getStepStatusVariant(phase.name);
-                        return (
-                          <React.Fragment key={phase.name}>
-                            <div
-                              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-30 ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
-                                stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
-                                  stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
-                                    'bg-muted/40 border-border text-muted-foreground'
-                                }`}
-                            >
-                              {phase.icon}
-                              <span className="text-xs font-bold leading-none">{phase.name}</span>
-                              <span className="text-[9px] text-muted-foreground leading-none">{phase.label}</span>
-                            </div>
-                            {idx < STEP_PHASES.length - 1 && (
-                              <MoveRight
-                                size={20}
-                                className={idx < currentStepIndex ? 'text-emerald-500 shrink-0' : 'text-muted-foreground shrink-0'}
-                              />
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Business Workflow Stepper removed as per user request */}
-
-                  {/* Agent Reasoning Logs */}
-                  {perms.canViewAgentLogs && (
-                    <div className="bg-muted p-2 px-3 rounded-xl border border-border flex flex-col gap-1 max-h-90 overflow-y-auto font-mono text-xs">
-                      <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1 font-sans mb-1 flex items-center gap-1.5">
-                        <History size={13} className="text-primary" />
-                        Agent Reasoning Logs & State Changes
-                      </span>
-                      {statusDetails.steps.length === 0 ? (
-                        <span className="text-muted-foreground italic">No logs generated yet. Starting engine loop...</span>
-                      ) : (
-                        statusDetails.steps.map((step, idx) => (
-                          <div key={idx} className="flex flex-col gap-1 border-b border-border/40 pb-1.5 mb-1 last:border-0 last:pb-0">
-                            <div className="flex items-center justify-between gap-4">
-                              <span className="font-bold text-primary">[{step.step_name}]</span>
-                              <Badge variant={step.status === 'completed' ? 'success' : step.status === 'running' ? 'warning' : step.status === 'failed' ? 'destructive' : 'secondary'} className="text-[9px] py-0 px-1.5">
-                                {step.status}
-                              </Badge>
-                            </div>
-                            {step.log_message && (
-                              <p className="text-foreground/90 whitespace-pre-wrap pl-2 leading-relaxed text-[11px]">
-                                {step.log_message}
-                              </p>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-
-                  {/* Workflow Transition Actions + Download — show once AI pipeline done */}
-                  {!AI_RUNNING_STATUSES.includes(currentStatus) && (
-                    <div className="flex flex-col gap-2 pt-1 border-t border-border/40">
-                      {/* Status + transition buttons */}
-                      <div className="flex justify-between items-center bg-muted/40 py-1.5 px-3 rounded-lg border border-border text-xs flex-wrap gap-2">
-                        <span>
-                          Approval State: <strong>{currentStatus}</strong>
-                          {statusDetails.proposal.submitted_by_role && (
-                            <span className="text-muted-foreground ml-2">
-                              (last: {statusDetails.proposal.submitted_by_role})
-                            </span>
-                          )}
-                        </span>
-                        <div className="flex gap-2 flex-wrap">
-
-                          {/* Approve */}
-                          {canApproveNow && (
-                            <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Approved')}>
-                              <CheckCircle2 size={11} /> Approve
-                            </Button>
-                          )}
-
-                          {/* Reject */}
-                          {canRejectNow && (
-                            <Button size="sm" variant="destructive" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Rejected')}>
-                              <AlertTriangle size={11} /> Reject
-                            </Button>
-                          )}
-
-                          {/* Publish (Optional) */}
-                          {canPublishNow && (
-                            <Button size="sm" variant="outline" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Published')}>
-                              <Award size={11} /> Mark as Published
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Edit / View + Download row */}
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <Button
-                          variant="outline"
-                          className="flex-1 gap-2"
-                          onClick={() => openEditor(statusDetails.structured_ir)}
                         >
-                          {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
-                          {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
-                        </Button>
-                        {['Approved', 'Published'].includes(currentStatus) && (
-                          <a
-                            href={proposalApi.downloadUrl(statusDetails.proposal.id)}
-                            className="flex-1"
-                            download
-                          >
-                            <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
-                              <Download size={15} /> Download Solution PPTX
-                            </Button>
-                          </a>
+                          {phase.icon}
+                          <span className="text-xs font-bold leading-none">{phase.name}</span>
+                          <span className="text-[9px] text-muted-foreground leading-none">{phase.label}</span>
+                        </div>
+                        {idx < STEP_PHASES.length - 1 && (
+                          <MoveRight
+                            size={20}
+                            className={idx < currentStepIndex ? 'text-emerald-500 shrink-0' : 'text-muted-foreground shrink-0'}
+                          />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Agent Reasoning Logs */}
+              {perms.canViewAgentLogs && (
+                <div className="bg-muted p-2 px-3 rounded-xl border border-border flex flex-col gap-1 max-h-90 overflow-y-auto font-mono text-xs">
+                  <span className="text-xs font-bold text-foreground border-b border-border/60 pb-1 font-sans mb-1 flex items-center gap-1.5">
+                    <History size={13} className="text-primary" />
+                    Agent Reasoning Logs & State Changes
+                  </span>
+                  {statusDetails.steps.length === 0 ? (
+                    <span className="text-muted-foreground italic">No logs generated yet. Starting engine loop...</span>
+                  ) : (
+                    statusDetails.steps.map((step, idx) => (
+                      <div key={idx} className="flex flex-col gap-1 border-b border-border/40 pb-1.5 mb-1 last:border-0 last:pb-0">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="font-bold text-primary">[{step.step_name}]</span>
+                          <Badge variant={step.status === 'completed' ? 'success' : step.status === 'running' ? 'warning' : step.status === 'failed' ? 'destructive' : 'secondary'} className="text-[9px] py-0 px-1.5">
+                            {step.status}
+                          </Badge>
+                        </div>
+                        {step.log_message && (
+                          <p className="text-foreground/90 whitespace-pre-wrap pl-2 leading-relaxed text-[11px]">
+                            {step.log_message}
+                          </p>
                         )}
                       </div>
+                    ))
+                  )}
+                </div>
+              )}
 
-                      {/* Partner — show audit logs inline */}
-                      {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (
-                        <div className="flex flex-col gap-2">
-                          <span className="text-xs font-bold text-foreground border-b border-border pb-1">Audit Trail</span>
-                          <div className="bg-muted p-2 rounded-lg font-mono text-[9px] max-h-30 overflow-y-auto border border-border leading-relaxed">
-                            {auditLogs
-                              .filter(log => log.proposal_id === statusDetails.proposal.id)
-                              .map((log: any, idx: number) => (
-                                <div key={idx} className="border-b border-border/40 pb-1.5 mb-1.5 last:border-0">
-                                  <span className="text-primary font-bold">[{log.proposal_id}]</span>{' '}
-                                  <strong>{log.step_name}</strong> — {log.log_message}{' '}
-                                  <span className="text-muted-foreground">({log.updated_at})</span>
-                                </div>
-                              ))}
-                          </div>
-                        </div>
+              {/* Workflow Transition Actions + Download — show once AI pipeline done */}
+              {!AI_RUNNING_STATUSES.includes(currentStatus) && (
+                <div className="flex flex-col gap-2 pt-1 border-t border-border/40">
+                  {/* Status + transition buttons */}
+                  <div className="flex justify-between items-center bg-muted/40 py-1.5 px-3 rounded-lg border border-border text-xs flex-wrap gap-2">
+                    <span>
+                      Approval State: <strong>{currentStatus}</strong>
+                      {statusDetails.proposal.submitted_by_role && (
+                        <span className="text-muted-foreground ml-2">
+                          (last: {statusDetails.proposal.submitted_by_role})
+                        </span>
+                      )}
+                    </span>
+                    <div className="flex gap-2 flex-wrap">
+
+                      {/* Approve */}
+                      {canApproveNow && (
+                        <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Approved')}>
+                          <CheckCircle2 size={11} /> Approve
+                        </Button>
+                      )}
+
+                      {/* Reject */}
+                      {canRejectNow && (
+                        <Button size="sm" variant="destructive" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Rejected')}>
+                          <AlertTriangle size={11} /> Reject
+                        </Button>
+                      )}
+
+                      {/* Publish (Optional) */}
+                      {canPublishNow && (
+                        <Button size="sm" variant="outline" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Published')}>
+                          <Award size={11} /> Mark as Published
+                        </Button>
                       )}
                     </div>
+                  </div>
+
+                  {/* Edit / View + Download row */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {!['Approved', 'Published'].includes(currentStatus) && (
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        onClick={() => openEditor(statusDetails.structured_ir)}
+                      >
+                        {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
+                        {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
+                      </Button>
+                    )}
+                    {['Approved', 'Published'].includes(currentStatus) && (
+                      <a
+                        href={proposalApi.downloadUrl(statusDetails.proposal.id)}
+                        className="w-full"
+                        download
+                      >
+                        <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
+                          <Download size={15} /> Download Solution PPTX
+                        </Button>
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Partner — show audit logs inline */}
+                  {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-bold text-foreground border-b border-border pb-1">Audit Trail</span>
+                      <div className="bg-muted p-2 rounded-lg font-mono text-[9px] max-h-30 overflow-y-auto border border-border leading-relaxed">
+                        {auditLogs
+                          .filter(log => log.proposal_id === statusDetails.proposal.id)
+                          .map((log: any, idx: number) => (
+                            <div key={idx} className="border-b border-border/40 pb-1.5 mb-1.5 last:border-0">
+                              <span className="text-primary font-bold">[{log.proposal_id}]</span>{' '}
+                              <strong>{log.step_name}</strong> — {log.log_message}{' '}
+                              <span className="text-muted-foreground">({log.updated_at})</span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
                   )}
-                </>
+                </div>
               )}
             </CardContent>
           </Card>
         )}
+
       </div>
 
       {/* ADDITIONAL UPLOAD MODAL */}
@@ -956,13 +820,13 @@ const Home: React.FC = () => {
               </div>
             )}
             <div className="flex items-center gap-2 mt-1">
-              <input
-                type="checkbox"
-                id="skipCaseStudy"
-                checked={skipCaseStudy}
+              <input 
+                type="checkbox" 
+                id="skipCaseStudy" 
+                checked={skipCaseStudy} 
                 onChange={(e) => {
-                  setSkipCaseStudy(e.target.checked);
-                  if (e.target.checked) setCaseStudyFiles([]);
+                    setSkipCaseStudy(e.target.checked);
+                    if (e.target.checked) setCaseStudyFiles([]);
                 }}
                 className="rounded border-input text-primary focus:ring-primary"
               />
@@ -1032,164 +896,164 @@ const Home: React.FC = () => {
             {/* Meta Sizing */}
             {editorMode === 'full' && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/40 p-4 rounded-xl border border-border">
-                  <Input
-                    label="Target Client Name"
-                    value={editableIr.client_name}
-                    disabled={!perms.canEditSolution}
-                    onChange={(e) => setEditableIr({ ...editableIr, client_name: e.target.value })}
-                  />
-                  <Input
-                    label="Duration Timeline"
-                    value={editableIr.project_duration}
-                    disabled={!perms.canEditSolution}
-                    onChange={(e) => setEditableIr({ ...editableIr, project_duration: e.target.value })}
-                  />
-                  <Input
-                    label="Financial Sizing Budget"
-                    value={editableIr.budget}
-                    disabled={!perms.canEditBudget}
-                    onChange={(e) => setEditableIr({ ...editableIr, budget: e.target.value })}
-                  />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/40 p-4 rounded-xl border border-border">
+              <Input
+                label="Target Client Name"
+                value={editableIr.client_name}
+                disabled={!perms.canEditSolution}
+                onChange={(e) => setEditableIr({ ...editableIr, client_name: e.target.value })}
+              />
+              <Input
+                label="Duration Timeline"
+                value={editableIr.project_duration}
+                disabled={!perms.canEditSolution}
+                onChange={(e) => setEditableIr({ ...editableIr, project_duration: e.target.value })}
+              />
+              <Input
+                label="Financial Sizing Budget"
+                value={editableIr.budget}
+                disabled={!perms.canEditBudget}
+                onChange={(e) => setEditableIr({ ...editableIr, budget: e.target.value })}
+              />
+            </div>
 
-                {/* Requirements and Gaps */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Requirements */}
-                  <div className="flex flex-col gap-3">
-                    <span className="text-sm font-bold text-foreground flex items-center justify-between border-b border-border/60 pb-1.5">
-                      Core Requirements List
+            {/* Requirements and Gaps */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Requirements */}
+              <div className="flex flex-col gap-3">
+                <span className="text-sm font-bold text-foreground flex items-center justify-between border-b border-border/60 pb-1.5">
+                  Core Requirements List
+                  {perms.canEditSolution && (
+                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" onClick={() => addItemToList('requirements')}>
+                      <Plus size={12} /> Add
+                    </Button>
+                  )}
+                </span>
+                <div className="flex flex-col gap-2">
+                  {editableIr.requirements?.map((req: string, idx: number) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        disabled={!perms.canEditSolution}
+                        className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs truncate"
+                        title={req}
+                        value={req}
+                        onChange={(e) => editItemInList('requirements', idx, e.target.value)}
+                      />
                       {perms.canEditSolution && (
-                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" onClick={() => addItemToList('requirements')}>
-                          <Plus size={12} /> Add
+                        <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10" onClick={() => deleteItemFromList('requirements', idx)}>
+                          <Trash2 size={13} />
                         </Button>
                       )}
-                    </span>
-                    <div className="flex flex-col gap-2">
-                      {editableIr.requirements?.map((req: string, idx: number) => (
-                        <div key={idx} className="flex gap-2 items-center">
-                          <input
-                            type="text"
-                            disabled={!perms.canEditSolution}
-                            className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs truncate"
-                            title={req}
-                            value={req}
-                            onChange={(e) => editItemInList('requirements', idx, e.target.value)}
-                          />
-                          {perms.canEditSolution && (
-                            <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10" onClick={() => deleteItemFromList('requirements', idx)}>
-                              <Trash2 size={13} />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
                     </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
 
-                  {/* Gaps / Mitigations */}
-                  <div className="flex flex-col gap-3">
-                    <span className="text-sm font-bold text-foreground flex items-center justify-between border-b border-border/60 pb-1.5">
-                      Capability Gaps & Mitigations
+              {/* Gaps / Mitigations */}
+              <div className="flex flex-col gap-3">
+                <span className="text-sm font-bold text-foreground flex items-center justify-between border-b border-border/60 pb-1.5">
+                  Capability Gaps & Mitigations
+                  {perms.canEditSolution && (
+                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" onClick={() => addItemToList('gaps')}>
+                      <Plus size={12} /> Add
+                    </Button>
+                  )}
+                </span>
+                <div className="flex flex-col gap-2">
+                  {editableIr.gaps?.map((gap: string, idx: number) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        disabled={!perms.canEditSolution}
+                        className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs truncate"
+                        title={gap}
+                        value={gap}
+                        onChange={(e) => editItemInList('gaps', idx, e.target.value)}
+                      />
                       {perms.canEditSolution && (
-                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" onClick={() => addItemToList('gaps')}>
-                          <Plus size={12} /> Add
+                        <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10" onClick={() => deleteItemFromList('gaps', idx)}>
+                          <Trash2 size={13} />
                         </Button>
                       )}
-                    </span>
-                    <div className="flex flex-col gap-2">
-                      {editableIr.gaps?.map((gap: string, idx: number) => (
-                        <div key={idx} className="flex gap-2 items-center">
-                          <input
-                            type="text"
-                            disabled={!perms.canEditSolution}
-                            className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs truncate"
-                            title={gap}
-                            value={gap}
-                            onChange={(e) => editItemInList('gaps', idx, e.target.value)}
-                          />
-                          {perms.canEditSolution && (
-                            <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10" onClick={() => deleteItemFromList('gaps', idx)}>
-                              <Trash2 size={13} />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
                     </div>
-                  </div>
+                  ))}
                 </div>
+              </div>
+            </div>
 
-                {/* Solution Pillars */}
-                <div className="flex flex-col gap-3 border-t border-border pt-4">
-                  <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5">
-                    Technical Solution Pillars (PPTX Slide 3 Layout)
-                  </span>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {editableIr.solution_pillars?.map((pillar: any, idx: number) => (
-                      <div key={idx} className="p-3 bg-muted/30 border border-border rounded-xl flex flex-col gap-2">
-                        <span className="text-[11px] font-bold text-primary uppercase">Pillar 0{idx + 1}</span>
+            {/* Solution Pillars */}
+            <div className="flex flex-col gap-3 border-t border-border pt-4">
+              <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5">
+                Technical Solution Pillars (PPTX Slide 3 Layout)
+              </span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {editableIr.solution_pillars?.map((pillar: any, idx: number) => (
+                  <div key={idx} className="p-3 bg-muted/30 border border-border rounded-xl flex flex-col gap-2">
+                    <span className="text-[11px] font-bold text-primary uppercase">Pillar 0{idx + 1}</span>
+                    <input
+                      type="text"
+                      disabled={!perms.canEditSolution}
+                      className="h-8 rounded-md border border-input bg-card px-2 text-xs font-semibold"
+                      value={pillar.title}
+                      onChange={(e) => updatePillar(idx, 'title', e.target.value)}
+                    />
+                    <textarea
+                      rows={4}
+                      disabled={!perms.canEditSolution}
+                      className="rounded-md border border-input bg-card p-2 text-[11px] leading-relaxed resize-none"
+                      value={pillar.desc}
+                      onChange={(e) => updatePillar(idx, 'desc', e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Architecture */}
+            <div className="flex flex-col gap-3 border-t border-border pt-4">
+              <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5">
+                Landscape Architecture & Components (PPTX Slide 4 Layout)
+              </span>
+              <div className="flex flex-col gap-4">
+                {editableIr.architecture?.map((layer: any, layerIdx: number) => (
+                  <div key={layerIdx} className="p-3 bg-muted/20 border border-border rounded-xl flex flex-col gap-2">
+                    <span className="text-xs font-bold text-foreground">{layer.name}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      {layer.components?.map((comp: string, compIdx: number) => (
                         <input
+                          key={compIdx}
                           type="text"
                           disabled={!perms.canEditSolution}
-                          className="h-8 rounded-md border border-input bg-card px-2 text-xs font-semibold"
-                          value={pillar.title}
-                          onChange={(e) => updatePillar(idx, 'title', e.target.value)}
+                          className="h-8 rounded-md border border-input bg-card px-2 text-xs"
+                          value={comp}
+                          onChange={(e) => updateArchitectureComponent(layerIdx, compIdx, e.target.value)}
                         />
-                        <textarea
-                          rows={4}
-                          disabled={!perms.canEditSolution}
-                          className="rounded-md border border-input bg-card p-2 text-[11px] leading-relaxed resize-none"
-                          value={pillar.desc}
-                          onChange={(e) => updatePillar(idx, 'desc', e.target.value)}
-                        />
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ))}
+              </div>
+            </div>
 
-                {/* Architecture */}
-                <div className="flex flex-col gap-3 border-t border-border pt-4">
-                  <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5">
-                    Landscape Architecture & Components (PPTX Slide 4 Layout)
-                  </span>
-                  <div className="flex flex-col gap-4">
-                    {editableIr.architecture?.map((layer: any, layerIdx: number) => (
-                      <div key={layerIdx} className="p-3 bg-muted/20 border border-border rounded-xl flex flex-col gap-2">
-                        <span className="text-xs font-bold text-foreground">{layer.name}</span>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                          {layer.components?.map((comp: string, compIdx: number) => (
-                            <input
-                              key={compIdx}
-                              type="text"
-                              disabled={!perms.canEditSolution}
-                              className="h-8 rounded-md border border-input bg-card px-2 text-xs"
-                              value={comp}
-                              onChange={(e) => updateArchitectureComponent(layerIdx, compIdx, e.target.value)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+            {/* Timeline Phases — Delivery editable */}
+            <div className="flex flex-col gap-3 border-t border-border pt-4">
+              <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5 flex items-center justify-between">
+                Timeline Phases & Milestones (PPTX Slide 5 Layout)
+                {!perms.canEditDelivery && <span className="text-[10px] text-muted-foreground font-normal flex items-center gap-1"><Lock size={10} /> Delivery Lead editable</span>}
+              </span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {editableIr.timeline_phases?.map((phase: any, idx: number) => (
+                  <div key={idx} className="p-3 bg-muted/20 border border-border rounded-xl flex flex-col gap-2">
+                    <span className="text-[11px] font-bold text-primary uppercase">Phase 0{idx + 1}</span>
+                    <input type="text" disabled={!perms.canEditDelivery} className="h-8 rounded-md border border-input bg-card px-2 text-xs font-semibold" value={phase.phase} onChange={(e) => updateTimelinePhase(idx, 'phase', e.target.value)} />
+                    <input type="text" disabled={!perms.canEditDelivery} className="h-8 rounded-md border border-input bg-card px-2 text-xs" value={phase.duration} onChange={(e) => updateTimelinePhase(idx, 'duration', e.target.value)} />
+                    <textarea rows={3} disabled={!perms.canEditDelivery} className="rounded-md border border-input bg-card p-2 text-[11px] leading-relaxed resize-none" value={phase.deliverables} onChange={(e) => updateTimelinePhase(idx, 'deliverables', e.target.value)} />
                   </div>
-                </div>
-
-                {/* Timeline Phases — Delivery editable */}
-                <div className="flex flex-col gap-3 border-t border-border pt-4">
-                  <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5 flex items-center justify-between">
-                    Timeline Phases & Milestones (PPTX Slide 5 Layout)
-                    {!perms.canEditDelivery && <span className="text-[10px] text-muted-foreground font-normal flex items-center gap-1"><Lock size={10} /> Delivery Lead editable</span>}
-                  </span>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {editableIr.timeline_phases?.map((phase: any, idx: number) => (
-                      <div key={idx} className="p-3 bg-muted/20 border border-border rounded-xl flex flex-col gap-2">
-                        <span className="text-[11px] font-bold text-primary uppercase">Phase 0{idx + 1}</span>
-                        <input type="text" disabled={!perms.canEditDelivery} className="h-8 rounded-md border border-input bg-card px-2 text-xs font-semibold" value={phase.phase} onChange={(e) => updateTimelinePhase(idx, 'phase', e.target.value)} />
-                        <input type="text" disabled={!perms.canEditDelivery} className="h-8 rounded-md border border-input bg-card px-2 text-xs" value={phase.duration} onChange={(e) => updateTimelinePhase(idx, 'duration', e.target.value)} />
-                        <textarea rows={3} disabled={!perms.canEditDelivery} className="rounded-md border border-input bg-card p-2 text-[11px] leading-relaxed resize-none" value={phase.deliverables} onChange={(e) => updateTimelinePhase(idx, 'deliverables', e.target.value)} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
+                ))}
+              </div>
+            </div>
+            </>
             )}
 
             {/* Resources */}
@@ -1227,37 +1091,37 @@ const Home: React.FC = () => {
             {/* Skills Mapping */}
             {editorMode === 'full' && (
               <>
-                <div className="flex flex-col gap-3 border-t border-border pt-4">
-                  <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5 flex items-center justify-between">
-                    Skills Inventory & Competency Mapping (PPTX Slide 7 Layout)
-                    {!perms.canEditDelivery && <span className="text-[10px] text-muted-foreground font-normal flex items-center gap-1"><Lock size={10} /> Delivery Lead editable</span>}
-                  </span>
-                  <div className="flex flex-col gap-2 max-h-55 overflow-y-auto pr-1">
-                    {editableIr.skills_mapping?.map((mapping: any, idx: number) => (
-                      <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-muted/20 p-2 border border-border rounded-lg items-center">
-                        {[
-                          { label: 'Skill Keyword', field: 'skill', ph: 'Skill' },
-                          { label: 'Target Role', field: 'role', ph: 'Role' },
-                          { label: 'Internal Competency', field: 'asset', ph: 'Asset' },
-                          { label: 'Confidence', field: 'conf', ph: 'Confidence' },
-                        ].map(({ label, field, ph }) => (
-                          <div key={field} className="flex flex-col gap-0.5">
-                            <span className="text-[9px] text-muted-foreground uppercase font-bold">{label}</span>
-                            <input
-                              type="text"
-                              disabled={!perms.canEditDelivery}
-                              className="h-8 rounded-md border border-input bg-card px-2 text-[11px]"
-                              placeholder={ph}
-                              value={mapping[field]}
-                              onChange={(e) => updateSkillMapping(idx, field as any, e.target.value)}
-                            />
-                          </div>
-                        ))}
+            <div className="flex flex-col gap-3 border-t border-border pt-4">
+              <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5 flex items-center justify-between">
+                Skills Inventory & Competency Mapping (PPTX Slide 7 Layout)
+                {!perms.canEditDelivery && <span className="text-[10px] text-muted-foreground font-normal flex items-center gap-1"><Lock size={10} /> Delivery Lead editable</span>}
+              </span>
+              <div className="flex flex-col gap-2 max-h-55 overflow-y-auto pr-1">
+                {editableIr.skills_mapping?.map((mapping: any, idx: number) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-muted/20 p-2 border border-border rounded-lg items-center">
+                    {[
+                      { label: 'Skill Keyword', field: 'skill', ph: 'Skill' },
+                      { label: 'Target Role', field: 'role', ph: 'Role' },
+                      { label: 'Internal Competency', field: 'asset', ph: 'Asset' },
+                      { label: 'Confidence', field: 'conf', ph: 'Confidence' },
+                    ].map(({ label, field, ph }) => (
+                      <div key={field} className="flex flex-col gap-0.5">
+                        <span className="text-[9px] text-muted-foreground uppercase font-bold">{label}</span>
+                        <input
+                          type="text"
+                          disabled={!perms.canEditDelivery}
+                          className="h-8 rounded-md border border-input bg-card px-2 text-[11px]"
+                          placeholder={ph}
+                          value={mapping[field]}
+                          onChange={(e) => updateSkillMapping(idx, field as any, e.target.value)}
+                        />
                       </div>
                     ))}
                   </div>
-                </div>
-              </>
+                ))}
+              </div>
+            </div>
+            </>
             )}
 
             {/* Save / Close */}
@@ -1275,26 +1139,26 @@ const Home: React.FC = () => {
           </div>
         )}
       </Modal>
-      <Modal isOpen={showRateConfirmation} onClose={() => setShowRateConfirmation(false)} title="Effort and Person-Hour Rates">
+            <Modal isOpen={showRateConfirmation} onClose={() => setShowRateConfirmation(false)} title="Effort and Person-Hour Rates">
         <div className="flex flex-col gap-4 py-4">
           <p className="text-sm">
             Do you want to keep the default values?
           </p>
           <div className="flex gap-3 justify-end mt-4">
             <Button variant="outline" onClick={async () => {
-              setShowRateConfirmation(false);
-              const details = await proposalApi.status(activeProposalId!);
-              setEditableIr(details.structured_ir);
-              setEditorMode('rates_only');
-              setIsEditorOpen(true);
+                setShowRateConfirmation(false);
+                const details = await proposalApi.status(activeProposalId!);
+                setEditableIr(details.structured_ir);
+                setEditorMode('rates_only');
+                setIsEditorOpen(true);
             }}>
               No (Edit Rates)
             </Button>
             <Button variant="primary" onClick={async () => {
-              setShowRateConfirmation(false);
-              const details = await proposalApi.status(activeProposalId!);
-              await proposalApi.resumeRate(activeProposalId!, details.structured_ir?.resources || []);
-              setPolling(true);
+                setShowRateConfirmation(false);
+                const details = await proposalApi.status(activeProposalId!);
+                await proposalApi.resumeRate(activeProposalId!, details.structured_ir?.resources || []);
+                setPolling(true);
             }}>
               Yes (Continue)
             </Button>

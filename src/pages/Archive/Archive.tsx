@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
+import { 
   History, RefreshCw, Download, Edit, Eye, Plus, Save,
   AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Send, Lock, Trash2, Play, Pause
 } from 'lucide-react';
@@ -19,12 +19,12 @@ import { WorkflowStepper } from '../../components/ui/WorkflowStepper/WorkflowSte
 import { formatDate } from '../../utils/formatters';
 
 const STEP_PHASES = [
-  { name: 'Ingesting', label: 'Document parsing', icon: <FileUp size={16} /> },
-  { name: 'Analyzing', label: 'Capability mapping', icon: <Cpu size={16} /> },
-  { name: 'Designing', label: 'Solution architecture', icon: <Layers size={16} /> },
-  { name: 'Planning', label: 'Timeline & pricing', icon: <Clock size={16} /> },
-  { name: 'Assembling', label: 'Reflexion assembly', icon: <CheckCircle2 size={16} /> },
-  { name: 'Complete', label: 'Render PowerPoint', icon: <Download size={16} /> },
+  { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
+  { name: 'Analyzing',  label: 'Capability mapping',  icon: <Cpu size={16} /> },
+  { name: 'Designing',  label: 'Solution architecture', icon: <Layers size={16} /> },
+  { name: 'Planning',   label: 'Timeline & pricing',    icon: <Clock size={16} /> },
+  { name: 'Assembling', label: 'Reflexion assembly',    icon: <CheckCircle2 size={16} /> },
+  { name: 'Complete',   label: 'Render PowerPoint',     icon: <Download size={16} /> },
 ];
 
 const AI_RUNNING_STATUSES = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed'];
@@ -39,15 +39,15 @@ function getProposalBadgeVariant(status: string) {
 const Archive: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const {
-    proposals,
-    activeProposalId,
-    statusDetails,
-    isPolling,
-    fetchProposals,
-    setActiveProposalId,
-    setStatusDetails,
-    setPolling
+  const { 
+    proposals, 
+    activeProposalId, 
+    statusDetails, 
+    isPolling, 
+    fetchProposals, 
+    setActiveProposalId, 
+    setStatusDetails, 
+    setPolling 
   } = useProposalStore();
 
   const perms = useRolePermissions();
@@ -60,16 +60,16 @@ const Archive: React.FC = () => {
 
   const [dots, setDots] = useState("");
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDots((prev) => {
-        if (prev === "...") return "";
-        return prev + ".";
-      });
-    }, 400);
+useEffect(() => {
+  const interval = setInterval(() => {
+    setDots((prev) => {
+      if (prev === "...") return "";
+      return prev + ".";
+    });
+  }, 400);
 
-    return () => clearInterval(interval);
-  }, []);
+  return () => clearInterval(interval);
+}, []);
 
   // ── Fetch on mount ──────────────────────────────────────
   useEffect(() => {
@@ -91,19 +91,14 @@ const Archive: React.FC = () => {
           setStatusDetails(details);
         }
         const proposalStatus = details.proposal.status;
-        const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus) || proposalStatus === 'Queued';
+        const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
         if (!isRunning) {
           setPolling(false);
+          setActiveProposalId(null);
           if (proposalStatus === 'Failed') {
-            setActiveProposalId(null);
             toast('Proposal generation failed. Check step logs.', 'error');
-          } else if (proposalStatus === 'Complete') {
-            setActiveProposalId(null);
-            toast('Proposal PowerPoint generation completed!', 'success');
-          } else if (proposalStatus === 'Paused') {
-            // Keep viewing the paused pipeline
           } else {
-            setActiveProposalId(null);
+            toast('Proposal PowerPoint generation completed!', 'success');
           }
           fetchProposals();
         }
@@ -126,7 +121,7 @@ const Archive: React.FC = () => {
   // Audit logs for partner review
   useEffect(() => {
     if (perms.isPartner && statusDetails) {
-      adminApi.getAuditLogs().then(setAuditLogs).catch(() => { });
+      adminApi.getAuditLogs().then(setAuditLogs).catch(() => {});
     }
   }, [perms.isPartner, statusDetails]);
 
@@ -249,7 +244,7 @@ const Archive: React.FC = () => {
   const isBusinessWorkflow = BUSINESS_STATUSES.includes(currentStatus);
 
   const canApproveNow = currentStatus === 'Complete' || currentStatus === 'Rejected';
-  const canRejectNow = currentStatus === 'Complete';
+  const canRejectNow  = currentStatus === 'Complete';
   const canPublishNow = currentStatus === 'Approved';
 
   return (
@@ -289,10 +284,11 @@ const Archive: React.FC = () => {
                     <div
                       key={proposal.id}
                       onClick={() => handleViewStatus(proposal)}
-                      className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${statusDetails?.proposal.id === proposal.id
+                      className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${
+                        statusDetails?.proposal.id === proposal.id
                           ? 'border-primary bg-primary/5 shadow-sm'
                           : 'border-border bg-card hover:border-primary/20 hover:bg-muted/10'
-                        }`}
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex flex-col gap-0.5">
@@ -307,7 +303,7 @@ const Archive: React.FC = () => {
                       <div className="flex items-center justify-between border-t border-border/40 pt-2.5 mt-1 text-[11px] text-muted-foreground">
                         <div className="flex items-center gap-3">
                         </div>
-
+                        
                         {BUSINESS_STATUSES.includes(proposal.status) && perms.canDownload && (
                           <a
                             href={proposalApi.downloadUrl(proposal.id)}
@@ -337,8 +333,8 @@ const Archive: React.FC = () => {
                   <CardTitle className="text-base font-bold">
                     {AI_RUNNING_STATUSES.includes(currentStatus)
                       ? <div className="flex items-center gap-1">
-                        <span>Pipeline Execution{dots}</span>
-                      </div>
+                      <span>Pipeline Execution{dots}</span>
+                    </div>
                       : `Proposal Review: completed`}
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -436,11 +432,12 @@ const Archive: React.FC = () => {
                       return (
                         <div
                           key={phase.name}
-                          className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
-                              stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
-                                stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
-                                  'bg-muted/40 border-border text-muted-foreground'
-                            }`}
+                          className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${
+                            stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
+                            stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
+                            stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                            'bg-muted/40 border-border text-muted-foreground'
+                          }`}
                         >
                           {phase.icon}
                           <span className="text-xs font-bold leading-none">{phase.name}</span>
@@ -523,16 +520,16 @@ const Archive: React.FC = () => {
                         {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
                       </Button>
                       {['Approved', 'Published'].includes(currentStatus) && perms.canDownload && (
-                        <a
-                          href={proposalApi.downloadUrl(statusDetails.proposal.id)}
-                          className="flex-1"
-                          download
-                        >
-                          <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
-                            <Download size={15} /> Download Solution PPTX
-                          </Button>
-                        </a>
-                      )}
+                      <a
+                        href={proposalApi.downloadUrl(statusDetails.proposal.id)}
+                        className="flex-1"
+                        download
+                      >
+                        <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
+                          <Download size={15} /> Download Solution PPTX
+                        </Button>
+                      </a>
+                    )}
                     </div>
 
                     {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (
@@ -568,9 +565,9 @@ const Archive: React.FC = () => {
       </div>
 
       {/* HITL SOLUTION REVIEW EDITOR MODAL */}
-      <Modal
-        isOpen={isEditorOpen}
-        onClose={() => setIsEditorOpen(false)}
+      <Modal 
+        isOpen={isEditorOpen} 
+        onClose={() => setIsEditorOpen(false)} 
         title={
           perms.isReadOnly
             ? 'Solution Blueprint Viewer (Read-Only — Reviewing Partner)'
