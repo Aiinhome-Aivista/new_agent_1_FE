@@ -28,11 +28,7 @@ export const Sidebar: React.FC = () => {
           href: '/dashboard',
           icon: <LayoutDashboard size={18} />,
         },
-        {
-          title: 'Case Study Upload',
-          href: '/case-studies',
-          icon: <FileText size={18} />,
-        },
+
         {
           title: 'Historical Drafts Archive',
           href: '/archive',
