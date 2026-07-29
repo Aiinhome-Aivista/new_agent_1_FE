@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   History, RefreshCw, Download, Edit, Eye, Plus, Save,
   AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Send, Lock, Trash2, Play, Pause
 } from 'lucide-react';
@@ -19,12 +19,12 @@ import { WorkflowStepper } from '../../components/ui/WorkflowStepper/WorkflowSte
 import { formatDate } from '../../utils/formatters';
 
 const STEP_PHASES = [
-  { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
-  { name: 'Analyzing',  label: 'Capability mapping',  icon: <Cpu size={16} /> },
-  { name: 'Designing',  label: 'Solution architecture', icon: <Layers size={16} /> },
-  { name: 'Planning',   label: 'Timeline & pricing',    icon: <Clock size={16} /> },
-  { name: 'Assembling', label: 'Reflexion assembly',    icon: <CheckCircle2 size={16} /> },
-  { name: 'Complete',   label: 'Render PowerPoint',     icon: <Download size={16} /> },
+  { name: 'Ingesting', label: 'Document parsing', icon: <FileUp size={16} /> },
+  { name: 'Analyzing', label: 'Capability mapping', icon: <Cpu size={16} /> },
+  { name: 'Designing', label: 'Solution architecture', icon: <Layers size={16} /> },
+  { name: 'Planning', label: 'Timeline & pricing', icon: <Clock size={16} /> },
+  { name: 'Assembling', label: 'Reflexion assembly', icon: <CheckCircle2 size={16} /> },
+  { name: 'Complete', label: 'Render PowerPoint', icon: <Download size={16} /> },
 ];
 
 const AI_RUNNING_STATUSES = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed'];
@@ -39,15 +39,15 @@ function getProposalBadgeVariant(status: string) {
 const Archive: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { 
-    proposals, 
-    activeProposalId, 
-    statusDetails, 
-    isPolling, 
-    fetchProposals, 
-    setActiveProposalId, 
-    setStatusDetails, 
-    setPolling 
+  const {
+    proposals,
+    activeProposalId,
+    statusDetails,
+    isPolling,
+    fetchProposals,
+    setActiveProposalId,
+    setStatusDetails,
+    setPolling
   } = useProposalStore();
 
   const perms = useRolePermissions();
@@ -60,16 +60,16 @@ const Archive: React.FC = () => {
 
   const [dots, setDots] = useState("");
 
-useEffect(() => {
-  const interval = setInterval(() => {
-    setDots((prev) => {
-      if (prev === "...") return "";
-      return prev + ".";
-    });
-  }, 400);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prev) => {
+        if (prev === "...") return "";
+        return prev + ".";
+      });
+    }, 400);
 
-  return () => clearInterval(interval);
-}, []);
+    return () => clearInterval(interval);
+  }, []);
 
   // ── Fetch on mount ──────────────────────────────────────
   useEffect(() => {
@@ -91,14 +91,19 @@ useEffect(() => {
           setStatusDetails(details);
         }
         const proposalStatus = details.proposal.status;
-        const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
+        const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus) || proposalStatus === 'Queued';
         if (!isRunning) {
           setPolling(false);
-          setActiveProposalId(null);
           if (proposalStatus === 'Failed') {
+            setActiveProposalId(null);
             toast('Proposal generation failed. Check step logs.', 'error');
-          } else {
+          } else if (proposalStatus === 'Complete') {
+            setActiveProposalId(null);
             toast('Proposal PowerPoint generation completed!', 'success');
+          } else if (proposalStatus === 'Paused') {
+            // Keep viewing the paused pipeline
+          } else {
+            setActiveProposalId(null);
           }
           fetchProposals();
         }
@@ -121,7 +126,7 @@ useEffect(() => {
   // Audit logs for partner review
   useEffect(() => {
     if (perms.isPartner && statusDetails) {
-      adminApi.getAuditLogs().then(setAuditLogs).catch(() => {});
+      adminApi.getAuditLogs().then(setAuditLogs).catch(() => { });
     }
   }, [perms.isPartner, statusDetails]);
 
@@ -244,7 +249,7 @@ useEffect(() => {
   const isBusinessWorkflow = BUSINESS_STATUSES.includes(currentStatus);
 
   const canApproveNow = currentStatus === 'Complete' || currentStatus === 'Rejected';
-  const canRejectNow  = currentStatus === 'Complete';
+  const canRejectNow = currentStatus === 'Complete';
   const canPublishNow = currentStatus === 'Approved';
 
   return (
@@ -284,11 +289,10 @@ useEffect(() => {
                     <div
                       key={proposal.id}
                       onClick={() => handleViewStatus(proposal)}
-                      className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${
-                        statusDetails?.proposal.id === proposal.id
+                      className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 ${statusDetails?.proposal.id === proposal.id
                           ? 'border-primary bg-primary/5 shadow-sm'
                           : 'border-border bg-card hover:border-primary/20 hover:bg-muted/10'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex flex-col gap-0.5">
@@ -305,7 +309,7 @@ useEffect(() => {
                           <span>Timeline: <strong>{proposal.project_duration}</strong></span>
                           <span>Budget: <strong>{proposal.budget}</strong></span>
                         </div>
-                        
+
                         {BUSINESS_STATUSES.includes(proposal.status) && perms.canDownload && (
                           <a
                             href={proposalApi.downloadUrl(proposal.id)}
@@ -335,8 +339,8 @@ useEffect(() => {
                   <CardTitle className="text-base font-bold">
                     {AI_RUNNING_STATUSES.includes(currentStatus)
                       ? <div className="flex items-center gap-1">
-                      <span>Pipeline Execution{dots}</span>
-                    </div>
+                        <span>Pipeline Execution{dots}</span>
+                      </div>
                       : `Proposal Review: completed`}
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -345,68 +349,68 @@ useEffect(() => {
                       : 'Business review workflow — human-in-the-loop approval chain'}
                   </CardDescription>
                 </div>
-                  <div className="flex items-center gap-2">
-                    {currentStatus === 'Paused' || currentStatus === 'Queued' ? (
-                      <Button variant="primary" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
+                <div className="flex items-center gap-2">
+                  {currentStatus === 'Paused' || currentStatus === 'Queued' ? (
+                    <Button variant="primary" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
+                      try {
+                        await proposalApi.resumeProposal(statusDetails.proposal.id);
+                        toast('Proposal pipeline resumed.', 'success');
+                        fetchProposals();
+                      } catch (e) {
+                        toast('Failed to resume.', 'error');
+                      }
+                    }}>
+                      <Play size={10} /> Start
+                    </Button>
+                  ) : null}
+                  {(AI_RUNNING_STATUSES.includes(currentStatus) && currentStatus !== 'Complete' && currentStatus !== 'Failed') ? (
+                    <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2 border-border text-foreground hover:bg-muted" onClick={async () => {
+                      try {
+                        await proposalApi.pauseProposal(statusDetails.proposal.id);
+                        toast('Proposal pipeline paused.', 'success');
+                        fetchProposals();
+                      } catch (e) {
+                        toast('Failed to pause.', 'error');
+                      }
+                    }}>
+                      <Pause size={10} /> Pause
+                    </Button>
+                  ) : null}
+                  {(currentStatus === 'Failed' || currentStatus === 'WaitingForTechSelection' || currentStatus === 'WaitingForRateConfirmation' || AI_RUNNING_STATUSES.includes(currentStatus)) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-[10px] gap-1"
+                      onClick={async () => {
                         try {
-                          await proposalApi.resumeProposal(statusDetails.proposal.id);
-                          toast('Proposal pipeline resumed.', 'success');
-                          fetchProposals();
-                        } catch(e) {
-                          toast('Failed to resume.', 'error');
-                        }
-                      }}>
-                        <Play size={10} /> Start
-                      </Button>
-                    ) : null}
-                    {(AI_RUNNING_STATUSES.includes(currentStatus) && currentStatus !== 'Complete' && currentStatus !== 'Failed') ? (
-                      <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2 border-border text-foreground hover:bg-muted" onClick={async () => {
-                        try {
-                          await proposalApi.pauseProposal(statusDetails.proposal.id);
-                          toast('Proposal pipeline paused.', 'success');
-                          fetchProposals();
-                        } catch(e) {
-                          toast('Failed to pause.', 'error');
-                        }
-                      }}>
-                        <Pause size={10} /> Pause
-                      </Button>
-                    ) : null}
-                    {(currentStatus === 'Failed' || currentStatus === 'WaitingForTechSelection' || currentStatus === 'WaitingForRateConfirmation' || AI_RUNNING_STATUSES.includes(currentStatus)) && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-7 px-2 text-[10px] gap-1"
-                        onClick={async () => {
-                          try {
-                            setActiveProposalId(statusDetails.proposal.id);
-                            
-                            if (currentStatus === 'Failed') {
-                              await proposalApi.resumeFailedProposal(statusDetails.proposal.id);
-                              toast('Pipeline resumed successfully.', 'success');
-                            } else {
-                              toast('Switched to live tracking.', 'success');
-                            }
-                            
-                            setPolling(true);
-                            if (currentStatus === 'Failed') fetchProposals();
-                            navigate('/dashboard');
-                          } catch (err: any) {
-                            toast('Failed to resume: ' + (err.response?.data?.error || err.message), 'error');
+                          setActiveProposalId(statusDetails.proposal.id);
+
+                          if (currentStatus === 'Failed') {
+                            await proposalApi.resumeFailedProposal(statusDetails.proposal.id);
+                            toast('Pipeline resumed successfully.', 'success');
+                          } else {
+                            toast('Switched to live tracking.', 'success');
                           }
-                        }}
-                      >
-                        {currentStatus === 'WaitingForTechSelection' || currentStatus === 'WaitingForRateConfirmation' ? (
-                          <>Review Details</>
-                        ) : (
-                          <><Play size={12} className="text-primary fill-primary/20" /> Resume</>
-                        )}
-                      </Button>
-                    )}
-                    <Badge variant={getProposalBadgeVariant(currentStatus)}>
-                      {currentStatus}
-                    </Badge>
-                  </div>
+
+                          setPolling(true);
+                          if (currentStatus === 'Failed') fetchProposals();
+                          navigate('/dashboard');
+                        } catch (err: any) {
+                          toast('Failed to resume: ' + (err.response?.data?.error || err.message), 'error');
+                        }
+                      }}
+                    >
+                      {currentStatus === 'WaitingForTechSelection' || currentStatus === 'WaitingForRateConfirmation' ? (
+                        <>Review Details</>
+                      ) : (
+                        <><Play size={12} className="text-primary fill-primary/20" /> Resume</>
+                      )}
+                    </Button>
+                  )}
+                  <Badge variant={getProposalBadgeVariant(currentStatus)}>
+                    {currentStatus}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-6">
                 {/* AI Pipeline Stepper */}
@@ -417,12 +421,11 @@ useEffect(() => {
                       return (
                         <div
                           key={phase.name}
-                          className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${
-                            stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
-                            stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
-                            stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
-                            'bg-muted/40 border-border text-muted-foreground'
-                          }`}
+                          className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
+                              stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
+                                stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                                  'bg-muted/40 border-border text-muted-foreground'
+                            }`}
                         >
                           {phase.icon}
                           <span className="text-xs font-bold leading-none">{phase.name}</span>
@@ -505,16 +508,16 @@ useEffect(() => {
                         {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
                       </Button>
                       {['Approved', 'Published'].includes(currentStatus) && perms.canDownload && (
-                      <a
-                        href={proposalApi.downloadUrl(statusDetails.proposal.id)}
-                        className="flex-1"
-                        download
-                      >
-                        <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
-                          <Download size={15} /> Download Solution PPTX
-                        </Button>
-                      </a>
-                    )}
+                        <a
+                          href={proposalApi.downloadUrl(statusDetails.proposal.id)}
+                          className="flex-1"
+                          download
+                        >
+                          <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
+                            <Download size={15} /> Download Solution PPTX
+                          </Button>
+                        </a>
+                      )}
                     </div>
 
                     {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (
@@ -550,9 +553,9 @@ useEffect(() => {
       </div>
 
       {/* HITL SOLUTION REVIEW EDITOR MODAL */}
-      <Modal 
-        isOpen={isEditorOpen} 
-        onClose={() => setIsEditorOpen(false)} 
+      <Modal
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
         title={
           perms.isReadOnly
             ? 'Solution Blueprint Viewer (Read-Only — Reviewing Partner)'
