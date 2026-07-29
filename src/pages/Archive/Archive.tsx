@@ -32,7 +32,7 @@ const BUSINESS_STATUSES = ['Complete', 'InReview', 'Approved', 'Published', 'Rej
 
 function getProposalBadgeVariant(status: string) {
   if (['Approved', 'Published'].includes(status)) return 'success';
-  if (['Failed', 'Rejected'].includes(status)) return 'destructive';
+  if (['Failed', 'Rejected', 'Cancelled'].includes(status)) return 'destructive';
   return 'warning';
 }
 
@@ -349,17 +349,34 @@ const Archive: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   {currentStatus === 'Paused' || currentStatus === 'Queued' ? (
-                    <Button variant="primary" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
-                      try {
-                        await proposalApi.resumeProposal(statusDetails.proposal.id);
-                        toast('Proposal pipeline resumed.', 'success');
-                        fetchProposals();
-                      } catch (e) {
-                        toast('Failed to resume.', 'error');
-                      }
-                    }}>
-                      <Play size={10} /> Start
-                    </Button>
+                    <>
+                      <Button variant="destructive" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
+                        if (confirm('Are you sure you want to cancel this proposal?')) {
+                          try {
+                            await proposalApi.cancelProposal(statusDetails.proposal.id);
+                            toast('Proposal cancelled.', 'success');
+                            const details = await proposalApi.status(statusDetails.proposal.id);
+                            setStatusDetails(details);
+                            fetchProposals();
+                          } catch (e) {
+                            toast('Failed to cancel.', 'error');
+                          }
+                        }
+                      }}>
+                        <Trash2 size={10} /> Cancel
+                      </Button>
+                      <Button variant="primary" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
+                        try {
+                          await proposalApi.resumeProposal(statusDetails.proposal.id);
+                          toast('Proposal pipeline resumed.', 'success');
+                          fetchProposals();
+                        } catch (e) {
+                          toast('Failed to resume.', 'error');
+                        }
+                      }}>
+                        <Play size={10} /> Start
+                      </Button>
+                    </>
                   ) : null}
                   {(AI_RUNNING_STATUSES.includes(currentStatus) && currentStatus !== 'Complete' && currentStatus !== 'Failed') ? (
                     <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2 border-border text-foreground hover:bg-muted" onClick={async () => {

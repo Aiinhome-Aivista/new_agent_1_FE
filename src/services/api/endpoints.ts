@@ -41,6 +41,10 @@ export const proposalApi = {
     const res = await apiClient.post(API_ENDPOINTS.pauseProposal(id));
     return res.data;
   },
+  cancelProposal: async (id: string): Promise<any> => {
+    const res = await apiClient.post(`/api/proposals/${id}/cancel`);
+    return res.data;
+  },
   resumeFailedProposal: async (id: string): Promise<any> => {
     const res = await apiClient.post(`/api/proposals/${id}/resume`);
     return res.data;
