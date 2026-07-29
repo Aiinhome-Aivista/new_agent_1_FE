@@ -302,8 +302,6 @@ useEffect(() => {
 
                       <div className="flex items-center justify-between border-t border-border/40 pt-2.5 mt-1 text-[11px] text-muted-foreground">
                         <div className="flex items-center gap-3">
-                          <span>Timeline: <strong>{proposal.project_duration}</strong></span>
-                          <span>Budget: <strong>{proposal.budget}</strong></span>
                         </div>
                         
                         {BUSINESS_STATUSES.includes(proposal.status) && perms.canDownload && (
