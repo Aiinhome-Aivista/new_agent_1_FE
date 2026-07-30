@@ -166,7 +166,7 @@ useEffect(() => {
             setActiveProposalId(null);
             if (proposalStatus === 'Failed') {
               toast('Proposal generation failed. Check step logs.', 'error');
-            } else {
+            } else if (proposalStatus === 'Complete') {
               toast('Proposal PowerPoint generation completed!', 'success');
             }
             fetchProposals();

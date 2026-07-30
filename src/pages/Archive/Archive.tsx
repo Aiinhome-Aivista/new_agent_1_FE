@@ -97,7 +97,7 @@ useEffect(() => {
           setActiveProposalId(null);
           if (proposalStatus === 'Failed') {
             toast('Proposal generation failed. Check step logs.', 'error');
-          } else {
+          } else if (proposalStatus === 'Complete') {
             toast('Proposal PowerPoint generation completed!', 'success');
           }
           fetchProposals();
@@ -344,35 +344,38 @@ useEffect(() => {
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  {currentStatus === 'Paused' || currentStatus === 'Queued' ? (
-                    <>
-                      <Button variant="destructive" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
-                        if (confirm('Are you sure you want to cancel this proposal?')) {
-                          try {
-                            await proposalApi.cancelProposal(statusDetails.proposal.id);
-                            toast('Proposal cancelled.', 'success');
-                            const details = await proposalApi.status(statusDetails.proposal.id);
-                            setStatusDetails(details);
-                            fetchProposals();
-                          } catch (e) {
-                            toast('Failed to cancel.', 'error');
-                          }
-                        }
-                      }}>
-                        <Trash2 size={10} /> Cancel
-                      </Button>
-                      <Button variant="primary" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
+                  {currentStatus !== 'Complete' && currentStatus !== 'Failed' && currentStatus !== 'Cancelled' ? (
+                    <Button variant="destructive" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
+                      if (confirm('Are you sure you want to cancel this proposal?')) {
                         try {
-                          await proposalApi.resumeProposal(statusDetails.proposal.id);
-                          toast('Proposal pipeline resumed.', 'success');
+                          await proposalApi.cancelProposal(statusDetails.proposal.id);
+                          toast('Proposal cancelled.', 'success');
+                          const details = await proposalApi.status(statusDetails.proposal.id);
+                          setStatusDetails(details);
                           fetchProposals();
                         } catch (e) {
-                          toast('Failed to resume.', 'error');
+                          toast('Failed to cancel.', 'error');
                         }
-                      }}>
-                        <Play size={10} /> Start
-                      </Button>
-                    </>
+                      }
+                    }}>
+                      <Trash2 size={10} /> Cancel
+                    </Button>
+                  ) : null}
+                  {currentStatus === 'Paused' || currentStatus === 'Queued' ? (
+                    <Button variant="primary" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
+                      try {
+                        setActiveProposalId(statusDetails.proposal.id);
+                        await proposalApi.resumeFailedProposal(statusDetails.proposal.id);
+                        toast('Proposal pipeline resumed.', 'success');
+                        setPolling(true);
+                        fetchProposals();
+                        navigate('/dashboard');
+                      } catch (e) {
+                        toast('Failed to resume.', 'error');
+                      }
+                    }}>
+                      <Play size={10} /> Start
+                    </Button>
                   ) : null}
                   {(AI_RUNNING_STATUSES.includes(currentStatus) && currentStatus !== 'Complete' && currentStatus !== 'Failed') ? (
                     <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2 border-border text-foreground hover:bg-muted" onClick={async () => {
