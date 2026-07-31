@@ -30,7 +30,7 @@ export const Sidebar: React.FC = () => {
         },
 
         {
-          title: 'Historical Drafts Archive',
+          title: 'Proposal History',
           href: '/archive',
           icon: <History size={18} />,
         },
@@ -47,7 +47,7 @@ export const Sidebar: React.FC = () => {
           icon: <LayoutDashboard size={18} />,
         },
         {
-          title: 'Historical Drafts Archive',
+          title: 'Proposal History',
           href: '/archive',
           icon: <History size={18} />,
         },

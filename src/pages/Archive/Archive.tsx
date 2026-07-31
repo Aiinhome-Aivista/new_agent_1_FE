@@ -292,15 +292,18 @@ useEffect(() => {
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex flex-col gap-0.5">
-                          <span className="font-bold text-sm text-foreground/90">{proposal.client_name}</span>
-                          <span className="text-[11px] text-muted-foreground">Generated: {formatDate(proposal.created_at)}</span>
+                          <span className="font-bold text-sm text-foreground/90 line-clamp-1" title={proposal.client_name}>
+                            {proposal.client_name}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground line-clamp-1">Generated: {formatDate(proposal.created_at)}</span>
+                          <span className="text-[11px] text-muted-foreground">proposal id: {formatDate(proposal.id)}</span>
                         </div>
                         <Badge variant={getProposalBadgeVariant(proposal.status)} className="text-[10px] py-0 px-2 flex-shrink-0">
                           {proposal.status}
                         </Badge>
                       </div>
 
-                      <div className="flex items-center justify-between border-t border-border/40 pt-2.5 mt-1 text-[11px] text-muted-foreground">
+                      <div className="flex items-center justify-between border-t border-border/40 pt-1.5 mt-1 text-[11px] text-muted-foreground">
                         <div className="flex items-center gap-3">
                         </div>
                         

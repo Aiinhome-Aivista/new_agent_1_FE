@@ -257,7 +257,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
               </div>
 
               <div className="bg-muted/40 border border-border rounded-2xl px-6 py-2 shadow-inner">
-                <div className="max-h-48 overflow-y-auto pr-2 scrollbar-thin">
+                <div className="max-h-48 overflow-y-auto pr-2">
                   {renderMarkdown(chatExplanation)}
                 </div>
               </div>
