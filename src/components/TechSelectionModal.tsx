@@ -216,14 +216,14 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   };
 
   // Format technology names to be user friendly
-  const formatTechName = (slug: string) => {
-    if (!slug) return '';
-    return slug.replace('_', ' ').replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const formatTechName = (slug?: string | null) => {
+    if (!slug || typeof slug !== 'string') return '';
+    return slug.replace(/_/g, ' ').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
   // Check if a technology matches the extracted technologies from document
-  const isExtracted = (category: 'ui' | 'backend' | 'database', tech: string) => {
-    if (!extractedTechs) return false;
+  const isExtracted = (category: 'ui' | 'backend' | 'database', tech?: string | null) => {
+    if (!extractedTechs || !tech) return false;
     const val = extractedTechs[category];
     if (!val) return false;
 
