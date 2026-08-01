@@ -1,3 +1,11 @@
+export interface ApiResponse<T = any> {
+  status: 'success' | 'failed';
+  statusCode: number;
+  message: string;
+  data: T;
+  errors: any[];
+}
+
 export interface User {
   id: number;
   username: string;

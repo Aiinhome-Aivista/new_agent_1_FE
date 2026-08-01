@@ -30,6 +30,10 @@ export function setupInterceptors(instance: AxiosInstance): AxiosInstance {
 
   instance.interceptors.response.use(
     (response: AxiosResponse) => {
+      // Auto-unwrap global API response standard
+      if (response.data && response.data.status === 'success' && 'data' in response.data) {
+        response.data = response.data.data;
+      }
       return response;
     },
     (error: AxiosError) => {
