@@ -240,7 +240,7 @@ useEffect(() => {
   };
 
   const currentStatus = statusDetails?.proposal.status ?? '';
-  const isBusinessWorkflow = BUSINESS_STATUSES.includes(currentStatus);
+
 
   const canApproveNow = currentStatus === 'Complete' || currentStatus === 'Rejected';
   const canRejectNow  = currentStatus === 'Complete';

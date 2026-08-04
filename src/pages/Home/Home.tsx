@@ -31,15 +31,7 @@ const STEP_PHASES = [
 // Pipeline-only statuses (AI running, business workflow not yet started)
 const AI_RUNNING_STATUSES = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed'];
 
-// Business workflow statuses (AI done, human review in progress)
-const BUSINESS_STATUSES = ['Complete', 'InReview', 'Approved', 'Published', 'Rejected'];
 
-// Status badge variant helpers
-function getProposalBadgeVariant(status: string) {
-  if (['Approved', 'Published'].includes(status)) return 'success';
-  if (['Failed', 'Rejected'].includes(status)) return 'destructive';
-  return 'warning';
-}
 
 const Home: React.FC = () => {
   const { toast } = useToast();
@@ -256,7 +248,7 @@ useEffect(() => {
     
     // Validation
     if (!skipCaseStudy && caseStudyFiles.length === 0) {
-      toast('Please upload a case study or check "Skip if you don\'t have any".', 'warning');
+      toast('Please upload a case study or check "Skip if you don\'t have any".', 'error');
       return;
     }
 

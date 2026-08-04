@@ -26,7 +26,8 @@ export interface Proposal {
   // Business workflow statuses: Complete → Draft → DeliveryReview → PartnerReview → Approved/Published
   status: 
     | 'Ingesting' | 'Analyzing' | 'Designing' | 'Planning' | 'Assembling' | 'Complete' | 'Failed'
-    | 'Draft' | 'DeliveryReview' | 'PartnerReview' | 'Approved' | 'Published' | 'WaitingForTechSelection';
+    | 'Draft' | 'DeliveryReview' | 'PartnerReview' | 'Approved' | 'Published' | 'WaitingForTechSelection'
+    | 'WaitingForRateConfirmation' | 'Paused' | 'Queued' | 'Cancelled' | 'Rejected' | '';
   submitted_by_role?: string | null;   // Role that last transitioned the proposal
   last_transitioned_at?: string | null;
   generated_file_path?: string | null;
