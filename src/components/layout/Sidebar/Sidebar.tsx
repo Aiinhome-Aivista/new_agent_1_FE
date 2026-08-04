@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Database, ShieldAlert, History, LogOut, FileText } from 'lucide-react';
+import { LayoutDashboard, Database, History, LogOut } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 
 import { useAuthStore } from '../../../store';

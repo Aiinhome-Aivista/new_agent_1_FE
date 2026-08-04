@@ -41,7 +41,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 }));
 
-export const useProposalStore = create<ProposalState>((set, get) => ({
+export const useProposalStore = create<ProposalState>((set) => ({
   proposals: [],
   activeProposalId: null,
   statusDetails: null,

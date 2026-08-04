@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   History, RefreshCw, Download, Edit, Eye, Plus, Save,
-  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Send, Lock, Trash2, Play, Pause
+  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Lock, Trash2, Play, Pause
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
 import { useProposalStore, useAuthStore } from '../../store';
@@ -15,7 +15,6 @@ import { Input } from '../../components/ui/Input/Input';
 import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
-import { WorkflowStepper } from '../../components/ui/WorkflowStepper/WorkflowStepper';
 import { formatDate } from '../../utils/formatters';
 
 const STEP_PHASES = [

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Clock, Send, ShieldCheck, Award, Globe, AlertTriangle, ChevronRight, MoveRight } from 'lucide-react';
+import { CheckCircle2, Clock, ShieldCheck, Award, Globe, AlertTriangle, MoveRight } from 'lucide-react';
 
 interface WorkflowStepperProps {
   currentStatus: string;
@@ -75,7 +75,6 @@ function getStepState(
 
 export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
   currentStatus,
-  submittedByRole,
 }) => {
   // Only show the business workflow stepper when AI pipeline is done
   const aiStatuses = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed'];

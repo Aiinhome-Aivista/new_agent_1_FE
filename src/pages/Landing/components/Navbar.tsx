@@ -23,13 +23,13 @@ export const Navbar: React.FC = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  const navLinks = [
-    { name: 'Home', href: '#' },
-    { name: 'Features', href: '#features' },
-    { name: 'How it works', href: '#workflow' },
-    { name: 'Templates', href: '#templates' },
-    { name: 'Contact', href: '#contact' },
-  ];
+  // const navLinks = [
+  //   { name: 'Home', href: '#' },
+  //   { name: 'Features', href: '#features' },
+  //   { name: 'How it works', href: '#workflow' },
+  //   { name: 'Templates', href: '#templates' },
+  //   { name: 'Contact', href: '#contact' },
+  // ];
 
   return (
     <motion.nav

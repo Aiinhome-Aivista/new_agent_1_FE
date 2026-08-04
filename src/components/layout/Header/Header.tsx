@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuthStore } from '../../../store';
 import { ThemeToggle } from './ThemeToggle';
-import { User as UserIcon, Shield, BarChart3 } from 'lucide-react';
+import { User as BarChart3 } from 'lucide-react';
 import { useRolePermissions } from '../../../hooks';
 
 // Per-role badge color config

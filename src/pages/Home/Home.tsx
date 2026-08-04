@@ -4,10 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   FileUp, Pause, Play, Download, History, Layers, Clock,
   CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save, Eye,
-  Send, ShieldCheck, Award, AlertTriangle, Lock
+    Award, AlertTriangle, Lock
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
-import { ProposalStatusDetails } from '../../types/api.types';
 import { useProposalStore, useAuthStore } from '../../store';
 import { useRolePermissions } from '../../hooks';
 import { proposalUploadSchema } from '../../utils/validators';
@@ -18,7 +17,6 @@ import { Input } from '../../components/ui/Input/Input';
 import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
-import { WorkflowStepper } from '../../components/ui/WorkflowStepper/WorkflowStepper';
 import { TechSelectionModal } from '../../components/TechSelectionModal';
 
 const STEP_PHASES = [

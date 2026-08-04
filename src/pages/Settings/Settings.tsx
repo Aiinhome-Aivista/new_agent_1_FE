@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Database, Plus, Search, FolderGit, Cpu, Tag, Edit, Trash2,
-  RefreshCw, Lock, Eye, ShieldAlert, CheckCircle2
+  Database, Plus, Search, FolderGit, Cpu, Tag, Trash2,
+  Lock, Eye, ShieldAlert, CheckCircle2
 } from 'lucide-react';
 import { knowledgeApi } from '../../services/api/endpoints';
 import { KnowledgeAsset } from '../../types';
 import { PageWrapper } from '../../components/layout/PageWrapper/PageWrapper';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card/Card';
 import { Button } from '../../components/ui/Button/Button';
-import { Input } from '../../components/ui/Input/Input';
 import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
@@ -36,7 +35,7 @@ const Settings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'All' | 'Asset' | 'Competency'>('All');
-  const [reindexing, setReindexing] = useState(false);
+  // const [reindexing, setReindexing] = useState(false);
 
   // ── Add modal state ─────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -128,17 +127,17 @@ const Settings: React.FC = () => {
   };
 
   // ── Re-index ─────────────────────────────────────────────
-  const handleReindex = async () => {
-    try {
-      setReindexing(true);
-      const res = await knowledgeApi.reindex();
-      toast(res.message || 'Re-indexing complete.', 'success');
-    } catch (err: any) {
-      toast('Re-index failed: ' + (err.response?.data?.error || err.message), 'error');
-    } finally {
-      setReindexing(false);
-    }
-  };
+  // const handleReindex = async () => {
+  //   try {
+  //     setReindexing(true);
+  //     const res = await knowledgeApi.reindex();
+  //     toast(res.message || 'Re-indexing complete.', 'success');
+  //   } catch (err: any) {
+  //     toast('Re-index failed: ' + (err.response?.data?.error || err.message), 'error');
+  //   } finally {
+  //     setReindexing(false);
+  //   }
+  // };
 
   // ── Filter ───────────────────────────────────────────────
   const filtered = assets.filter((asset) => {
