@@ -630,7 +630,7 @@ useEffect(() => {
                     return (
                       <React.Fragment key={phase.name}>
                         <div
-                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-30 ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
+                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-30 ${stepStatus === 'success' ? 'bg-[#FF7A45]/15 border-[#FF7A45]/30 text-[#FF7A45] font-medium' :
                             stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
                               stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
                                 'bg-muted/40 border-border text-muted-foreground'
@@ -643,7 +643,7 @@ useEffect(() => {
                         {idx < STEP_PHASES.length - 1 && (
                           <MoveRight
                             size={20}
-                            className={idx < currentStepIndex ? 'text-emerald-500 shrink-0' : 'text-muted-foreground shrink-0'}
+                            className={idx < currentStepIndex ? 'text-button-orange shrink-0' : 'text-muted-foreground shrink-0'}
                           />
                         )}
                       </React.Fragment>
@@ -719,30 +719,17 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  {/* Edit / View + Download row */}
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    {!['Approved', 'Published'].includes(currentStatus) && (
-                      <Button
-                        variant="outline"
-                        className="flex-1 gap-2"
-                        onClick={() => openEditor(statusDetails.structured_ir)}
-                      >
-                        {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
-                        {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
+                  {['Approved', 'Published'].includes(currentStatus) && (
+                    <a
+                      href={proposalApi.downloadUrl(statusDetails.proposal.id)}
+                      className="w-full"
+                      download
+                    >
+                      <Button variant="primary" className="w-full gap-2 font-bold shadow-md bg-button-orange hover:bg-hover-orange border-button-orange text-white">
+                        <Download size={15} /> Download Solution PPTX
                       </Button>
-                    )}
-                    {['Approved', 'Published'].includes(currentStatus) && (
-                      <a
-                        href={proposalApi.downloadUrl(statusDetails.proposal.id)}
-                        className="w-full"
-                        download
-                      >
-                        <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
-                          <Download size={15} /> Download Solution PPTX
-                        </Button>
-                      </a>
-                    )}
-                  </div>
+                    </a>
+                  )}
 
                   {/* Partner — show audit logs inline */}
                   {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (

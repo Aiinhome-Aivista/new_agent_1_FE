@@ -20,7 +20,7 @@ export const Button: React.FC<ButtonProps> = ({
     outline: 'border border-border bg-transparent text-foreground hover:bg-muted hover:text-muted-foreground',
     ghost: 'bg-transparent text-foreground hover:bg-muted active:bg-muted/80',
     destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm',
-    success: 'bg-emerald-600 text-white hover:bg-emerald-500 active:bg-emerald-700 shadow-sm',
+    success: 'bg-button-orange text-white hover:bg-hover-orange active:bg-primary-orange shadow-sm',
   };
 
   const sizes = {

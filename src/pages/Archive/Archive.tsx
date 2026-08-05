@@ -14,6 +14,7 @@ import { Button } from '../../components/ui/Button/Button';
 import { Input } from '../../components/ui/Input/Input';
 import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
+import { ConfirmModal } from '../../components/ui/Modal/ConfirmModal';
 import { useToast } from '../../components/ui/Toast/Toast';
 import { formatDate } from '../../utils/formatters';
 
@@ -56,6 +57,9 @@ const Archive: React.FC = () => {
   const [editableIr, setEditableIr] = useState<any>(null);
   const [savingIr, setSavingIr] = useState(false);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancellingProposal, setCancellingProposal] = useState(false);
 
   const [dots, setDots] = useState("");
 
@@ -347,19 +351,12 @@ useEffect(() => {
                 </div>
                 <div className="flex items-center gap-2">
                   {currentStatus !== 'Complete' && currentStatus !== 'Failed' && currentStatus !== 'Cancelled' ? (
-                    <Button variant="destructive" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={async () => {
-                      if (confirm('Are you sure you want to cancel this proposal?')) {
-                        try {
-                          await proposalApi.cancelProposal(statusDetails.proposal.id);
-                          toast('Proposal cancelled.', 'success');
-                          const details = await proposalApi.status(statusDetails.proposal.id);
-                          setStatusDetails(details);
-                          fetchProposals();
-                        } catch (e) {
-                          toast('Failed to cancel.', 'error');
-                        }
-                      }
-                    }}>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-6 text-[10px] gap-1 px-2"
+                      onClick={() => setCancelModalOpen(true)}
+                    >
                       <Trash2 size={10} /> Cancel
                     </Button>
                   ) : null}
@@ -438,7 +435,7 @@ useEffect(() => {
                         <div
                           key={phase.name}
                           className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${
-                            stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
+                            stepStatus === 'success'     ? 'bg-[#FF7A45]/15 border-[#FF7A45]/30 text-[#FF7A45] font-medium' :
                             stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
                             stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
                             'bg-muted/40 border-border text-muted-foreground'
@@ -515,27 +512,17 @@ useEffect(() => {
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        variant="outline"
-                        className="flex-1 gap-2"
-                        onClick={() => openEditor(statusDetails.structured_ir)}
-                      >
-                        {perms.isReadOnly ? <Eye size={15} /> : <Edit size={15} />}
-                        {perms.isReadOnly ? 'View Solution Blueprint' : 'Edit Solution Blueprint'}
-                      </Button>
-                      {['Approved', 'Published'].includes(currentStatus) && perms.canDownload && (
+                    {['Approved', 'Published'].includes(currentStatus) && perms.canDownload && (
                       <a
                         href={proposalApi.downloadUrl(statusDetails.proposal.id)}
-                        className="flex-1"
+                        className="w-full"
                         download
                       >
-                        <Button variant="primary" className="w-full gap-2 font-bold shadow-md shadow-primary/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-700 text-white">
+                        <Button variant="primary" className="w-full gap-2 font-bold shadow-md bg-button-orange hover:bg-hover-orange border-button-orange text-white">
                           <Download size={15} /> Download Solution PPTX
                         </Button>
                       </a>
                     )}
-                    </div>
 
                     {perms.isPartner && Array.isArray(auditLogs) && auditLogs.length > 0 && (
                       <div className="flex flex-col gap-2">
@@ -882,6 +869,35 @@ useEffect(() => {
           </div>
         )}
       </Modal>
+
+      {/* CONFIRMATION POPUP FOR CANCEL PROPOSAL */}
+      <ConfirmModal
+        isOpen={cancelModalOpen}
+        onClose={() => setCancelModalOpen(false)}
+        onConfirm={async () => {
+          if (!statusDetails?.proposal.id) return;
+          try {
+            setCancellingProposal(true);
+            await proposalApi.cancelProposal(statusDetails.proposal.id);
+            toast('Proposal cancelled successfully.', 'success');
+            const details = await proposalApi.status(statusDetails.proposal.id);
+            setStatusDetails(details);
+            fetchProposals();
+            setCancelModalOpen(false);
+          } catch (e) {
+            toast('Failed to cancel proposal.', 'error');
+          } finally {
+            setCancellingProposal(false);
+          }
+        }}
+        title="Cancel Proposal"
+        message="Are you sure you want to cancel this proposal? This action will stop all current processing tasks."
+        confirmText="Yes, Cancel Proposal"
+        cancelText="Keep Proposal"
+        variant="orange"
+        showIcon={false}
+        isLoading={cancellingProposal}
+      />
     </PageWrapper>
   );
 };

@@ -5,6 +5,7 @@ import { PageWrapper } from '../../components/layout/PageWrapper/PageWrapper';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card/Card';
 import { Button } from '../../components/ui/Button/Button';
 import { Badge } from '../../components/ui/Badge/Badge';
+import { ConfirmModal } from '../../components/ui/Modal/ConfirmModal';
 import { useToast } from '../../components/ui/Toast/Toast';
 
 const CaseStudies: React.FC = () => {
@@ -14,6 +15,8 @@ const CaseStudies: React.FC = () => {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchCaseStudies = async () => {
@@ -105,16 +108,6 @@ selectedFiles.forEach((file) =>  formData.append("files", file));
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this case study?')) return;
-    try {
-      await caseStudiesApi.delete(id);
-      toast('Case study deleted successfully.', 'success');
-      fetchCaseStudies();
-    } catch (err: any) {
-      toast('Failed to delete case study: ' + err.message, 'error');
-    }
-  };
 
   return (
     <PageWrapper>
@@ -231,7 +224,7 @@ selectedFiles.forEach((file) =>  formData.append("files", file));
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle className="text-sm font-bold flex items-center gap-1.5">
-                  <CheckCircle2 size={16} className="text-emerald-500" />
+                  <CheckCircle2 size={16} className="text-button-orange" />
                   Processed Case Studies
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -288,8 +281,8 @@ selectedFiles.forEach((file) =>  formData.append("files", file));
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 mx-auto"
-                                onClick={() => handleDelete(cs.id)}
+                                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 mx-auto cursor-pointer"
+                                onClick={() => setDeleteId(cs.id)}
                               >
                                 <Trash2 size={13} />
                               </Button>
@@ -306,6 +299,32 @@ selectedFiles.forEach((file) =>  formData.append("files", file));
 
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={async () => {
+          if (deleteId === null) return;
+          try {
+            setDeleting(true);
+            await caseStudiesApi.delete(deleteId);
+            toast('Case study deleted successfully.', 'success');
+            fetchCaseStudies();
+            setDeleteId(null);
+          } catch (err: any) {
+            toast('Failed to delete case study: ' + err.message, 'error');
+          } finally {
+            setDeleting(false);
+          }
+        }}
+        title="Delete Case Study"
+        message="Are you sure you want to delete this case study? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+        showIcon={false}
+        isLoading={deleting}
+      />
     </PageWrapper>
   );
 };

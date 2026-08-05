@@ -8,5 +8,7 @@ export { Badge } from './Badge/Badge';
 export type { BadgeProps } from './Badge/Badge';
 export { Modal } from './Modal/Modal';
 export type { ModalProps } from './Modal/Modal';
+export { ConfirmModal } from './Modal/ConfirmModal';
+export type { ConfirmModalProps } from './Modal/ConfirmModal';
 export { useToast, ToastProvider } from './Toast/Toast';
 export type { ToastItem, ToastType } from './Toast/Toast';

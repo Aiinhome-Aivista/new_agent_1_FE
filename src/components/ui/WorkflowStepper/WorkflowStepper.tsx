@@ -109,7 +109,7 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
                 <div
                   className={`
                     h-8 w-8 rounded-full border-2 flex items-center justify-center flex-0 transition-all duration-300 z-10
-                    ${state === 'done'    ? 'bg-emerald-500 border-emerald-500 text-white shadow-emerald-500/30 shadow-md' : ''}
+                    ${state === 'done'    ? 'bg-button-orange border-button-orange text-white shadow-md' : ''}
                     ${state === 'active' && !isRejected ? 'bg-primary border-primary text-primary-foreground shadow-primary/30 shadow-md animate-pulse' : ''}
                     ${state === 'active' && isRejected  ? 'bg-rose-500 border-rose-500 text-white shadow-rose-500/30 shadow-md' : ''}
                     ${state === 'pending' ? 'bg-muted border-border text-muted-foreground' : ''}
@@ -122,7 +122,7 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
                 <div className="flex flex-col items-center gap-0 text-center">
                   <span
                     className={`text-[10px] font-bold leading-tight transition-colors ${
-                      state === 'done'    ? 'text-emerald-600 dark:text-emerald-400' :
+                      state === 'done'    ? 'text-button-orange' :
                       state === 'active' && !isRejected ? 'text-primary' :
                       state === 'active' && isRejected  ? 'text-rose-500' :
                       'text-muted-foreground'
@@ -141,7 +141,7 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
                 <div
                   className={`flex-0 flex items-center justify-center mt-2 opacity-50 ${
                     state === 'done'
-                      ? 'text-emerald-500 opacity-100'
+                      ? 'text-button-orange opacity-100'
                       : 'text-muted-foreground'
                   }`}
                 >

@@ -34,13 +34,13 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const icons = {
-    success: <CheckCircle className="text-emerald-500" size={18} />,
+    success: <CheckCircle className="text-button-orange" size={18} />,
     error: <AlertCircle className="text-destructive" size={18} />,
     info: <Info className="text-sky-500" size={18} />,
   };
 
   const bgStyles = {
-    success: 'bg-card border-emerald-500/20 shadow-emerald-500/5',
+    success: 'bg-card border-button-orange/30 shadow-button-orange/5',
     error: 'bg-card border-destructive/20 shadow-destructive/5',
     info: 'bg-card border-sky-500/20 shadow-sky-500/5',
   };

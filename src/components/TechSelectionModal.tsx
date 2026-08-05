@@ -310,19 +310,19 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                           <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
                             UI: <span className="font-bold text-primary">{formatTechName(pkg.ui)}</span>
                             {isExtracted('ui', pkg.ui) && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#FF7A45]" title="Explicitly mentioned in RFP document" />
                             )}
                           </span>
                           <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
                             API: <span className="font-bold text-primary">{formatTechName(pkg.backend)}</span>
                             {isExtracted('backend', pkg.backend) && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#FF7A45]" title="Explicitly mentioned in RFP document" />
                             )}
                           </span>
                           <span className="text-[10px] bg-card border border-border/80 text-foreground px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
                             DB: <span className="font-bold text-primary">{formatTechName(pkg.database)}</span>
                             {isExtracted('database', pkg.database) && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="Explicitly mentioned in RFP document" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#FF7A45]" title="Explicitly mentioned in RFP document" />
                             )}
                           </span>
                         </div>

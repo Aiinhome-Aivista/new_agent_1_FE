@@ -1,67 +1,134 @@
 :root {
-  /* Color system */
-  --color-brand-orange-rgb: 208, 74, 2;
-  --color-brand-charcoal-rgb: 45, 45, 45;
-  --color-brand-gold-rgb: 235, 163, 0;
-  --color-brand-red-rgb: 163, 31, 52;
+  /* ==========================================
+     Centralized Brand Color Palette
+     ========================================== */
+  --primary-orange: #FF5A14;
+  --button-orange: #FF7A45;
+  --hover-orange: #F56B2F;
+  --sidebar-bg: #4A4A4A;
+  --light-bg: #FFFFFF;
+  --input-bg: #FFF7F2;
+  --light-border: #D8D8D8;
+  --orange-border: #FF8A55;
+  --primary-text: #666666;
+  --secondary-text: #888888;
+  --placeholder-color: #B0B0B0;
+  --white: #FFFFFF;
 
-  --color-brand-orange: rgb(var(--color-brand-orange-rgb));
-  --color-brand-charcoal: rgb(var(--color-brand-charcoal-rgb));
-  --color-brand-gold: rgb(var(--color-brand-gold-rgb));
-  --color-brand-red: rgb(var(--color-brand-red-rgb));
+  /* RGB Values for Opacity & Glassmorphism Effects */
+  --primary-orange-rgb: 255, 90, 20;
+  --button-orange-rgb: 255, 122, 69;
+  --hover-orange-rgb: 245, 107, 47;
+  --sidebar-bg-rgb: 74, 74, 74;
+  --input-bg-rgb: 255, 247, 242;
+  --primary-text-rgb: 102, 102, 102;
 
-  /* Light Theme Variables */
-  --background: #f8f9fa;
-  --foreground: #1c1c1c;
-  --card: #ffffff;
-  --card-foreground: #1c1c1c;
-  --popover: #ffffff;
-  --popover-foreground: #1c1c1c;
-  --primary: var(--color-brand-orange);
-  --primary-foreground: #ffffff;
-  --secondary: #e2e8f0;
-  --secondary-foreground: #1e293b;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: var(--color-brand-gold);
-  --accent-foreground: #1c1c1c;
-  --destructive: var(--color-brand-red);
-  --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: var(--color-brand-orange);
-  
+  /* ==========================================
+     Semantic Theme Variables (Mapped to Palette)
+     ========================================== */
+  --background: var(--light-bg);
+  --foreground: var(--primary-text);
+  --card: var(--white);
+  --card-foreground: var(--primary-text);
+  --popover: var(--white);
+  --popover-foreground: var(--primary-text);
+  --primary: var(--primary-orange);
+  --primary-hover: var(--hover-orange);
+  --primary-foreground: var(--white);
+  --secondary: var(--button-orange);
+  --secondary-foreground: var(--white);
+  --muted: var(--input-bg);
+  --muted-foreground: var(--secondary-text);
+  --border: var(--light-border);
+  --border-orange: var(--orange-border);
+  --input: var(--input-bg);
+  --ring: var(--primary-orange);
+  --sidebar: var(--sidebar-bg);
+  --placeholder: var(--placeholder-color);
+
+  /* ==========================================
+     Centralized Typography Tokens
+     ========================================== */
+  --font-family-heading: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-family-body: Helvetica, Arial, sans-serif;
+  --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* 1. Logo / Title ("DeepDcode") */
+  --typo-logo-title-font: var(--font-family-heading);
+  --typo-logo-title-size: 22px;
+  --typo-logo-title-weight: 700;
+
+  /* 2. Header Subtitle ("Know the system...") */
+  --typo-header-subtitle-font: var(--font-family-heading);
+  --typo-header-subtitle-size: 13px;
+  --typo-header-subtitle-weight: 400;
+
+  /* 3. Dropdown Label & Select Text ("Application type", "Please select") */
+  --typo-dropdown-font: var(--font-family-body);
+  --typo-dropdown-size: 14px;
+  --typo-dropdown-weight: 400;
+
+  /* 4. "GET INSIGHT" Button */
+  --typo-btn-get-insight-font: var(--font-family-body);
+  --typo-btn-get-insight-size: 14px;
+  --typo-btn-get-insight-weight: 700;
+
+  /* 5. Main Heading ("Get insight from the project repository!") */
+  --typo-main-heading-font: var(--font-family-heading);
+  --typo-main-heading-size: 22px;
+  --typo-main-heading-weight: 400;
+
+  /* 6. Middle Instruction Text ("Please select a application type...") */
+  --typo-instruction-font: var(--font-family-body);
+  --typo-instruction-size: 17px;
+  --typo-instruction-weight: 400;
+
+  /* 7. Example Question Pills ("What is PMO Portal?") */
+  --typo-question-pill-font: var(--font-family-body);
+  --typo-question-pill-size: 13px;
+  --typo-question-pill-weight: 400;
+
+  /* 8. Chat Input Box Text ("Type your question here...") */
+  --typo-chat-input-font: var(--font-family-body);
+  --typo-chat-input-size: 15px;
+  --typo-chat-input-weight: 400;
+
+  /* 9. Footer Text ("Powered by PwC...") */
+  --typo-footer-font: var(--font-family-body);
+  --typo-footer-size: 11px;
+  --typo-footer-weight: 400;
+
+  /* Geometry & Shadows */
   --radius: 0.75rem;
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .dark {
-  /* Dark Theme Variables */
-  --background: #121212;
-  --foreground: #f3f4f6;
-  --card: #1e1e1e;
-  --card-foreground: #f3f4f6;
-  --popover: #1e1e1e;
-  --popover-foreground: #f3f4f6;
-  --primary: var(--color-brand-orange);
-  --primary-foreground: #ffffff;
-  --secondary: #2d2d2d;
-  --secondary-foreground: #f3f4f6;
-  --muted: #2d2d2d;
-  --muted-foreground: #9ca3af;
-  --accent: var(--color-brand-gold);
-  --accent-foreground: #121212;
-  --destructive: var(--color-brand-red);
-  --destructive-foreground: #ffffff;
-  --border: #2d2d2d;
-  --input: #2d2d2d;
-  --ring: var(--color-brand-orange);
+  /* Dark Theme Variable Overrides */
+  --background: #1e1e1e;
+  --foreground: #e0e0e0;
+  --card: #2a2a2a;
+  --card-foreground: #ffffff;
+  --popover: #2a2a2a;
+  --popover-foreground: #ffffff;
+  --primary: var(--primary-orange);
+  --primary-hover: var(--hover-orange);
+  --primary-foreground: var(--white);
+  --secondary: var(--sidebar-bg);
+  --secondary-foreground: var(--white);
+  --muted: #333333;
+  --muted-foreground: var(--secondary-text);
+  --border: #444444;
+  --border-orange: var(--orange-border);
+  --input: #2a2a2a;
+  --ring: var(--primary-orange);
+  --sidebar: #2b2b2b;
 }
 
 @theme {
+  /* Semantic Mappings for Tailwind CSS */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -74,18 +141,26 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --color-org-orange: var(--color-brand-orange);
-  --color-org-charcoal: var(--color-brand-charcoal);
-  --color-org-gold: var(--color-brand-gold);
-  --color-org-red: var(--color-brand-red);
+  /* Explicit Brand Palette Utilities for Tailwind CSS */
+  --color-primary-orange: #FF5A14;
+  --color-button-orange: #FF7A45;
+  --color-hover-orange: #F56B2F;
+  --color-sidebar: #4A4A4A;
+  --color-light-bg: #FFFFFF;
+  --color-input-bg: #FFF7F2;
+  --color-light-border: #D8D8D8;
+  --color-orange-border: #FF8A55;
+  --color-primary-text: #666666;
+  --color-secondary-text: #888888;
+  --color-placeholder: #B0B0B0;
+  --color-white: #FFFFFF;
+
+  --font-heading: var(--font-family-heading);
+  --font-body: var(--font-family-body);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);

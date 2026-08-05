@@ -5,20 +5,129 @@
   * {
     border-color: var(--border);
   }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: var(--font-sans);
+    font-family: var(--font-family-heading);
     min-height: 100vh;
     overflow-x: hidden;
     margin: 0;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
+
+  ::placeholder {
+    color: var(--placeholder-color);
+    font-family: var(--typo-chat-input-font);
+    font-size: var(--typo-chat-input-size);
+    font-weight: var(--typo-chat-input-weight);
+  }
+
+  input, textarea, select {
+    background-color: var(--input-bg);
+    border-color: var(--light-border);
+    color: var(--primary-text);
+    font-family: var(--typo-chat-input-font);
+    font-size: var(--typo-chat-input-size);
+    font-weight: var(--typo-chat-input-weight);
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--orange-border);
+    outline: none;
+  }
+}
+
+/* ==========================================
+   Typography Specifications Centralized Classes
+   ========================================== */
+
+/* 1. Logo / Title ("DeepDcode") */
+.font-logo-title {
+  font-family: var(--typo-logo-title-font) !important;
+  font-size: var(--typo-logo-title-size) !important;
+  font-weight: var(--typo-logo-title-weight) !important;
+}
+
+/* 2. Header Subtitle ("Know the system...") */
+.font-header-subtitle {
+  font-family: var(--typo-header-subtitle-font) !important;
+  font-size: var(--typo-header-subtitle-size) !important;
+  font-weight: var(--typo-header-subtitle-weight) !important;
+}
+
+/* 3. Dropdown Label & Select Text ("Application type", "Please select") */
+.font-dropdown-label, .font-dropdown-select {
+  font-family: var(--typo-dropdown-font) !important;
+  font-size: var(--typo-dropdown-size) !important;
+  font-weight: var(--typo-dropdown-weight) !important;
+}
+
+/* 4. "GET INSIGHT" Button */
+.font-btn-get-insight, .btn-get-insight {
+  font-family: var(--typo-btn-get-insight-font) !important;
+  font-size: var(--typo-btn-get-insight-size) !important;
+  font-weight: var(--typo-btn-get-insight-weight) !important;
+  text-transform: uppercase !important;
+}
+
+/* 5. Main Heading ("Get insight from the project repository!") */
+.font-main-heading {
+  font-family: var(--typo-main-heading-font) !important;
+  font-size: var(--typo-main-heading-size) !important;
+  font-weight: var(--typo-main-heading-weight) !important;
+}
+
+/* 6. Middle Instruction Text ("Please select a application type...") */
+.font-instruction-text {
+  font-family: var(--typo-instruction-font) !important;
+  font-size: var(--typo-instruction-size) !important;
+  font-weight: var(--typo-instruction-weight) !important;
+}
+
+/* 7. Example Question Pills ("What is PMO Portal?") */
+.font-question-pill {
+  font-family: var(--typo-question-pill-font) !important;
+  font-size: var(--typo-question-pill-size) !important;
+  font-weight: var(--typo-question-pill-weight) !important;
+}
+
+/* 8. Chat Input Box Text ("Type your question here...") */
+.font-chat-input {
+  font-family: var(--typo-chat-input-font) !important;
+  font-size: var(--typo-chat-input-size) !important;
+  font-weight: var(--typo-chat-input-weight) !important;
+}
+
+/* 9. Footer Text ("Powered by PwC...") */
+.font-footer-text {
+  font-family: var(--typo-footer-font) !important;
+  font-size: var(--typo-footer-size) !important;
+  font-weight: var(--typo-footer-weight) !important;
+}
+
+/* Custom Component & Utility Classes */
+.bg-sidebar-custom {
+  background-color: var(--sidebar-bg);
+}
+
+.btn-orange {
+  background-color: var(--button-orange);
+  color: var(--white);
+  font-family: var(--typo-btn-get-insight-font);
+  font-size: var(--typo-btn-get-insight-size);
+  font-weight: var(--typo-btn-get-insight-weight);
+  text-transform: uppercase;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.btn-orange:hover {
+  background-color: var(--hover-orange);
 }
 
 /* Glassmorphism utility */
 .glass {
-  background: rgba(var(--color-brand-charcoal-rgb), 0.05);
+  background: rgba(var(--primary-orange-rgb), 0.05);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);

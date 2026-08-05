@@ -42,11 +42,14 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl"><BarChart3 /></span>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md text-white">
+              <BarChart3 size={22} />
             </div>
-            <span className="font-bold text-xl tracking-tight">Autonomous Proposal Creator</span>
+            <span className="font-logo-title tracking-tight text-foreground leading-tight flex items-center gap-1.5">
+              <span className="text-primary">Autonomous</span>
+              <span>Proposal Creator</span>
+            </span>
           </div>
 
           {/* Desktop Actions */}
