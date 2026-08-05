@@ -16,11 +16,11 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://187.127.163.17:3009',
         changeOrigin: true,
       },
       '/static': {
-        target: 'http://localhost:5000',
+        target: 'http://187.127.163.17:3009',
         changeOrigin: true,
       }
     }
