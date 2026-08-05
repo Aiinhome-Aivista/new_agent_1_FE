@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  History, RefreshCw, Download, Edit, Eye, Plus, Save,
+  History, RefreshCw, Download, Plus, Save,
   AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Lock, Trash2, Play, Pause
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
@@ -141,12 +141,6 @@ useEffect(() => {
     }
   };
 
-  // ── IR Editor ───────────────────────────────────────────
-  const openEditor = (structuredIr: any) => {
-    if (!structuredIr) return;
-    setEditableIr(JSON.parse(JSON.stringify(structuredIr)));
-    setIsEditorOpen(true);
-  };
 
   const saveUpdatedIr = async () => {
     if (!statusDetails?.proposal.id || !editableIr) return;
