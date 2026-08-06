@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   FileUp, Pause, Play, Download, History, Layers, Clock,
-  CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save, Eye,
+  CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save,
     Award, AlertTriangle, Lock
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
@@ -291,13 +291,6 @@ useEffect(() => {
 
 
 
-  // ── IR Editor ───────────────────────────────────────────
-  const openEditor = (structuredIr: any) => {
-    if (!structuredIr) return;
-    setEditableIr(JSON.parse(JSON.stringify(structuredIr)));
-    setEditorMode('full');
-    setIsEditorOpen(true);
-  };
 
   const saveUpdatedIr = async () => {
     if (!statusDetails?.proposal.id || !editableIr) return;
