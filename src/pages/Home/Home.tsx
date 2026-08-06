@@ -52,6 +52,7 @@ const Home: React.FC = () => {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [requirementsText, setRequirementsText] = useState('');
+  const [additionalContext, setAdditionalContext] = useState('');
   const [activeUploadTab, setActiveUploadTab] = useState<'upload' | 'text'>('upload');
   const [isDragActive, setIsDragActive] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -264,6 +265,9 @@ useEffect(() => {
         formData.append('requirements_text', requirementsText);
       } else {
         selectedFiles.forEach((file) => formData.append('files', file));
+        if (additionalContext.trim()) {
+          formData.append('additional_context', additionalContext);
+        }
       }
       
       caseStudyFiles.forEach(f => formData.append('case_study_files', f));
@@ -279,6 +283,7 @@ useEffect(() => {
       setPolling(true);
       setSelectedFiles([]);
       setRequirementsText('');
+      setAdditionalContext('');
       setActiveUploadTab('upload');
       reset();
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -530,6 +535,19 @@ useEffect(() => {
                         ))}
                       </div>
                     )}
+                    <div className="mt-3 flex flex-col gap-1.5">
+                      <label className="text-xs font-medium text-foreground/80 flex items-center gap-1">
+                        <Edit size={13} className="text-primary" />
+                        Additional Context / Notes 
+                      </label>
+                      <textarea
+                        rows={4}
+                        className="w-full rounded-lg border border-border bg-card/50 p-2.5 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary transition-all resize-y placeholder:text-muted-foreground/50"
+                        placeholder="Type or paste any additional details like client background, objectives, success criteria, key focuses..."
+                        value={additionalContext}
+                        onChange={(e) => setAdditionalContext(e.target.value)}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -590,6 +608,7 @@ useEffect(() => {
                       setShowTechSelection(false);
                       setSelectedFiles([]);
                       setRequirementsText('');
+                      setAdditionalContext('');
                       setActiveUploadTab('upload');
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
