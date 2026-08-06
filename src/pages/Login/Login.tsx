@@ -86,6 +86,7 @@ const Login: React.FC = () => {
               label="Username"
               type="text"
               placeholder="e.g. admin"
+              className='text-[#b3b1b1]'
               error={errors.username?.message as string}
               {...register('username')}
             />
@@ -94,6 +95,7 @@ const Login: React.FC = () => {
               label="Password"
               type="password"
               placeholder="••••••••"
+              className='text-[#b3b1b1]'
               error={errors.password?.message as string}
               {...register('password')}
             />

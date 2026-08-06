@@ -642,7 +642,7 @@ useEffect(() => {
                     return (
                       <React.Fragment key={phase.name}>
                         <div
-                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-30 ${stepStatus === 'success' ? 'bg-[#FF7A45]/15 border-[#FF7A45]/30 text-[#FF7A45] font-medium' :
+                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-30 ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
                             stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
                               stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
                                 'bg-muted/40 border-border text-muted-foreground'
@@ -655,7 +655,7 @@ useEffect(() => {
                         {idx < STEP_PHASES.length - 1 && (
                           <MoveRight
                             size={20}
-                            className={idx < currentStepIndex ? 'text-button-orange shrink-0' : 'text-muted-foreground shrink-0'}
+                            className={idx < currentStepIndex ? 'text-emerald-500 shrink-0' : 'text-muted-foreground shrink-0'}
                           />
                         )}
                       </React.Fragment>
