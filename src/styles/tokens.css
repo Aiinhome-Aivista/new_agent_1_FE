@@ -7,11 +7,11 @@
   --hover-orange: #F56B2F;
   --sidebar-bg: #4A4A4A;
   --light-bg: #FFFFFF;
-  --input-bg: #FFF7F2;
+  --input-bg: #ffedf2;
   --light-border: #D8D8D8;
   --orange-border: #FF8A55;
   --primary-text: #666666;
-  --secondary-text: #e4e4e4;
+  --secondary-text: #999999;
   --placeholder-color: #B0B0B0;
   --white: #FFFFFF;
 
@@ -26,7 +26,7 @@
   /* ==========================================
      Semantic Theme Variables (Mapped to Palette)
      ========================================== */
-  --background: var(--light-bg);
+  --background: var(--input-bg);
   --foreground: var(--primary-text);
   --card: var(--white);
   --card-foreground: var(--primary-text);
@@ -36,6 +36,7 @@
   --primary-hover: var(--hover-orange);
   --primary-foreground: var(--white);
   --secondary: var(--button-orange);
+  --secondary-badge: var(--secondary-text);
   --secondary-foreground: var(--white);
   --muted: var(--input-bg);
   --muted-foreground: var(--secondary-text);
@@ -109,6 +110,7 @@
   /* Dark Theme Variable Overrides */
   --background: #1e1e1e;
   --foreground: #e0e0e0;
+  --secondary-text: #e0e0e0;
   --card: #2a2a2a;
   --card-foreground: #ffffff;
   --popover: #2a2a2a;
@@ -117,6 +119,7 @@
   --primary-hover: var(--hover-orange);
   --primary-foreground: var(--white);
   --secondary: var(--sidebar-bg);
+  --secondary-badge: #7e7e7e80;
   --secondary-foreground: var(--white);
   --muted: #333333;
   --muted-foreground: var(--secondary-text);
@@ -138,6 +141,7 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
+  --color-secondary-badge: var(--secondary-badge);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);

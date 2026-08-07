@@ -264,7 +264,7 @@ const Settings: React.FC = () => {
             <input
               type="text"
               placeholder="Search assets, tags, description..."
-              className="pl-9 pr-4 py-2 border border-input rounded-lg w-full text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              className="pl-9 pr-4 py-2 border border-input rounded-lg w-full text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

@@ -542,7 +542,7 @@ useEffect(() => {
                       </label>
                       <textarea
                         rows={4}
-                        className="w-full rounded-lg border border-border bg-card/50 p-2.5 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary transition-all resize-y placeholder:text-muted-foreground/50"
+                        className="w-full rounded-lg border border-border bg-card/50 p-2.5 text-xs text-foreground leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary transition-all resize-y placeholder:text-muted-foreground/50"
                         placeholder="Type or paste any additional details like client background, objectives, success criteria, key focuses..."
                         value={additionalContext}
                         onChange={(e) => setAdditionalContext(e.target.value)}
@@ -559,7 +559,7 @@ useEffect(() => {
                     </label>
                     <textarea
                       rows={6}
-                      className="w-full rounded-lg border border-border bg-card/50 p-3 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary transition-all resize-y placeholder:text-muted-foreground/60"
+                      className="w-full rounded-lg border border-border bg-card/50 p-3 text-xs text-foreground leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary transition-all resize-y placeholder:text-muted-foreground/60"
                       placeholder="Describe client requirements, paste the email MoM, list features, or outline specific project goals here..."
                       value={requirementsText}
                       onChange={(e) => setRequirementsText(e.target.value)}
