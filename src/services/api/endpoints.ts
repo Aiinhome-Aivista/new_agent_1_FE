@@ -10,6 +10,10 @@ export const authApi = {
 };
 
 export const proposalApi = {
+  generateQuestion: async (data: any): Promise<any> => {
+    const res = await apiClient.post('/api/generate-question', data);
+    return res.data;
+  },
   upload: async (formData: FormData): Promise<{ message: string; proposal_id: string }> => {
     const res = await apiClient.post(API_ENDPOINTS.uploadProposal, formData, {
       headers: {
@@ -58,10 +62,10 @@ export const proposalApi = {
     return res.data;
   },
   resumeProposal: async (id: string, ui_tech: string, backend_tech: string, db_tech: string, formatted_budget: string, selected_rag?: string, selected_guardrail?: string, selected_action_engine?: string): Promise<any> => {
-    const res = await apiClient.post(API_ENDPOINTS.resumeProposal(id), { 
-      ui_tech, 
-      backend_tech, 
-      db_tech, 
+    const res = await apiClient.post(API_ENDPOINTS.resumeProposal(id), {
+      ui_tech,
+      backend_tech,
+      db_tech,
       formatted_budget,
       selected_rag,
       selected_guardrail,
