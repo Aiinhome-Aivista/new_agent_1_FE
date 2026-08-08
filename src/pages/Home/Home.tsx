@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   FileUp, Pause, Play, Download, History, Layers, Clock,
   CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save,
-    Award, AlertTriangle, Lock
+  Award, AlertTriangle, Lock, MonitorPlay
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
 import { useProposalStore, useAuthStore } from '../../store';
@@ -18,6 +18,7 @@ import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
 import { TechSelectionModal } from '../../components/TechSelectionModal';
+import { PPTPreviewModal } from '../../components/PPTPreviewModal';
 
 const STEP_PHASES = [
   { name: 'Ingesting', label: 'Document parsing', icon: <FileUp size={16} /> },
@@ -59,6 +60,7 @@ const Home: React.FC = () => {
   const [editorMode, setEditorMode] = useState<'full' | 'rates_only'>('full');
   const [editableIr, setEditableIr] = useState<any>(null);
   const [savingIr, setSavingIr] = useState(false);
+  const [isPPTPreviewOpen, setIsPPTPreviewOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Extra upload modal states
@@ -323,6 +325,37 @@ useEffect(() => {
       }
     } catch (err: any) {
       toast('Failed to save changes: ' + (err.response?.data?.error || err.message), 'error');
+    } finally {
+      setSavingIr(false);
+    }
+  };
+
+  const handlePreviewSave = async (newIr: any) => {
+    setEditableIr(newIr);
+    if (!statusDetails?.proposal.id || !newIr) return;
+    try {
+      setSavingIr(true);
+      if (statusDetails.proposal.status === 'WaitingForRateConfirmation') {
+        await proposalApi.resumeRate(statusDetails.proposal.id, newIr.resources);
+        toast('Rate changes saved. Resuming proposal generation...', 'success');
+        setPolling(true);
+      } else {
+        const response = await proposalApi.edit(statusDetails.proposal.id, newIr);
+        toast('Solution blueprint updated. PowerPoint deck regenerated.', 'success');
+        setStatusDetails({
+          ...statusDetails,
+          proposal: {
+            ...statusDetails.proposal,
+            generated_file_path: response.file_path,
+            structured_json_ir: JSON.stringify(response.structured_ir),
+          },
+          structured_ir: response.structured_ir
+        });
+        fetchProposals();
+      }
+    } catch (err: any) {
+      toast('Failed to save changes: ' + (err.response?.data?.error || err.message), 'error');
+      throw err;
     } finally {
       setSavingIr(false);
     }
@@ -707,6 +740,13 @@ useEffect(() => {
                       )}
                     </span>
                     <div className="flex gap-2 flex-wrap">
+
+                      {/* Preview Slides */}
+                      {statusDetails?.structured_ir && (
+                        <Button size="sm" variant="outline" className="text-[10px] py-1 h-7 gap-1 text-button-orange border-button-orange hover:bg-button-orange/10" onClick={() => setIsPPTPreviewOpen(true)}>
+                          <MonitorPlay size={11} /> Preview Slides
+                        </Button>
+                      )}
 
                       {/* Approve */}
                       {canApproveNow && (
@@ -1163,6 +1203,17 @@ useEffect(() => {
             setPolling(true); // resume polling to catch next phase
           }}
           onClose={() => setShowTechSelection(false)}
+        />
+      )}
+      {statusDetails && (
+        <PPTPreviewModal
+          isOpen={isPPTPreviewOpen}
+          onClose={() => setIsPPTPreviewOpen(false)}
+          proposalId={statusDetails.proposal.id}
+          clientName={statusDetails.proposal.client_name}
+          structuredIr={statusDetails.structured_ir}
+          canEdit={!perms.isReadOnly}
+          onSave={handlePreviewSave}
         />
       )}
     </PageWrapper>
