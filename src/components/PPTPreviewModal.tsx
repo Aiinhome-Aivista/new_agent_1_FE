@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './ui/Modal/Modal';
 import { Button } from './ui/Button/Button';
-import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X, Bot, Send, Sparkles, Wand2, MessageSquare, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X, Bot, Send, Sparkles, Wand2 } from 'lucide-react';
 import { DiagramEditor } from './DiagramEditor/DiagramEditor';
 import { proposalApi } from '../services/api/endpoints';
 
