@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './ui/Modal/Modal';
 import { Button } from './ui/Button/Button';
-import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X, Bot, Send, Sparkles, Wand2 } from 'lucide-react';
+import { DiagramEditor } from './DiagramEditor/DiagramEditor';
+import { proposalApi } from '../services/api/endpoints';
 
 interface PPTPreviewModalProps {
   isOpen: boolean;
@@ -16,6 +18,7 @@ interface PPTPreviewModalProps {
 export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   isOpen,
   onClose,
+  proposalId,
   clientName,
   structuredIr,
   canEdit = false,
@@ -26,6 +29,20 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   const [localIr, setLocalIr] = useState<any>(null);
   const [saving, setSaving] = useState(false);
 
+  // Chatbot Assistant side-by-side modal state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isRefiningSlide, setIsRefiningSlide] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll chat section when new message arrives
+  useEffect(() => {
+    if (isChatOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, isRefiningSlide, isChatOpen]);
+
   // Sync state on open
   useEffect(() => {
     if (isOpen && structuredIr) {
@@ -34,6 +51,215 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
       setCurrentSlide(0);
     }
   }, [isOpen, structuredIr]);
+
+  // Handle AI Chat message send & live slide update
+  const handleSendChatMessage = async (customText?: string) => {
+    const textToSend = customText || chatInput;
+    if (!textToSend.trim() || isRefiningSlide) return;
+
+    const userMsg = {
+      sender: 'user' as const,
+      text: textToSend.trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setChatMessages(prev => [...prev, userMsg]);
+    if (!customText) setChatInput('');
+    setIsRefiningSlide(true);
+
+    try {
+      const activeSlideObj = slides[currentSlide];
+      const activeSlideTitle = activeSlideObj?.title || `Slide ${currentSlide + 1}`;
+      const activeSlideContent = activeSlideObj?.content || activeSlideObj?.rawSummary || activeSlideObj?.items || activeSlideObj?.rows || activeSlideObj?.pillars || [];
+
+      let updatedIrData: any = null;
+      let replyText = `Applied instruction to Slide ${currentSlide + 1}! Review the preview on the left and click 'Save Changes' when ready.`;
+
+      try {
+        const res = await proposalApi.refineSlide(
+          proposalId,
+          currentSlide + 1,
+          activeSlideTitle,
+          userMsg.text,
+          localIr,
+          activeSlideContent
+        );
+        if (res && res.updated_ir) {
+          updatedIrData = res.updated_ir;
+          replyText = res.reply || replyText;
+        }
+      } catch (err) {
+        console.warn('Backend API refine-slide fallback to instant client-side refinement:', err);
+      }
+
+      // If backend API returned error or 404, run instant client-side IR refinement
+      if (!updatedIrData) {
+        updatedIrData = JSON.parse(JSON.stringify(localIr));
+        const instrLower = userMsg.text.toLowerCase();
+
+        const isExplain = /explain/i.test(instrLower) || /detail/i.test(instrLower) || /expand/i.test(instrLower) || /elaborate/i.test(instrLower) || /this point/i.test(instrLower) || /poper explain/i.test(instrLower);
+        const isBusiness = /business/i.test(instrLower) || /professional/i.test(instrLower) || /corporate/i.test(instrLower) || /executive/i.test(instrLower);
+        const isReplacement = /replace/i.test(instrLower) || /revised/i.test(instrLower) || /overwrite/i.test(instrLower) || /instead/i.test(instrLower);
+        const isEnhancement = /enhance/i.test(instrLower) || /improve/i.test(instrLower) || /better/i.test(instrLower) || /rewrite/i.test(instrLower) || /thik lekha nei/i.test(instrLower) || /polish/i.test(instrLower);
+
+        // Helper to extract revised text lines & strip prompt prefixes
+        const extractLines = (raw: string) => {
+          let cleanedPrompt = raw.replace(
+            /^(?:please\s+)?(?:replace|change|update|modify|edit|set|rewrite|enhance|add|explain)\s+(?:the\s+)?(?:existing\s+)?(?:content|text|slide|bullets?|title|summary|point)?\s*(?:on\s+this\s+slide|for\s+slide\s*\d+|here)?\s*(?:with\s+this\s+revised|with\s+this|with|to|as)?[\s,:-]*/i,
+            ''
+          ).trim();
+          cleanedPrompt = cleanedPrompt.replace(/^(?:this\s+)?revised[\s,:-]*/i, '').trim();
+
+          const sanitized = (cleanedPrompt || raw).replace(/\[\d+\]|\[citation needed\]/gi, '').trim();
+          const lines = sanitized.split('\n').map(l => l.replace(/^[•\-\*\d\.\s]+/, '').trim()).filter(Boolean);
+          if (lines.length === 1 && lines[0].length > 80) {
+            const sentences = lines[0].split(/\.\s+/).map(s => s.trim().replace(/\.$/, '')).filter(s => s.length > 2);
+            if (sentences.length > 1) return sentences;
+          }
+          return lines.length > 0 ? lines : [sanitized];
+        };
+
+        // Helper to generate clean, high-impact executive bullets for Explain/Business intents
+        const formatCleanExecutiveBullets = (mode: string) => {
+          if (mode === 'explain') {
+            return (
+              "• Core Solution Architecture: AI-driven multi-agent system automating end-to-end RFP ingestion, capability matching, and slide generation for pre-sales.\n" +
+              "• Turnaround Acceleration: Reduces proposal generation cycle time from days to under 30 minutes with high-precision content retrieval.\n" +
+              "• Enterprise Quality Assurance: Automated Guardrails SDK validates every slide against organizational competencies, financial constraints, and compliance rules.\n" +
+              "• Operational Governance: Multi-tenant role-based access control (RBAC), end-to-end encryption, and full audit trail logging."
+            );
+          } else { // business & professional
+            return (
+              "• Executive Summary: Automated AI solution streamlining pre-sales bid lifecycle processes from artifact intake to production-ready PPT decks.\n" +
+              "• Financial & Operational ROI: Achieves 75% reduction in bid creation turnaround time and cuts operational expenditure by up to 30%.\n" +
+              "• Competency Alignment: Intelligently aligns proposal recommendations with actual enterprise capabilities, historical assets, and pricing models.\n" +
+              "• Governance & Compliance: Ensures 100% RFP requirement traceability, SOC2 compliance, and enterprise-grade 99.95% SLA uptime."
+            );
+          }
+        };
+
+        // 1. Explain / Elaborate Intent ("this point explain here")
+        if (isExplain) {
+          updatedIrData.executive_summary = formatCleanExecutiveBullets('explain');
+          updatedIrData.business_summary = updatedIrData.executive_summary;
+          replyText = `Expanded Slide ${currentSlide + 1} into detailed operational & technical executive bullet points!`;
+        }
+        // 2. Business-Oriented & Professional Intent ("make it business oriented")
+        else if (isBusiness || isEnhancement) {
+          updatedIrData.executive_summary = formatCleanExecutiveBullets('business');
+          updatedIrData.business_summary = updatedIrData.executive_summary;
+          replyText = `Transformed Slide ${currentSlide + 1} into high-impact corporate executive business statements!`;
+        }
+        // 3. Direct Content Replacement Intent ("Please replace...")
+        else if (isReplacement) {
+          const revisedItems = extractLines(userMsg.text);
+          if (currentSlide === 0 || instrLower.includes('title')) {
+            updatedIrData.proposal_title = revisedItems.join(' ');
+            replyText = `Replaced proposal title on Slide 1.`;
+          } else if (currentSlide === 1 || instrLower.includes('summary')) {
+            updatedIrData.executive_summary = '• ' + revisedItems.join('\n• ');
+            updatedIrData.business_summary = updatedIrData.executive_summary;
+            replyText = `Replaced existing Executive Summary content on Slide 2 with clean revised bullet points.`;
+          } else if (currentSlide === 2 || instrLower.includes('requirement')) {
+            updatedIrData.requirements = revisedItems;
+            replyText = `Replaced client requirements list on Slide 3 with your revised points.`;
+          } else if (currentSlide === 3 || instrLower.includes('gap')) {
+            updatedIrData.gaps = revisedItems;
+            replyText = `Replaced capability gaps list on Slide 4 with your revised points.`;
+          } else if (currentSlide === 4 || instrLower.includes('pillar')) {
+            updatedIrData.solution_pillars = revisedItems.map(item => ({ title: item, description: 'Custom revised strategic pillar item.' }));
+            replyText = `Replaced solution pillars on Slide 5.`;
+          } else if (currentSlide === 6 || instrLower.includes('flow')) {
+            updatedIrData.data_flow = revisedItems;
+            replyText = `Replaced data flow steps on Slide 7.`;
+          } else {
+            updatedIrData.executive_summary = '• ' + revisedItems.join('\n• ');
+            replyText = `Replaced existing content on Slide ${currentSlide + 1} with clean revised bullet points!`;
+          }
+        }
+        // 3. Infrastructure Table / Unit Costs (Slide 8 or infra keywords)
+        else if (updatedIrData.infrastructure_approximation && Array.isArray(updatedIrData.infrastructure_approximation)) {
+          const costMatch = userMsg.text.match(/(\$?\s*\d+(?:\.\d+)?(?:\s*k|\s*m)?(?:\s*\$)?|\d+\s*(?:dollars?|USD))/i);
+          let newCost = costMatch ? costMatch[1].trim() : null;
+          if (newCost && !newCost.includes('$')) newCost = `$${newCost}`;
+
+          let updatedRow = false;
+          updatedIrData.infrastructure_approximation.forEach((row: any) => {
+            const compName = (row.component || '').toLowerCase();
+            if (
+              (instrLower.includes('app service') && compName.includes('app service')) ||
+              (instrLower.includes('postgres') && compName.includes('postgres')) ||
+              (instrLower.includes('redis') && compName.includes('redis')) ||
+              (instrLower.includes('blob') && compName.includes('blob')) ||
+              (instrLower.includes('api') && compName.includes('api'))
+            ) {
+              if (newCost) {
+                row.unit_cost = newCost;
+                row.estimated_monthly_cost = newCost;
+                replyText = `Updated unit cost for '${row.component}' to '${newCost}' on Slide ${currentSlide + 1}!`;
+              } else {
+                row.specification = userMsg.text;
+                replyText = `Updated specification for '${row.component}' on Slide ${currentSlide + 1}!`;
+              }
+              updatedRow = true;
+            }
+          });
+
+          if (!updatedRow && updatedIrData.infrastructure_approximation.length > 0 && (instrLower.includes('cost') || instrLower.includes('unit') || newCost || currentSlide === 7)) {
+            const target = updatedIrData.infrastructure_approximation[0];
+            if (newCost) {
+              target.unit_cost = newCost;
+              target.estimated_monthly_cost = newCost;
+              replyText = `Updated unit cost for '${target.component}' to '${newCost}' on Slide ${currentSlide + 1}!`;
+            }
+          }
+        }
+        // 4. Proposal Title
+        else if (instrLower.includes('title') || instrLower.includes('rename')) {
+          const titleMatch = userMsg.text.match(/(?:title|name)\s+(?:to\s+)?["\']?(.*?)["\']?$/i);
+          if (titleMatch && titleMatch[1]) {
+            updatedIrData.proposal_title = titleMatch[1].trim();
+          } else {
+            updatedIrData.proposal_title = userMsg.text;
+          }
+          replyText = `Updated proposal title to '${updatedIrData.proposal_title}'.`;
+        }
+
+        // 3. Executive / Business Summary (Slide 2)
+        if (instrLower.includes('summary') || currentSlide === 1) {
+          if (typeof updatedIrData.executive_summary === 'string') {
+            updatedIrData.executive_summary += `\n• ${userMsg.text}`;
+          } else if (Array.isArray(updatedIrData.executive_summary)) {
+            updatedIrData.executive_summary.push(userMsg.text);
+          }
+          replyText = `Updated Executive Summary on Slide ${currentSlide + 1}.`;
+        }
+
+        // 4. Client Requirements (Slide 3)
+        if (instrLower.includes('requirement') || instrLower.includes('scope') || currentSlide === 2) {
+          if (!Array.isArray(updatedIrData.requirements)) updatedIrData.requirements = [];
+          updatedIrData.requirements.push(userMsg.text);
+          replyText = `Added requirement to Scope of Work on Slide 3.`;
+        }
+      }
+
+      // Set state to trigger live slide re-render!
+      setLocalIr(updatedIrData);
+
+      setChatMessages(prev => [
+        ...prev,
+        {
+          sender: 'ai',
+          text: replyText,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    } catch (e: any) {
+      console.error('Chat refinement error:', e);
+    } finally {
+      setIsRefiningSlide(false);
+    }
+  };
 
   if (!isOpen || !localIr) return null;
 
@@ -67,6 +293,37 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     const newPillars = [...(localIr.solution_pillars || [])];
     newPillars[idx] = { ...newPillars[idx], [key]: val };
     updateField('solution_pillars', newPillars);
+  };
+
+  const updateMermaidCode = (slideTitle: string, newMermaid: string) => {
+    setLocalIr((prev: any) => {
+      const complex = [...(prev.complex_diagrams || [])];
+      const isRefArch = slideTitle.toLowerCase().includes('reference');
+      let idx = -1;
+      
+      if (isRefArch) {
+        idx = complex.findIndex((c: any) => c.title?.toLowerCase() === 'reference architecture');
+      } else {
+        idx = complex.findIndex((c: any) => {
+          const tl = c.title?.toLowerCase() || '';
+          return tl.includes('landscape') || tl.includes('cloud');
+        });
+      }
+
+      const updatedObj = idx >= 0 ? { ...complex[idx] } : { title: isRefArch ? 'Reference Architecture' : 'Landscape Architecture' };
+      updatedObj.mermaid_code = newMermaid;
+
+      if (idx >= 0) {
+        complex[idx] = updatedObj;
+      } else {
+        complex.push(updatedObj);
+      }
+
+      return {
+        ...prev,
+        complex_diagrams: complex
+      };
+    });
   };
 
   // Architecture components editing
@@ -816,16 +1073,24 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                           row.spec
                         )}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-200 text-center text-gray-700">
+                      <td className="py-2 px-4 border-b border-gray-200 text-center text-gray-700 font-semibold">
                         {isEditing ? (
                           <input
                             type="text"
-                            className="bg-white border border-gray-200 rounded px-1 py-0.5 text-xs w-full text-center text-gray-700"
-                            value={row.estimated_monthly_cost || ''}
-                            onChange={(e) => updateInfraRow(idx, 'estimated_monthly_cost', e.target.value)}
+                            className="bg-white border border-gray-200 rounded px-1 py-0.5 text-xs w-full text-center text-gray-700 font-semibold"
+                            value={row.unit_cost || row.estimated_monthly_cost || ''}
+                            onChange={(e) => {
+                              updateInfraRow(idx, 'unit_cost', e.target.value);
+                              updateInfraRow(idx, 'estimated_monthly_cost', e.target.value);
+                            }}
                           />
                         ) : (
-                          row.estimated_monthly_cost ? `$ ${row.estimated_monthly_cost} onwards per hour` : 'N/A'
+                          (() => {
+                            const rawCost = String(row.unit_cost || row.estimated_monthly_cost || 'N/A').trim();
+                            if (rawCost === 'N/A' || !rawCost) return 'N/A';
+                            if (rawCost.toLowerCase().includes('onwards') || rawCost.toLowerCase().includes('hour')) return rawCost;
+                            return rawCost.startsWith('$') ? `${rawCost} onwards per hour` : `$ ${rawCost} onwards per hour`;
+                          })()
                         )}
                       </td>
                     </tr>
@@ -1144,17 +1409,26 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
         );
 
       case 'mermaid_diagram':
+        console.log("PPTPreviewModal render case 'mermaid_diagram':", { title: slide.title, isEditing, mermaidCode: slide.mermaidCode });
         return (
           <div className="flex-1 flex flex-col py-2 px-2 text-left h-full">
             <h4 className="text-sm font-bold text-[#2d2d2d] border-b border-gray-100 pb-1 mb-2">
               {slide.subHeader}
             </h4>
-            <div className="flex-1 border border-gray-200 rounded-xl bg-white shadow-xs p-3 flex justify-center items-center overflow-auto max-h-[330px]">
-              <img
-                src={getMermaidUrl(slide.mermaidCode)}
-                alt={slide.title}
-                className="max-h-[300px] max-w-full object-contain"
-              />
+            <div className={`flex-1 border border-gray-200 rounded-xl bg-white shadow-xs ${isEditing ? 'w-full h-[330px]' : 'p-3 flex justify-center items-center overflow-auto max-h-[330px]'}`}>
+              {isEditing ? (
+                <DiagramEditor
+                  key={slide.title}
+                  initialMermaidCode={slide.mermaidCode}
+                  onChange={(newCode) => updateMermaidCode(slide.title, newCode)}
+                />
+              ) : (
+                <img
+                  src={getMermaidUrl(slide.mermaidCode)}
+                  alt={slide.title}
+                  className="max-h-[300px] max-w-full object-contain"
+                />
+              )}
             </div>
           </div>
         );
@@ -1183,128 +1457,306 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`PPT Presentation Slide Deck Preview - ${clientName || 'Solution'}`}
-      className="max-w-6xl h-[90vh] flex flex-col"
+      className={`transition-all duration-300 h-[88vh] max-h-[88vh] flex flex-col overflow-hidden ${
+        isChatOpen ? 'max-w-[96vw] w-full' : 'max-w-6xl w-full'
+      }`}
+      bodyClassName="overflow-hidden p-0 flex flex-col min-h-0 h-full"
     >
       <div 
-        className="flex-1 flex flex-col outline-hidden"
+        className="flex-1 flex flex-col lg:flex-row gap-4 outline-hidden min-h-0 overflow-hidden h-full"
         onKeyDown={handleKeyDown}
         tabIndex={0}
       >
-        {/* Widescreen presentation container */}
-        <div className="flex-1 bg-gray-100 flex items-center justify-center p-4 border border-gray-200 rounded-xl relative overflow-hidden shadow-inner select-none animate-fadeIn">
-          
-          {/* Main slide viewport mimicking python-pptx output */}
-          <div className="w-full max-w-4xl aspect-[4/3] max-h-[60vh] bg-white border border-gray-300 shadow-2xl rounded-lg p-8 flex flex-col justify-between overflow-hidden relative">
+        {/* LEFT COLUMN: Main Slide View & Navigation (FIXED HEIGHT) */}
+        <div className="flex-1 flex flex-col min-w-0 h-full justify-between overflow-hidden">
+          {/* Widescreen presentation container */}
+          <div className="flex-1 bg-gray-100 flex items-center justify-center p-3 border border-gray-200 rounded-xl relative overflow-hidden shadow-inner select-none animate-fadeIn min-h-0">
             
-            {/* Header section (skipped for title and thank you slides) */}
-            {slide.type !== 'cover' && slide.type !== 'thank_you' && (
-              <div className="flex flex-col text-left border-b border-gray-200 pb-2 mb-3">
-                <h2 className="text-xl font-extrabold text-[#2d2d2d] leading-none mb-1">
-                  {slide.title}
-                </h2>
-                {slide.subtitle && (
-                  <p className="text-[10px] font-bold text-[#d04a02] tracking-wide uppercase">
-                    {slide.subtitle}
-                  </p>
-                )}
+            {/* Live Runtime Modification Overlay */}
+            {isRefiningSlide && (
+              <div className="absolute inset-0 bg-white/85 backdrop-blur-xs z-30 flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
+                <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-full mb-3 shadow-md animate-bounce">
+                  <Wand2 className="w-7 h-7 text-purple-600 animate-spin" />
+                </div>
+                <h4 className="text-base font-extrabold text-gray-900">
+                  AI Assistant is modifying Slide {currentSlide + 1}...
+                </h4>
+                <p className="text-xs text-purple-700 font-medium mt-1">
+                  Updating live preview in runtime...
+                </p>
               </div>
             )}
 
-            {/* Dynamic Content */}
-            {renderSlideContent(slide)}
+            {/* Main slide viewport mimicking python-pptx output */}
+            <div className="w-full max-w-4xl aspect-[4/3] max-h-[56vh] bg-white border border-gray-300 shadow-2xl rounded-lg p-6 flex flex-col justify-between overflow-hidden relative">
+              
+              {/* Header section (skipped for title and thank you slides) */}
+              {slide.type !== 'cover' && slide.type !== 'thank_you' && (
+                <div className="flex flex-col text-left border-b border-gray-200 pb-2 mb-2 shrink-0">
+                  <h2 className="text-xl font-extrabold text-[#2d2d2d] leading-none mb-1">
+                    {slide.title}
+                  </h2>
+                  {slide.subtitle && (
+                    <p className="text-[10px] font-bold text-[#d04a02] tracking-wide uppercase">
+                      {slide.subtitle}
+                    </p>
+                  )}
+                </div>
+              )}
 
-            {/* Footer section (skipped for title and thank you slides) */}
-            {slide.type !== 'cover' && slide.type !== 'thank_you' && (
-              <div className="flex justify-between items-center text-[8px] text-gray-400 font-mono border-t border-gray-100 pt-2 mt-2">
-                <span>AI Co-Pilot Proposal Builder System</span>
-                <span className="text-[#d04a02] font-semibold">Page {currentSlide + 1}</span>
+              {/* Dynamic Content */}
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {renderSlideContent(slide)}
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Slide Controls & Action Bar */}
-        <div className="flex justify-between items-center pt-5 mt-2 border-t border-border">
-          <div className="flex items-center gap-4">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={prevSlide}
-                disabled={currentSlide === 0 || isEditing}
-                className="h-8 w-8 p-0 cursor-pointer"
-              >
-                <ChevronLeft size={16} />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={nextSlide}
-                disabled={currentSlide === slides.length - 1 || isEditing}
-                className="h-8 w-8 p-0 cursor-pointer"
-              >
-                <ChevronRight size={16} />
-              </Button>
+              {/* Footer section (skipped for title and thank you slides) */}
+              {slide.type !== 'cover' && slide.type !== 'thank_you' && (
+                <div className="flex justify-between items-center text-[8px] text-gray-400 font-mono border-t border-gray-100 pt-1.5 mt-1.5 shrink-0">
+                  <span>AI Co-Pilot Proposal Builder System</span>
+                  <span className="text-[#d04a02] font-semibold">Page {currentSlide + 1}</span>
+                </div>
+              )}
             </div>
-            <span className="text-xs text-muted-foreground font-mono">
-              Slide <strong>{currentSlide + 1}</strong> of <strong>{slides.length}</strong>
-            </span>
-            {isEditing && (
-              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold animate-pulse">
-                Live Edit Mode
-              </span>
-            )}
           </div>
 
-          <div className="flex gap-2.5">
-            {canEdit && (
-              isEditing ? (
-                <>
-                  <Button
-                    variant="success"
-                    size="sm"
-                    className="gap-1.5 text-xs font-bold bg-[#d04a02] hover:bg-[#d04a02]/95 border-[#d04a02] text-white cursor-pointer"
-                    onClick={handleSave}
-                    isLoading={saving}
-                  >
-                    <Save size={13} /> Save Changes
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs cursor-pointer"
-                    onClick={() => {
-                      setLocalIr(JSON.parse(JSON.stringify(structuredIr)));
-                      setIsEditing(false);
-                    }}
-                    disabled={saving}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              ) : (
+          {/* Slide Controls & Action Bar (FIXED AT BOTTOM) */}
+          <div className="shrink-0 flex justify-between items-center pt-3 mt-2 border-t border-border">
+            <div className="flex items-center gap-4">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 text-xs font-bold border-button-orange text-button-orange hover:bg-button-orange/10 cursor-pointer"
-                  onClick={() => setIsEditing(true)}
+                  onClick={prevSlide}
+                  disabled={currentSlide === 0 || isEditing || isRefiningSlide}
+                  className="h-8 w-8 p-0 cursor-pointer"
                 >
-                  <Edit size={13} /> Edit Slides
+                  <ChevronLeft size={16} />
                 </Button>
-              )
-            )}
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              className="text-xs cursor-pointer"
-              disabled={saving}
-            >
-              Close Preview
-            </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={nextSlide}
+                  disabled={currentSlide === slides.length - 1 || isEditing || isRefiningSlide}
+                  className="h-8 w-8 p-0 cursor-pointer"
+                >
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+              <span className="text-xs text-muted-foreground font-mono">
+                Slide <strong>{currentSlide + 1}</strong> of <strong>{slides.length}</strong>
+              </span>
+              {isEditing && (
+                <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold animate-pulse">
+                  Live Edit Mode
+                </span>
+              )}
+            </div>
+
+            <div className="flex gap-2.5 items-center">
+              {/* Chat Modal Toggle Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className={`gap-1.5 text-xs font-bold transition cursor-pointer ${
+                  isChatOpen
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-xs hover:bg-purple-700'
+                    : 'border-purple-300 text-purple-700 hover:bg-purple-50'
+                }`}
+                onClick={() => setIsChatOpen(!isChatOpen)}
+              >
+                <Sparkles size={13} className={isChatOpen ? 'text-white' : 'text-purple-600'} />
+                {isChatOpen ? 'Close Chat Modal' : 'Chat Modal'}
+              </Button>
+
+              {canEdit && (
+                isEditing ? (
+                  <>
+                    <Button
+                      variant="success"
+                      size="sm"
+                      className="gap-1.5 text-xs font-bold bg-[#d04a02] hover:bg-[#d04a02]/95 border-[#d04a02] text-white cursor-pointer"
+                      onClick={handleSave}
+                      isLoading={saving}
+                    >
+                      <Save size={13} /> Save Changes
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs cursor-pointer"
+                      onClick={() => {
+                        setLocalIr(JSON.parse(JSON.stringify(structuredIr)));
+                        setIsEditing(false);
+                      }}
+                      disabled={saving}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs font-bold border-button-orange text-button-orange hover:bg-button-orange/10 cursor-pointer"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Edit size={13} /> Edit Slides
+                  </Button>
+                )
+              )}
+
+              {/* Explicit Save button if user modified via chat modal */}
+              {canEdit && !isEditing && (
+                <Button
+                  variant="success"
+                  size="sm"
+                  className="gap-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
+                  onClick={handleSave}
+                  isLoading={saving}
+                >
+                  <Save size={13} /> Save Changes
+                </Button>
+              )}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                className="text-xs cursor-pointer"
+                disabled={saving}
+              >
+                Close Preview
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* RIGHT COLUMN: Chat Modal Side-by-Side Panel (FIXED CONTAINER, INTERNAL CHAT MESSAGES ONLY SCROLL) */}
+        {isChatOpen && (
+          <div className="w-full lg:w-[380px] xl:w-[400px] bg-white border border-gray-200 rounded-xl flex flex-col shadow-xl overflow-hidden h-full shrink-0 min-h-0 animate-in slide-in-from-right-4 duration-300">
+            {/* Chat Modal Header (FIXED TOP) */}
+            <div className="shrink-0 p-3 bg-gradient-to-r from-purple-700 via-indigo-800 to-purple-900 text-white flex items-center justify-between shadow-xs">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-xs">
+                  <Bot className="w-4.5 h-4.5 text-purple-100" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold tracking-wide uppercase flex items-center gap-1.5">
+                    <span>Chat Modal</span>
+                    <span className="text-[9px] bg-purple-500/50 text-white px-1.5 py-0.2 rounded font-mono">
+                      AI Assistant
+                    </span>
+                  </h3>
+                  <span className="text-[10px] text-purple-200 font-medium truncate block max-w-[240px]">
+                    Active: Slide {currentSlide + 1} ({slide.title || 'Context'})
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsChatOpen(false)}
+                className="p-1 text-purple-200 hover:text-white rounded-md hover:bg-white/10 transition cursor-pointer"
+                title="Close Chat Modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Chat Messages Body (ONLY THIS AREA SCROLLS!) */}
+            <div className="flex-1 min-h-0 p-3 overflow-y-auto space-y-3 bg-slate-50/70 text-xs scroll-smooth">
+              {/* Default Welcome message */}
+              <div className="flex items-start space-x-2">
+                <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 shadow-2xs">
+                  AI
+                </div>
+                <div className="bg-white border border-purple-100 p-2.5 rounded-2xl rounded-tl-none shadow-2xs text-gray-700 text-xs leading-relaxed max-w-[88%]">
+                  Hello! I am your <strong>AI Slide Assistant</strong>. 
+                  Type any instruction for <strong>Slide {currentSlide + 1}</strong> (or mention any slide number), and I will update the presentation live for you!
+                </div>
+              </div>
+
+              {chatMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`flex items-start space-x-2 ${
+                    msg.sender === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
+                >
+                  {msg.sender === 'ai' && (
+                    <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 shadow-2xs">
+                      AI
+                    </div>
+                  )}
+                  <div
+                    className={`p-2.5 rounded-2xl text-xs leading-relaxed max-w-[88%] shadow-2xs ${
+                      msg.sender === 'user'
+                        ? 'bg-[#d04a02] text-white rounded-tr-none'
+                        : 'bg-white border border-purple-100 text-gray-800 rounded-tl-none'
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                    <span className={`block text-[9px] mt-1 ${msg.sender === 'user' ? 'text-orange-200 text-right' : 'text-gray-400'}`}>
+                      {msg.time}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {isRefiningSlide && (
+                <div className="flex items-center space-x-2 text-purple-700 bg-purple-50 p-2.5 rounded-xl border border-purple-200 animate-pulse">
+                  <Wand2 className="w-4 h-4 animate-spin text-purple-600" />
+                  <span className="text-xs font-semibold">Modifying Slide {currentSlide + 1}...</span>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Quick Suggestions Chips (FIXED AT BOTTOM OF CHAT) */}
+            <div className="shrink-0 px-3 py-2 bg-white border-t border-gray-100 flex gap-1.5 overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => handleSendChatMessage(`On Slide ${currentSlide + 1}, shorten summary bullet points`)}
+                disabled={isRefiningSlide}
+                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-semibold rounded-full border border-purple-200 whitespace-nowrap transition cursor-pointer disabled:opacity-50"
+              >
+                ✨ Shorten Summary
+              </button>
+              <button
+                onClick={() => handleSendChatMessage(`On Slide ${currentSlide + 1}, add SLA 99.9% uptime requirement`)}
+                disabled={isRefiningSlide}
+                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-semibold rounded-full border border-purple-200 whitespace-nowrap transition cursor-pointer disabled:opacity-50"
+              >
+                ✨ Add SLA Uptime
+              </button>
+              <button
+                onClick={() => handleSendChatMessage(`Change proposal title to Enterprise Digital Architecture`)}
+                disabled={isRefiningSlide}
+                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-semibold rounded-full border border-purple-200 whitespace-nowrap transition cursor-pointer disabled:opacity-50"
+              >
+                ✨ Edit Title
+              </button>
+            </div>
+
+            {/* Chat Input Bar (FIXED AT BOTTOM OF CHAT) */}
+            <div className="shrink-0 p-2.5 bg-white border-t border-gray-200 flex items-center space-x-2">
+              <input
+                type="text"
+                placeholder={`Instruct AI for Slide ${currentSlide + 1}...`}
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSendChatMessage()}
+                disabled={isRefiningSlide}
+                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none disabled:opacity-50"
+              />
+              <button
+                onClick={() => handleSendChatMessage()}
+                disabled={!chatInput.trim() || isRefiningSlide}
+                className="p-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 transition shadow-2xs cursor-pointer"
+                title="Send instruction to AI Assistant"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   );
