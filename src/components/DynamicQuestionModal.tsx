@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { User, Bot } from 'lucide-react';
 import { Modal } from './ui/Modal/Modal';
 import { Button } from './ui/Button/Button';
 import { Input } from './ui/Input/Input';
@@ -91,77 +92,104 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
     }
   };
 
+  const isInitialLoading = isLoading && qaHistory.length === 0;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Additional Details (Question ${currentQuestionIndex + 1} of ${MAX_QUESTIONS})`}
+      title={isInitialLoading ? undefined : `Additional Details (Question ${currentQuestionIndex + 1} of ${MAX_QUESTIONS})`}
+      hideCloseButton={isInitialLoading}
+      className='h-[75vh]'
     >
-      <div className="flex flex-col gap-4 max-h-[60vh]">
-        {/* Chat History Section */}
-        <div 
-          ref={chatContainerRef}
-          className="flex flex-col gap-4 overflow-y-auto pr-2 scroll-smooth" 
-          style={{ maxHeight: '40vh' }}
-        >
-          {qaHistory.map((qa, index) => (
-            <div key={index} className="flex flex-col gap-2">
-              <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none w-11/12 self-start text-sm text-gray-800 dark:text-gray-200">
-                <span className="font-semibold text-xs text-gray-500 mb-1 block">AI Agent</span>
-                {qa.question}
+      {isInitialLoading ? (
+        <div className="flex justify-center items-center py-12 h-full">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        </div>
+      ) : (
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* Chat History Section */}
+          <div 
+            ref={chatContainerRef}
+            className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 scroll-smooth pb-4" 
+          >
+            {qaHistory.map((qa, index) => (
+              <div key={index} className="flex flex-col gap-2">
+                <div className="flex items-end justify-start gap-2 max-w-[91%] self-start">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
+                    <Bot size={16} className="text-gray-500 dark:text-gray-400" />
+                  </div>
+                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200">
+                    <span className="break-words">{qa.question}</span>
+                  </div>
+                </div>
+                <div className="flex items-end justify-end gap-2 max-w-[91%] self-end">
+                  <div className="bg-orange-500 text-white p-3 rounded-lg rounded-tr-none text-sm">
+                    <span className="break-words">{qa.answer}</span>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0 mb-1">
+                    <User size={16} className="text-orange-500" />
+                  </div>
+                </div>
               </div>
-              <div className="bg-orange-500 text-white p-3 rounded-lg rounded-tr-none w-11/12 self-end text-sm">
-                <span className="font-semibold text-xs text-orange-200 mb-1 block">You</span>
-                {qa.answer}
-              </div>
-            </div>
-          ))}
+            ))}
 
-          {/* Current Question Loading or Text */}
-          {isLoading ? (
-            <div className="py-4 text-left text-sm text-gray-500 animate-pulse bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none w-11/12 self-start">
-              AI is analyzing context to generate the next question...
-            </div>
-          ) : (
-            currentQuestion && (
-              <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none w-11/12 self-start text-sm text-gray-800 dark:text-gray-200">
-                <span className="font-semibold text-xs text-gray-500 mb-1 block">AI Agent</span>
-                {currentQuestion}
+            {/* Current Question Loading or Text */}
+            {isLoading ? (
+              <div className="flex items-end justify-start gap-2 max-w-[91%] self-start">
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
+                  <Bot size={16} className="text-gray-500 dark:text-gray-400" />
+                </div>
+                <div className="py-4 text-left text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none flex items-center space-x-1">
+                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                </div>
               </div>
-            )
-          )}
+            ) : (
+              currentQuestion && (
+                <div className="flex items-end justify-start gap-2 max-w-[91%] self-start">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
+                    <Bot size={16} className="text-gray-500 dark:text-gray-400" />
+                  </div>
+                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200">
+                    <span className="break-words">{currentQuestion}</span>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+          {/* Input Section */}
+          <div className="mt-2">
+            <Input
+              className="border-border focus:border-primary text-gray-900 dark:text-gray-100 placeholder:text-gray-500"
+              value={currentAnswer}
+              onChange={(e) => setCurrentAnswer(e.target.value)}
+              placeholder="Type your answer here..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !isLoading && currentAnswer.trim()) {
+                  e.preventDefault();
+                  handleNext();
+                }
+              }}
+              autoFocus
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="flex justify-end gap-3 mt-2 border-t border-gray-200 dark:border-gray-800 pt-4">
+            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button variant="outline" onClick={() => handleNext(true)} disabled={isLoading}>
+              Skip
+            </Button>
+            <Button variant="primary" onClick={() => handleNext(false)} disabled={isLoading || !currentAnswer.trim()}>
+              {currentQuestionIndex === MAX_QUESTIONS - 1 ? 'Submit & Assemble' : 'Next'}
+            </Button>
+          </div>
         </div>
-
-        {/* Input Section */}
-        <div className="mt-2">
-          <Input
-            className="text-gray-900 dark:text-gray-100 placeholder:text-gray-500"
-            value={currentAnswer}
-            onChange={(e) => setCurrentAnswer(e.target.value)}
-            placeholder="Type your answer here..."
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !isLoading && currentAnswer.trim()) {
-                e.preventDefault();
-                handleNext();
-              }
-            }}
-            autoFocus
-            disabled={isLoading}
-          />
-        </div>
-        
-        <div className="flex justify-end gap-3 mt-2 border-t border-gray-200 dark:border-gray-800 pt-4">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button variant="outline" onClick={() => handleNext(true)} disabled={isLoading}>
-            Skip
-          </Button>
-          <Button variant="primary" onClick={() => handleNext(false)} disabled={isLoading || !currentAnswer.trim()}>
-            {currentQuestionIndex === MAX_QUESTIONS - 1 ? 'Submit & Assemble' : 'Next'}
-          </Button>
-        </div>
-      </div>
+      )}
     </Modal>
   );
 };

@@ -1183,7 +1183,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`PPT Presentation Slide Deck Preview - ${clientName || 'Solution'}`}
-      className="max-w-5xl h-[92vh] flex flex-col"
+      className="max-w-6xl h-[90vh] flex flex-col"
     >
       <div 
         className="flex-1 flex flex-col outline-hidden"
@@ -1191,7 +1191,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
         tabIndex={0}
       >
         {/* Widescreen presentation container */}
-        <div className="flex-1 bg-gray-100 flex items-center justify-center p-6 border border-gray-200 rounded-xl relative overflow-hidden shadow-inner select-none animate-fadeIn">
+        <div className="flex-1 bg-gray-100 flex items-center justify-center p-4 border border-gray-200 rounded-xl relative overflow-hidden shadow-inner select-none animate-fadeIn">
           
           {/* Main slide viewport mimicking python-pptx output */}
           <div className="w-full max-w-4xl aspect-[4/3] max-h-[60vh] bg-white border border-gray-300 shadow-2xl rounded-lg p-8 flex flex-col justify-between overflow-hidden relative">
