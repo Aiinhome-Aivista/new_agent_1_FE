@@ -1,6 +1,7 @@
 export { cn } from './cn';
 export { formatCurrency, formatDate } from './formatters';
 export { loginSchema, proposalUploadSchema } from './validators';
+export { parseMermaidCode, generateMermaidCode } from './mermaidParser';
 export const noop = () => {};
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export const generateId = () => Math.random().toString(36).substr(2, 9);

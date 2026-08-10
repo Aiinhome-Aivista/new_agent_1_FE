@@ -9,6 +9,7 @@ export interface ModalProps {
   title?: string;
   children: React.ReactNode;
   className?: string;
+  bodyClassName?: string;
   hideCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
 }
@@ -19,6 +20,7 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   className,
+  bodyClassName,
   hideCloseButton = false,
   closeOnOverlayClick = true,
 }) => {
@@ -51,7 +53,7 @@ export const Modal: React.FC<ModalProps> = ({
             )}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+            <div className="flex items-center justify-between border-b border-border pb-3 mb-4 shrink-0">
               {title && (
                 <h2 className="text-lg font-semibold text-foreground">
                   {title}
@@ -68,7 +70,7 @@ export const Modal: React.FC<ModalProps> = ({
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto pr-1">{children}</div>
+            <div className={cn("flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col", bodyClassName)}>{children}</div>
           </motion.div>
         </div>
       )}

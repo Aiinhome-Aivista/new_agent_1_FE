@@ -34,6 +34,17 @@ export const proposalApi = {
     const res = await apiClient.post(API_ENDPOINTS.editProposal(id), irData);
     return res.data;
   },
+  refineSlide: async (proposalId: string, slideNumber: number, slideTitle: string, instruction: string, currentIr: any, currentContent?: any): Promise<{ reply: string; updated_ir: any }> => {
+    const res = await apiClient.post('/api/proposals/refine-slide', {
+      proposal_id: proposalId,
+      slide_number: slideNumber,
+      slide_title: slideTitle,
+      instruction,
+      structured_ir: currentIr,
+      current_content: currentContent
+    });
+    return res.data;
+  },
   downloadUrl: (id: string) => {
     return API_ENDPOINTS.downloadProposal(id);
   },
