@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './ui/Modal/Modal';
 import { Button } from './ui/Button/Button';
-import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X } from 'lucide-react';
-import { DiagramEditor } from './DiagramEditor/DiagramEditor';
 import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X, Bot, Send, Sparkles, Wand2, MessageSquare, Loader2 } from 'lucide-react';
-import { InteractiveDiagramEditor } from './InteractiveDiagramEditor';
+import { DiagramEditor } from './DiagramEditor/DiagramEditor';
 import { proposalApi } from '../services/api/endpoints';
 
 interface PPTPreviewModalProps {
