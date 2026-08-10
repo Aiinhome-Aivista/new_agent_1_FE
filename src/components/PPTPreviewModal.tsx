@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from './ui/Modal/Modal';
 import { Button } from './ui/Button/Button';
 import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X } from 'lucide-react';
+import { DiagramEditor } from './DiagramEditor/DiagramEditor';
 
 interface PPTPreviewModalProps {
   isOpen: boolean;
@@ -67,6 +68,37 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     const newPillars = [...(localIr.solution_pillars || [])];
     newPillars[idx] = { ...newPillars[idx], [key]: val };
     updateField('solution_pillars', newPillars);
+  };
+
+  const updateMermaidCode = (slideTitle: string, newMermaid: string) => {
+    setLocalIr((prev: any) => {
+      const complex = [...(prev.complex_diagrams || [])];
+      const isRefArch = slideTitle.toLowerCase().includes('reference');
+      let idx = -1;
+      
+      if (isRefArch) {
+        idx = complex.findIndex((c: any) => c.title?.toLowerCase() === 'reference architecture');
+      } else {
+        idx = complex.findIndex((c: any) => {
+          const tl = c.title?.toLowerCase() || '';
+          return tl.includes('landscape') || tl.includes('cloud');
+        });
+      }
+
+      const updatedObj = idx >= 0 ? { ...complex[idx] } : { title: isRefArch ? 'Reference Architecture' : 'Landscape Architecture' };
+      updatedObj.mermaid_code = newMermaid;
+
+      if (idx >= 0) {
+        complex[idx] = updatedObj;
+      } else {
+        complex.push(updatedObj);
+      }
+
+      return {
+        ...prev,
+        complex_diagrams: complex
+      };
+    });
   };
 
   // Architecture components editing
@@ -1144,17 +1176,26 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
         );
 
       case 'mermaid_diagram':
+        console.log("PPTPreviewModal render case 'mermaid_diagram':", { title: slide.title, isEditing, mermaidCode: slide.mermaidCode });
         return (
           <div className="flex-1 flex flex-col py-2 px-2 text-left h-full">
             <h4 className="text-sm font-bold text-[#2d2d2d] border-b border-gray-100 pb-1 mb-2">
               {slide.subHeader}
             </h4>
-            <div className="flex-1 border border-gray-200 rounded-xl bg-white shadow-xs p-3 flex justify-center items-center overflow-auto max-h-[330px]">
-              <img
-                src={getMermaidUrl(slide.mermaidCode)}
-                alt={slide.title}
-                className="max-h-[300px] max-w-full object-contain"
-              />
+            <div className={`flex-1 border border-gray-200 rounded-xl bg-white shadow-xs ${isEditing ? 'w-full h-[330px]' : 'p-3 flex justify-center items-center overflow-auto max-h-[330px]'}`}>
+              {isEditing ? (
+                <DiagramEditor
+                  key={slide.title}
+                  initialMermaidCode={slide.mermaidCode}
+                  onChange={(newCode) => updateMermaidCode(slide.title, newCode)}
+                />
+              ) : (
+                <img
+                  src={getMermaidUrl(slide.mermaidCode)}
+                  alt={slide.title}
+                  className="max-h-[300px] max-w-full object-contain"
+                />
+              )}
             </div>
           </div>
         );
