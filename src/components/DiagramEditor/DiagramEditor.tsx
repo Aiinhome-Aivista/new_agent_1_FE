@@ -16,7 +16,39 @@ import {
 import '@xyflow/react/dist/style.css';
 import './DiagramEditor.css';
 import { parseMermaid, stringifyMermaid, CustomNode } from './mermaidParser';
-import { Plus, Trash2, HelpCircle } from 'lucide-react';
+import { 
+  Plus, Trash2, HelpCircle, Database, Monitor, Cpu, Globe, Server, Folder, Bell, FileText, Activity 
+} from 'lucide-react';
+
+// Helper to get matching lucide icon for architecture boxes
+const getNodeIcon = (label: string) => {
+  const lbl = label.toLowerCase();
+  if (lbl.includes('database') || lbl.includes('db') || lbl.includes('cache') || lbl.includes('vector') || lbl.includes('postgres') || lbl.includes('redis') || lbl.includes('chroma') || lbl.includes('pgvector') || lbl.includes('store')) {
+    return <Database size={13} className="text-[#d04a02] shrink-0" />;
+  }
+  if (lbl.includes('web') || lbl.includes('ui') || lbl.includes('dashboard') || lbl.includes('review') || lbl.includes('interface')) {
+    return <Monitor size={13} className="text-[#d04a02] shrink-0" />;
+  }
+  if (lbl.includes('agent') || lbl.includes('orchestrat') || lbl.includes('synthesis') || lbl.includes('logic')) {
+    return <Cpu size={13} className="text-[#d04a02] shrink-0" />;
+  }
+  if (lbl.includes('gateway') || lbl.includes('api') || lbl.includes('external')) {
+    return <Globe size={13} className="text-[#d04a02] shrink-0" />;
+  }
+  if (lbl.includes('cluster') || lbl.includes('aks') || lbl.includes('eks') || lbl.includes('backend') || lbl.includes('services')) {
+    return <Server size={13} className="text-[#d04a02] shrink-0" />;
+  }
+  if (lbl.includes('artefact') || lbl.includes('blob') || lbl.includes('storage') || lbl.includes('s3') || lbl.includes('source')) {
+    return <Folder size={13} className="text-[#d04a02] shrink-0" />;
+  }
+  if (lbl.includes('alert') || lbl.includes('governance') || lbl.includes('monitor') || lbl.includes('logs') || lbl.includes('guardrail')) {
+    return <Bell size={13} className="text-[#d04a02] shrink-0" />;
+  }
+  if (lbl.includes('draft') || lbl.includes('proposal') || lbl.includes('json') || lbl.includes('document') || lbl.includes('intermediate') || lbl.includes('powerpoint')) {
+    return <FileText size={13} className="text-[#d04a02] shrink-0" />;
+  }
+  return <Activity size={13} className="text-[#d04a02] shrink-0" />;
+};
 
 // Custom Diagram Node Component (horizontal, Left/Right connection handles)
 const CustomNodeComponent = ({ data, id }: NodeProps) => {
@@ -27,6 +59,58 @@ const CustomNodeComponent = ({ data, id }: NodeProps) => {
   const finishEditing = data.finishEditing as (id: string) => void;
   const cancelEditing = data.cancelEditing as () => void;
 
+  const label = data.label as string || '';
+  const lbl = label.toLowerCase();
+  const isDatabase = lbl.includes('database') || lbl.includes('db') || lbl.includes('cache') || lbl.includes('vector') || lbl.includes('postgres') || lbl.includes('redis') || lbl.includes('chroma') || lbl.includes('pgvector') || lbl.includes('store');
+
+  if (isDatabase) {
+    return (
+      <div className="w-full h-full relative select-none">
+        {/* Target handle on the Left */}
+        <Handle 
+          type="target" 
+          position={Position.Left} 
+          style={{ background: '#d04a02', width: 8, height: 8, border: '2px solid #ffffff', zIndex: 10 }} 
+        />
+
+        <div className="db-cylinder">
+          <div className="db-cylinder-top"></div>
+          <div className="db-cylinder-body flex items-center justify-center gap-1.5 min-h-[44px]">
+            {editingId === id ? (
+              <input
+                className="node-rename-input w-full text-center bg-transparent outline-none font-bold text-xs border-none p-0 m-0"
+                value={editingValue}
+                onChange={(e) => setEditingValue(e.target.value)}
+                onBlur={() => finishEditing(id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') finishEditing(id);
+                  if (e.key === 'Escape') cancelEditing();
+                }}
+                autoFocus
+              />
+            ) : (
+              <div 
+                onDoubleClick={(e) => onDoubleClick(e, { id, data })}
+                title="Double click to rename"
+                className="cursor-pointer font-bold flex items-center justify-center gap-1.5 text-[#2d2d2d]"
+              >
+                <Database size={13} className="text-[#d04a02] shrink-0" />
+                <span>{label}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Source handle on the Right */}
+        <Handle 
+          type="source" 
+          position={Position.Right} 
+          style={{ background: '#d04a02', width: 8, height: 8, border: '2px solid #ffffff', zIndex: 10 }} 
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full min-h-[40px] flex items-center justify-center relative select-none">
       {/* Target handle on the Left */}
@@ -36,7 +120,7 @@ const CustomNodeComponent = ({ data, id }: NodeProps) => {
         style={{ background: '#d04a02', width: 8, height: 8, border: '2px solid #ffffff' }} 
       />
       
-      <div className="w-full px-2 text-center">
+      <div className="w-full px-2 flex items-center justify-center gap-1.5">
         {editingId === id ? (
           <input
             className="node-rename-input w-full text-center bg-transparent outline-none font-bold text-xs border-none p-0 m-0"
@@ -53,9 +137,10 @@ const CustomNodeComponent = ({ data, id }: NodeProps) => {
           <div 
             onDoubleClick={(e) => onDoubleClick(e, { id, data })}
             title="Double click to rename"
-            className="py-1 cursor-pointer font-bold"
+            className="py-1 cursor-pointer font-bold flex items-center gap-1.5 text-[#2d2d2d]"
           >
-            {data.label as string}
+            {getNodeIcon(label)}
+            <span>{label}</span>
           </div>
         )}
       </div>
@@ -115,6 +200,39 @@ const nodeTypes = {
   customGroup: CustomGroupNode
 };
 
+// Predefined list of standard architecture icons/components from slides 12 & 13
+const iconOptions = [
+  { value: 'web_ui', label: 'Web UI (React)' },
+  { value: 'api_gateway', label: 'API Gateway' },
+  { value: 'orchestrator', label: 'Orchestration Logic' },
+  { value: 'fastapi_backend', label: 'FastAPI Agent Services' },
+  { value: 'aks_cluster', label: 'AKS Cluster (Multi-Agent System)' },
+  { value: 'eks_cluster', label: 'EKS Cluster (Multi-Agent System)' },
+  { value: 'financial_agent', label: 'Financial Tracking Agent' },
+  { value: 'risk_agent', label: 'Risk Analysis Agent' },
+  { value: 'predictive_agent', label: 'Predictive Analytics Agent' },
+  { value: 'kpi_synthesis', label: 'KPI Synthesis Agent' },
+  { value: 'reporting_dashboard', label: 'Reporting/Dashboard Agent' },
+  { value: 'postgres_db', label: 'PostgreSQL Database' },
+  { value: 'pgvector_embed', label: 'pgvector (Embeddings)' },
+  { value: 'chroma_vs', label: 'ChromaDB (Vector Store)' },
+  { value: 'redis_cache', label: 'Redis Cache' },
+  { value: 'azure_data_factory', label: 'Azure Data Factory (Ingestion)' },
+  { value: 'aws_glue', label: 'AWS Glue (Ingestion)' },
+  { value: 'azure_monitor', label: 'Azure Monitor (Logs)' },
+  { value: 'aws_cloudwatch', label: 'AWS CloudWatch (Logs)' },
+  { value: 'azure_search', label: 'Azure Cognitive Search' },
+  { value: 'amazon_kendra', label: 'Amazon Kendra (Search)' },
+  { value: 'alerts_governance', label: 'Alerts & Governance' },
+  { value: 'pptx_render_engine', label: 'PowerPoint Rendering Engine' },
+  { value: 'client_artefacts', label: 'Client Artefacts' },
+  { value: 'structured_json', label: 'Structured JSON Intermediate' },
+  { value: 'pptx_draft', label: 'PowerPoint Draft' },
+  { value: 'human_review', label: 'Human Review Interface' },
+  { value: 'approved_proposal', label: 'Approved Proposal' },
+  { value: 'custom', label: 'Custom Box (Rename Me)' }
+];
+
 interface DiagramEditorProps {
   initialMermaidCode: string;
   onChange: (newCode: string) => void;
@@ -131,6 +249,9 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   
+  // Selected icon option for new nodes
+  const [selectedIcon, setSelectedIcon] = useState<string>('web_ui');
+
   // Subgraph assignment selection for new nodes
   const [selectedSubgraph, setSelectedSubgraph] = useState<string>('none');
 
@@ -234,24 +355,37 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({
 
   // Map nodes to pass handlers to custom nodes
   const displayNodes = useMemo(() => {
-    return nodes.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        editingId,
-        editingValue,
-        setEditingValue,
-        finishEditing,
-        cancelEditing,
-        onDoubleClick: onNodeDoubleClick
-      }
-    }));
+    return nodes.map((node) => {
+      const label = node.data.label as string || '';
+      const lbl = label.toLowerCase();
+      const isDatabase = lbl.includes('database') || lbl.includes('db') || lbl.includes('cache') || lbl.includes('vector') || lbl.includes('postgres') || lbl.includes('redis') || lbl.includes('chroma') || lbl.includes('pgvector') || lbl.includes('store');
+      
+      return {
+        ...node,
+        className: `${node.className || ''} ${isDatabase ? 'database-node' : ''}`.trim(),
+        data: {
+          ...node.data,
+          editingId,
+          editingValue,
+          setEditingValue,
+          finishEditing,
+          cancelEditing,
+          onDoubleClick: onNodeDoubleClick
+        }
+      };
+    });
   }, [nodes, editingId, editingValue, onNodeDoubleClick, finishEditing, cancelEditing]);
 
-  // Add a new node (box)
-  const addNode = useCallback(() => {
-    const id = `node_${Date.now().toString().slice(-6)}`;
-    const label = `New Box ${nodes.filter(n => n.type !== 'customGroup').length + 1}`;
+  // Add a new node representing the selected icon/component
+  const addIconNode = useCallback(() => {
+    const selectedObj = iconOptions.find(opt => opt.value === selectedIcon) || iconOptions[0];
+    const baseId = selectedObj.value === 'custom' ? 'node' : selectedObj.value;
+    const id = `${baseId}_${Date.now().toString().slice(-4)}`;
+    
+    let label = selectedObj.label;
+    if (selectedObj.value === 'custom') {
+      label = `Custom Box ${nodes.filter(n => n.type !== 'customGroup').length + 1}`;
+    }
     
     let position = { x: 100, y: 100 };
     let parentId: string | undefined = undefined;
@@ -262,6 +396,14 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({
       extent = 'parent';
       // Put position relative inside parent
       position = { x: 30, y: 50 };
+    } else if (nodes.length > 0) {
+      // Position near the average coordinates of existing nodes so it's visible in current view
+      const leafNodes = nodes.filter(n => n.type !== 'customGroup');
+      if (leafNodes.length > 0) {
+        const avgX = leafNodes.reduce((sum, n) => sum + n.position.x, 0) / leafNodes.length;
+        const avgY = leafNodes.reduce((sum, n) => sum + n.position.y, 0) / leafNodes.length;
+        position = { x: avgX + 80, y: avgY + 80 };
+      }
     }
 
     const newNode: CustomNode = {
@@ -282,7 +424,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({
     // Start editing new node instantly
     setEditingId(id);
     setEditingValue(label);
-  }, [nodes, edges, selectedSubgraph, setNodes, saveChanges]);
+  }, [nodes, edges, selectedSubgraph, selectedIcon, setNodes, saveChanges]);
 
   // Delete selected nodes or edges
   const deleteSelected = useCallback(() => {
@@ -350,24 +492,38 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({
       {/* Top Toolbar */}
       <div className="diagram-editor-toolbar">
         <div className="diagram-editor-toolbar-actions">
-          <button 
-            type="button" 
-            className="diagram-toolbar-btn primary"
-            onClick={addNode}
-          >
-            <Plus size={14} /> Add Box
-          </button>
+          <div className="flex items-center gap-1">
+            <select 
+              className="text-[10px] font-bold border border-gray-300 rounded px-1.5 py-1 bg-white max-w-[180px] truncate"
+              value={selectedIcon}
+              onChange={(e) => setSelectedIcon(e.target.value)}
+            >
+              {iconOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            
+            <button 
+              type="button" 
+              className="diagram-toolbar-btn primary cursor-pointer"
+              onClick={addIconNode}
+            >
+              <Plus size={14} /> Add Icon
+            </button>
+          </div>
           
-          <select 
-            className="text-[10px] font-bold border border-gray-300 rounded px-1.5 py-1 bg-white"
-            value={selectedSubgraph}
-            onChange={(e) => setSelectedSubgraph(e.target.value)}
-          >
-            <option value="none">No Subgraph (Top level)</option>
-            {subgraphOptions.map(sg => (
-              <option key={sg} value={sg}>Inside: {sg}</option>
-            ))}
-          </select>
+          {subgraphOptions.length > 0 && (
+            <select 
+              className="text-[10px] font-bold border border-gray-300 rounded px-1.5 py-1 bg-white"
+              value={selectedSubgraph}
+              onChange={(e) => setSelectedSubgraph(e.target.value)}
+            >
+              <option value="none">No Subgraph (Top level)</option>
+              {subgraphOptions.map(sg => (
+                <option key={sg} value={sg}>Inside: {sg}</option>
+              ))}
+            </select>
+          )}
 
           <button 
             type="button" 
