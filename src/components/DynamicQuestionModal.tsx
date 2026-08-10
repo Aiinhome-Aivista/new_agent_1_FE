@@ -36,7 +36,7 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
     scrollToBottom();
   }, [qaHistory, currentQuestion, isLoading]);
 
-  const MAX_QUESTIONS = 5;
+  const MAX_QUESTIONS = 10;
 
   const fetchNextQuestion = async (history: { question: string; answer: string }[]) => {
     setIsLoading(true);
@@ -98,7 +98,7 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isInitialLoading ? undefined : `Additional Details (Question ${currentQuestionIndex + 1} of ${MAX_QUESTIONS})`}
+      title={isInitialLoading ? undefined : 'Additional Details'}
       hideCloseButton={isInitialLoading}
       className='h-[75vh]'
     >
