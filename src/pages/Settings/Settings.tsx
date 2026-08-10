@@ -40,7 +40,6 @@ const Settings: React.FC = () => {
   // ── Add modal state ─────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formFiles, setFormFiles] = useState<FileList | null>(null);
-  const [sector, setSector] = useState('');
   const [saving, setSaving] = useState(false);
 
   // ── Delete confirm ───────────────────────────────────────
@@ -82,7 +81,6 @@ const Settings: React.FC = () => {
   // ── Open modal ───────────────────────────────────────────
   const openAddModal = () => {
     setFormFiles(null);
-    setSector('');
     setIsModalOpen(true);
   };
 
@@ -93,16 +91,11 @@ const Settings: React.FC = () => {
       toast('Please select at least one file to upload.', 'error');
       return;
     }
-    if (!sector) {
-      toast('Please select a Sector.', 'error');
-      return;
-    }
     
     const formData = new FormData();
     for (let i = 0; i < formFiles.length; i++) {
       formData.append('files', formFiles[i]);
     }
-    formData.append('sector', sector);
 
     try {
       setSaving(true);
@@ -270,35 +263,7 @@ const Settings: React.FC = () => {
             />
           </div>
           
-          <div className="flex bg-muted p-1 rounded-lg border border-border self-stretch sm:self-auto items-center">
-            <button
-              onClick={() => setSectorFilter('All')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                sectorFilter === 'All'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              All
-            </button>
-            <select
-              value={sectorFilter === 'All' ? '' : sectorFilter}
-              onChange={(e) => setSectorFilter(e.target.value)}
-              className={`ml-2 px-3 py-1 text-xs font-semibold rounded-md border border-input focus:outline-none transition-all cursor-pointer ${
-                sectorFilter !== 'All' 
-                  ? 'bg-card text-foreground shadow-sm' 
-                  : 'bg-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <option className="bg-card text-foreground" value="" disabled>Select Sector</option>
-              <option className="bg-card text-foreground" value="Finance">Finance</option>
-              <option className="bg-card text-foreground" value="Healthcare">Healthcare</option>
-              <option className="bg-card text-foreground" value="Retail">Retail</option>
-              <option className="bg-card text-foreground" value="Technology">Technology</option>
-              <option className="bg-card text-foreground" value="Manufacturing">Manufacturing</option>
-              <option className="bg-card text-foreground" value="Other">Other</option>
-            </select>
-          </div>
+
 
           <div className="ml-auto text-xs text-muted-foreground flex-shrink-0">
             {filtered.length} / {assets.length} items
@@ -403,25 +368,7 @@ const Settings: React.FC = () => {
               />
             </div>
 
-            <div className="flex flex-col gap-1.5 mt-2">
-              <label className="text-sm font-medium text-foreground/80">Sector</label>
-              <select
-                value={sector}
-                onChange={(e) => setSector(e.target.value)}
-                className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                required
-              >
-                <option className="bg-card text-foreground" value="" disabled>Select a sector</option>
-                <option className="bg-card text-foreground" value="Finance">Finance</option>
-                <option className="bg-card text-foreground" value="Healthcare">Healthcare</option>
-                <option className="bg-card text-foreground" value="Retail">Retail</option>
-                <option className="bg-card text-foreground" value="Technology">Technology</option>
-                <option className="bg-card text-foreground" value="Manufacturing">Manufacturing</option>
-                <option className="bg-card text-foreground" value="Other">Other</option>
-              </select>
-            </div>
-
-            <Button type="submit" variant="primary" isLoading={saving} disabled={!formFiles || formFiles.length === 0 || !sector} className="w-full mt-4">
+            <Button type="submit" variant="primary" isLoading={saving} disabled={!formFiles || formFiles.length === 0} className="w-full mt-4">
               Upload and Index Files
             </Button>
           </form>
