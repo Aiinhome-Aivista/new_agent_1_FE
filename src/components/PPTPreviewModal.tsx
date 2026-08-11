@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './ui/Modal/Modal';
 import { Button } from './ui/Button/Button';
-import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X, Bot, Send, Sparkles, Wand2, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X, Bot, Send, Sparkles, User } from 'lucide-react';
 import { DiagramEditor } from './DiagramEditor/DiagramEditor';
 import { proposalApi } from '../services/api/endpoints';
 
@@ -106,7 +106,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     try {
       const activeSlideObj = slides[currentSlide];
       const activeSlideTitle = activeSlideObj?.title || `Slide ${currentSlide + 1}`;
-      const activeSlideContent = activeSlideObj?.content || activeSlideObj?.rawSummary || activeSlideObj?.items || activeSlideObj?.rows || activeSlideObj?.pillars || [];
+      const activeSlideContent = activeSlideObj?.content || activeSlideObj?.rawSummary || activeSlideObj?.items || activeSlideObj?.rows || activeSlideObj?.pillars || activeSlideObj?.layers || activeSlideObj?.resources || activeSlideObj?.skills || activeSlideObj?.project || activeSlideObj?.mermaidCode || [];
 
       let updatedIrData: any = null;
       let replyText = `Applied instruction to Slide ${currentSlide + 1}! Review the preview on the left and click 'Save Changes' when ready.`;
@@ -641,6 +641,23 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     AKS --> Search`;
   };
 
+  // Extract reference architecture description
+  const getRefArchDescription = () => {
+    const complex = localIr.complex_diagrams || [];
+    const match = complex.find((c: any) => c.title?.toLowerCase() === 'reference architecture');
+    return match?.description || '';
+  };
+
+  // Extract landscape architecture description
+  const getLandscapeArchDescription = () => {
+    const complex = localIr.complex_diagrams || [];
+    const match = complex.find((c: any) => {
+      const tl = c.title?.toLowerCase() || '';
+      return tl.includes('landscape') || tl.includes('cloud');
+    });
+    return match?.description || '';
+  };
+
   // Build the slides dynamic list
   const slides: any[] = [];
 
@@ -779,7 +796,8 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     title: 'Reference Architecture',
     subtitle: 'System Data Flow & Orchestration Architecture',
     subHeader: 'Logical Reference Architecture & Component Topology',
-    mermaidCode: getRefArchMermaid()
+    mermaidCode: getRefArchMermaid(),
+    description: getRefArchDescription()
   });
 
   // Slide 13: Cloud Landscape Diagram
@@ -789,7 +807,8 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     title: `Landscape Architecture (${cloudPlatformName} Cloud Platform)`,
     subtitle: `${cloudPlatformName} Native Services & Integration Topology`,
     subHeader: `${cloudPlatformName} Services Integration & Data Pipeline`,
-    mermaidCode: getCloudLandscapeMermaid()
+    mermaidCode: getCloudLandscapeMermaid(),
+    description: getLandscapeArchDescription()
   });
 
   // Slide 14: Thank You
@@ -1468,7 +1487,12 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
             <h4 className="text-sm font-bold text-[#2d2d2d] border-b border-gray-100 pb-1 mb-2">
               {slide.subHeader}
             </h4>
-            <div className={`flex-1 border border-gray-200 rounded-xl bg-white shadow-xs ${isEditing ? 'w-full h-[330px]' : 'p-3 flex justify-center items-center overflow-auto max-h-[330px]'}`}>
+            {slide.description && (
+              <div className="text-[11px] text-gray-600 mb-2 leading-relaxed whitespace-pre-line font-medium bg-gray-50/50 p-2 rounded-lg border border-gray-100">
+                {slide.description}
+              </div>
+            )}
+            <div className={`flex-1 border border-gray-200 rounded-xl bg-white shadow-xs ${isEditing ? 'w-full h-[270px]' : 'p-3 flex justify-center items-center overflow-auto max-h-[270px]'}`}>
               {isEditing ? (
                 <DiagramEditor
                   key={slide.title}
@@ -1479,7 +1503,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                 <img
                   src={getMermaidUrl(slide.mermaidCode)}
                   alt={slide.title}
-                  className="max-h-[300px] max-w-full object-contain"
+                  className="max-h-[240px] max-w-full object-contain"
                 />
               )}
             </div>
