@@ -124,11 +124,11 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
                   </div>
                 </div>
                 <div className="flex items-end justify-end gap-2 max-w-[91%] self-end">
-                  <div className="bg-orange-500 text-white p-3 rounded-lg rounded-tr-none text-sm">
+                  <div className="bg-button-orange text-white p-3 rounded-lg rounded-tr-none text-sm">
                     <span className="break-words">{qa.answer}</span>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0 mb-1">
-                    <User size={16} className="text-orange-500" />
+                  <div className="w-8 h-8 rounded-full bg-button-orange/20 flex items-center justify-center shrink-0 mb-1">
+                    <User size={16} className="text-primary-orange" />
                   </div>
                 </div>
               </div>
@@ -184,7 +184,11 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
             <Button variant="outline" onClick={() => handleNext(true)} disabled={isLoading}>
               Skip
             </Button>
-            <Button variant="primary" onClick={() => handleNext(false)} disabled={isLoading || !currentAnswer.trim()}>
+            <Button
+              className="bg-button-orange hover:bg-hover-orange text-white"
+              onClick={() => handleNext(false)}
+              disabled={isLoading || !currentAnswer.trim()}
+            >
               {currentQuestionIndex === MAX_QUESTIONS - 1 ? 'Submit & Assemble' : 'Next'}
             </Button>
           </div>
