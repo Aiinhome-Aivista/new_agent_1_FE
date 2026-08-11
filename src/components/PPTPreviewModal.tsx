@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './ui/Modal/Modal';
 import { Button } from './ui/Button/Button';
-import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X, Bot, Send, Sparkles, Wand2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Save, Plus, Trash2, X, Bot, Send, Sparkles, Wand2, User } from 'lucide-react';
 import { DiagramEditor } from './DiagramEditor/DiagramEditor';
 import { proposalApi } from '../services/api/endpoints';
 
@@ -14,6 +14,35 @@ interface PPTPreviewModalProps {
   canEdit?: boolean;
   onSave?: (updatedIr: any) => Promise<void>;
 }
+
+const ExpandableMessage = ({ text }: { text: string }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const textRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (textRef.current) {
+      setIsOverflowing(textRef.current.scrollHeight > textRef.current.clientHeight);
+    }
+  }, [text]);
+
+  return (
+    <div 
+      onClick={() => setIsExpanded(!isExpanded)}
+      className={isOverflowing || isExpanded ? 'cursor-pointer' : ''}
+    >
+      <div 
+        ref={textRef}
+        className={`break-words whitespace-pre-wrap ${!isExpanded ? 'line-clamp-2' : ''}`}
+      >
+        {text}
+      </div>
+      {!isExpanded && isOverflowing && (
+        <div className="text-[10px] font-bold opacity-70 mt-1">Read more...</div>
+      )}
+    </div>
+  );
+};
 
 export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   isOpen,
@@ -35,6 +64,13 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   const [chatInput, setChatInput] = useState('');
   const [isRefiningSlide, setIsRefiningSlide] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (chatInput === '' && chatInputRef.current) {
+      chatInputRef.current.style.height = 'auto';
+    }
+  }, [chatInput]);
 
   // Auto-scroll chat section when new message arrives
   useEffect(() => {
@@ -763,6 +799,11 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (isEditing) return; // Disable slideshow slide key nav during text edit
+    
+    // Ignore keydown if user is typing in an input or textarea
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
     if (e.key === 'ArrowRight') nextSlide();
     if (e.key === 'ArrowLeft') prevSlide();
   };
@@ -1476,19 +1517,19 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
             {isRefiningSlide && (
               <div className="absolute inset-0 bg-white/85 backdrop-blur-xs z-30 flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
                 <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-full mb-3 shadow-md animate-bounce">
-                  <Wand2 className="w-7 h-7 text-purple-600 animate-spin" />
+                  <Bot className="w-7 h-7 text-secondary" />
                 </div>
                 <h4 className="text-base font-extrabold text-gray-900">
                   AI Assistant is modifying Slide {currentSlide + 1}...
                 </h4>
-                <p className="text-xs text-purple-700 font-medium mt-1">
+                <p className="text-xs text-primary font-medium mt-1">
                   Updating live preview in runtime...
                 </p>
               </div>
             )}
 
             {/* Main slide viewport mimicking python-pptx output */}
-            <div className="w-full max-w-4xl aspect-[4/3] max-h-[56vh] bg-white border border-gray-300 shadow-2xl rounded-lg p-6 flex flex-col justify-between overflow-hidden relative">
+            <div className="w-full max-w-6xl aspect-[4/3] max-h-[60vh] bg-white border border-gray-300 shadow-2xl rounded-lg p-6 flex flex-col justify-between overflow-hidden relative">
               
               {/* Header section (skipped for title and thank you slides) */}
               {slide.type !== 'cover' && slide.type !== 'thank_you' && (
@@ -1520,7 +1561,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
           </div>
 
           {/* Slide Controls & Action Bar (FIXED AT BOTTOM) */}
-          <div className="shrink-0 flex justify-between items-center pt-3 mt-2 border-t border-border">
+          <div className="shrink-0 flex justify-between items-center p-3 mt-2 border-t border-border">
             <div className="flex items-center gap-4">
               <div className="flex gap-2">
                 <Button
@@ -1551,7 +1592,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                 </span>
               )}
             </div>
-
+{/* "gap-1.5 text-xs font-bold border-button-orange text-button-orange hover:bg-button-orange/10 cursor-pointer" */}
             <div className="flex gap-2.5 items-center">
               {/* Chat Modal Toggle Button */}
               <Button
@@ -1559,12 +1600,12 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                 size="sm"
                 className={`gap-1.5 text-xs font-bold transition cursor-pointer ${
                   isChatOpen
-                    ? 'bg-purple-600 text-white border-purple-600 shadow-xs hover:bg-purple-700'
-                    : 'border-purple-300 text-purple-700 hover:bg-purple-50'
+                    ? 'text-button-orange border-button-orange shadow-xs hover:bg-button-orange/10'
+                    : 'border-button-orange text-button-orange hover:bg-button-orange/10'
                 }`}
                 onClick={() => setIsChatOpen(!isChatOpen)}
               >
-                <Sparkles size={13} className={isChatOpen ? 'text-white' : 'text-purple-600'} />
+                <Sparkles size={13} className={isChatOpen ? 'text-white' : 'text-secondary'} />
                 {isChatOpen ? 'Close Chat Modal' : 'Chat Modal'}
               </Button>
 
@@ -1633,9 +1674,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
 
         {/* RIGHT COLUMN: Chat Modal Side-by-Side Panel (FIXED CONTAINER, INTERNAL CHAT MESSAGES ONLY SCROLL) */}
         {isChatOpen && (
-          <div className="w-full lg:w-[380px] xl:w-[400px] bg-white border border-gray-200 rounded-xl flex flex-col shadow-xl overflow-hidden h-full shrink-0 min-h-0 animate-in slide-in-from-right-4 duration-300">
+          <div className="w-full lg:w-[380px] xl:w-[450px] bg-white border border-border rounded-xl flex flex-col shadow-xl overflow-hidden h-full shrink-0 min-h-0 animate-in slide-in-from-right-4 duration-300">
             {/* Chat Modal Header (FIXED TOP) */}
-            <div className="shrink-0 p-3 bg-gradient-to-r from-purple-700 via-indigo-800 to-purple-900 text-white flex items-center justify-between shadow-xs">
+            <div className="shrink-0 p-3 bg-secondary text-foreground flex items-center justify-between shadow-xs">
               <div className="flex items-center space-x-2.5">
                 <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-xs">
                   <Bot className="w-4.5 h-4.5 text-purple-100" />
@@ -1643,7 +1684,10 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                 <div>
                   <h3 className="text-xs font-extrabold tracking-wide uppercase flex items-center gap-1.5">
                     <span>Chat Modal</span>
-                    <span className="text-[9px] bg-purple-500/50 text-white px-1.5 py-0.2 rounded font-mono">
+                    
+                  {/* inline-flex items-center justify-center gap-1 px-2 py-0.5   */}
+                
+                    <span className="rounded-full text-[10px] font-bold border leading-none bg-[#FF8A55]/15 text-[#FF5A14] border-[#FF8A55] px-2 py-0.5 font-mono">
                       AI Assistant
                     </span>
                   </h3>
@@ -1662,97 +1706,93 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
             </div>
 
             {/* Chat Messages Body (ONLY THIS AREA SCROLLS!) */}
-            <div className="flex-1 min-h-0 p-3 overflow-y-auto space-y-3 bg-slate-50/70 text-xs scroll-smooth">
+            <div className="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-4 text-xs scroll-smooth bg-background">
               {/* Default Welcome message */}
-              <div className="flex items-start space-x-2">
-                <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 shadow-2xs">
-                  AI
+              <div className="flex items-end justify-start gap-2 max-w-[91%] self-start">
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
+                  <Bot size={16} className="text-gray-500 dark:text-gray-400" />
                 </div>
-                <div className="bg-white border border-purple-100 p-2.5 rounded-2xl rounded-tl-none shadow-2xs text-gray-700 text-xs leading-relaxed max-w-[88%]">
-                  Hello! I am your <strong>AI Slide Assistant</strong>. 
-                  Type any instruction for <strong>Slide {currentSlide + 1}</strong> (or mention any slide number), and I will update the presentation live for you!
+                <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200">
+                  Hi! I am your <strong>AI Assistant</strong>.<br />
+                   I’ll help you edit and customize your slides.
+                  {/* Type any instruction for <strong>Slide {currentSlide + 1}</strong> (or mention any slide number), and I will update the presentation live for you! */}
                 </div>
               </div>
 
               {chatMessages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex items-start space-x-2 ${
-                    msg.sender === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  {msg.sender === 'ai' && (
-                    <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 shadow-2xs">
-                      AI
+                <div key={i} className="flex flex-col gap-2">
+                  {msg.sender === 'ai' ? (
+                    <div className="flex items-end justify-start gap-2 max-w-[91%] self-start">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
+                        <Bot size={16} className="text-gray-500 dark:text-gray-400" />
+                      </div>
+                      <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200">
+                        <ExpandableMessage text={msg.text} />
+                        <span className="block text-[10px] mt-1 text-gray-400">{msg.time}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-end justify-end gap-2 max-w-[80%] self-end">
+                      <div className="bg-button-orange text-white p-3 rounded-lg rounded-tr-none text-sm">
+                        <ExpandableMessage text={msg.text} />
+                        <span className="block text-[10px] mt-1 text-white/80 text-right">{msg.time}</span>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-button-orange/20 flex items-center justify-center shrink-0 mb-1">
+                        <User size={16} className="text-primary-orange" />
+                      </div>
                     </div>
                   )}
-                  <div
-                    className={`p-2.5 rounded-2xl text-xs leading-relaxed max-w-[88%] shadow-2xs ${
-                      msg.sender === 'user'
-                        ? 'bg-[#d04a02] text-white rounded-tr-none'
-                        : 'bg-white border border-purple-100 text-gray-800 rounded-tl-none'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap">{msg.text}</p>
-                    <span className={`block text-[9px] mt-1 ${msg.sender === 'user' ? 'text-orange-200 text-right' : 'text-gray-400'}`}>
-                      {msg.time}
-                    </span>
-                  </div>
                 </div>
               ))}
 
               {isRefiningSlide && (
-                <div className="flex items-center space-x-2 text-purple-700 bg-purple-50 p-2.5 rounded-xl border border-purple-200 animate-pulse">
-                  <Wand2 className="w-4 h-4 animate-spin text-purple-600" />
-                  <span className="text-xs font-semibold">Modifying Slide {currentSlide + 1}...</span>
+                <div className="flex items-end justify-start gap-2 max-w-[91%] self-start mt-2">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
+                    <Bot size={16} className="text-gray-500 dark:text-gray-400" />
+                  </div>
+                  <div className="py-3 text-left text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none flex items-center space-x-1">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <span className="ml-2 text-xs font-medium">Modifying Slide {currentSlide + 1}...</span>
+                  </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Suggestions Chips (FIXED AT BOTTOM OF CHAT) */}
-            <div className="shrink-0 px-3 py-2 bg-white border-t border-gray-100 flex gap-1.5 overflow-x-auto no-scrollbar">
-              <button
-                onClick={() => handleSendChatMessage(`On Slide ${currentSlide + 1}, shorten summary bullet points`)}
-                disabled={isRefiningSlide}
-                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-semibold rounded-full border border-purple-200 whitespace-nowrap transition cursor-pointer disabled:opacity-50"
-              >
-                ✨ Shorten Summary
-              </button>
-              <button
-                onClick={() => handleSendChatMessage(`On Slide ${currentSlide + 1}, add SLA 99.9% uptime requirement`)}
-                disabled={isRefiningSlide}
-                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-semibold rounded-full border border-purple-200 whitespace-nowrap transition cursor-pointer disabled:opacity-50"
-              >
-                ✨ Add SLA Uptime
-              </button>
-              <button
-                onClick={() => handleSendChatMessage(`Change proposal title to Enterprise Digital Architecture`)}
-                disabled={isRefiningSlide}
-                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-semibold rounded-full border border-purple-200 whitespace-nowrap transition cursor-pointer disabled:opacity-50"
-              >
-                ✨ Edit Title
-              </button>
-            </div>
-
             {/* Chat Input Bar (FIXED AT BOTTOM OF CHAT) */}
-            <div className="shrink-0 p-2.5 bg-white border-t border-gray-200 flex items-center space-x-2">
-              <input
-                type="text"
+            <div className="shrink-0 p-4 bg-background border-t border-gray-200 dark:border-gray-800 flex items-center gap-2">
+              <textarea
+                ref={chatInputRef}
+                rows={1}
                 placeholder={`Instruct AI for Slide ${currentSlide + 1}...`}
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSendChatMessage()}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (chatInput.trim() && !isRefiningSlide) {
+                      handleSendChatMessage();
+                    }
+                  }
+                }}
                 disabled={isRefiningSlide}
-                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none disabled:opacity-50"
+                className="flex-1 px-3 py-2 rounded-lg border border-border focus:border-primary bg-card text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 focus:outline-none disabled:opacity-50 transition-colors resize-none overflow-y-auto"
+                style={{ minHeight: '40px', maxHeight: '120px' }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+                }}
               />
               <button
                 onClick={() => handleSendChatMessage()}
                 disabled={!chatInput.trim() || isRefiningSlide}
-                className="p-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 transition shadow-2xs cursor-pointer"
+                className="p-2.5 bg-button-orange text-white rounded-lg hover:bg-hover-orange disabled:opacity-50 transition shadow-sm cursor-pointer"
                 title="Send instruction to AI Assistant"
               >
-                <Send className="w-3.5 h-3.5" />
+                <Send className="w-4 h-4" />
               </button>
             </div>
           </div>
