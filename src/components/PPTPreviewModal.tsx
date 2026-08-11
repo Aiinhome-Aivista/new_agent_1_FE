@@ -1617,7 +1617,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                 }`}
                 onClick={() => setIsChatOpen(!isChatOpen)}
               >
-                <Sparkles size={13} className={isChatOpen ? 'text-white' : 'text-secondary'} />
+                <Sparkles size={13} className={isChatOpen ? 'text-primary' : 'text-secondary'} />
                 {isChatOpen ? 'Close Chat Modal' : 'Chat Modal'}
               </Button>
 
@@ -1686,12 +1686,12 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
 
         {/* RIGHT COLUMN: Chat Modal Side-by-Side Panel (FIXED CONTAINER, INTERNAL CHAT MESSAGES ONLY SCROLL) */}
         {isChatOpen && (
-          <div className="w-full lg:w-[380px] xl:w-[450px] bg-white border border-border rounded-xl flex flex-col shadow-xl overflow-hidden h-full shrink-0 min-h-0 animate-in slide-in-from-right-4 duration-300">
+          <div className="w-full lg:w-[380px] xl:w-[450px] bg-card border border-border rounded-xl flex flex-col shadow-xl overflow-hidden h-full shrink-0 min-h-0 animate-in slide-in-from-right-4 duration-300">
             {/* Chat Modal Header (FIXED TOP) */}
-            <div className="shrink-0 p-3 bg-secondary text-foreground flex items-center justify-between shadow-xs">
+            <div className="shrink-0 p-3 bg-background text-foreground flex items-center justify-between shadow-xs">
               <div className="flex items-center space-x-2.5">
-                <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-xs">
-                  <Bot className="w-4.5 h-4.5 text-purple-100" />
+                <div className="p-1.5 bg-orange-border/80 text-primary-orange border-orange-border rounded-lg backdrop-blur-xs">
+                  <Bot className="w-4.5 h-4.5 text-background" />
                 </div>
                 <div>
                   <h3 className="text-xs font-extrabold tracking-wide uppercase flex items-center gap-1.5">
@@ -1703,14 +1703,14 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                       AI Assistant
                     </span>
                   </h3>
-                  <span className="text-[10px] text-purple-200 font-medium truncate block max-w-[240px]">
+                  <span className="text-muted-foreground text-xs font-medium truncate block max-w-60">
                     Active: Slide {currentSlide + 1} ({slide.title || 'Context'})
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => setIsChatOpen(false)}
-                className="p-1 text-purple-200 hover:text-white rounded-md hover:bg-white/10 transition cursor-pointer"
+                className="p-1 rounded-full text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors cursor-pointer"
                 title="Close Chat Modal"
               >
                 <X className="w-4 h-4" />
@@ -1718,13 +1718,13 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
             </div>
 
             {/* Chat Messages Body (ONLY THIS AREA SCROLLS!) */}
-            <div className="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-4 text-xs scroll-smooth bg-background">
+            <div className="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-4 text-xs scroll-smooth bg-card">
               {/* Default Welcome message */}
               <div className="flex items-end justify-start gap-2 max-w-[91%] self-start">
                 <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
                   <Bot size={16} className="text-gray-500 dark:text-gray-400" />
                 </div>
-                <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200">
+                <div className="bg-foreground p-3 rounded-lg rounded-tl-none text-sm text-background">
                   Hi! I am your <strong>AI Assistant</strong>.<br />
                    I’ll help you edit and customize your slides.
                   {/* Type any instruction for <strong>Slide {currentSlide + 1}</strong> (or mention any slide number), and I will update the presentation live for you! */}
@@ -1738,7 +1738,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                       <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
                         <Bot size={16} className="text-gray-500 dark:text-gray-400" />
                       </div>
-                      <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200">
+                      <div className="bg-foreground p-3 rounded-lg rounded-tl-none text-sm text-background">
                         <ExpandableMessage text={msg.text} />
                         <span className="block text-[10px] mt-1 text-gray-400">{msg.time}</span>
                       </div>
@@ -1790,7 +1790,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                   }
                 }}
                 disabled={isRefiningSlide}
-                className="flex-1 px-3 py-2 rounded-lg border border-border focus:border-primary bg-card text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 focus:outline-none disabled:opacity-50 transition-colors resize-none overflow-y-auto"
+                className="flex-1 px-3 py-2 rounded-lg border border-border focus:border-primary bg-card text-sm text-foreground placeholder:text-gray-500 focus:outline-none disabled:opacity-50 transition-colors resize-none overflow-y-auto"
                 style={{ minHeight: '40px', maxHeight: '120px' }}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;

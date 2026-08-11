@@ -119,7 +119,7 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
                   <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
                     <Bot size={16} className="text-gray-500 dark:text-gray-400" />
                   </div>
-                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200">
+                  <div className="bg-foreground p-3 rounded-lg rounded-tl-none text-sm text-background">
                     <span className="break-words">{qa.question}</span>
                   </div>
                 </div>
@@ -152,7 +152,7 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
                   <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
                     <Bot size={16} className="text-gray-500 dark:text-gray-400" />
                   </div>
-                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200">
+                  <div className="bg-foreground p-3 rounded-lg rounded-tl-none text-sm text-background">
                     <span className="break-words">{currentQuestion}</span>
                   </div>
                 </div>
@@ -160,9 +160,9 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
             )}
           </div>
           {/* Input Section */}
-          <div className="mt-2">
+          <div className="mt-2 px-1">
             <Input
-              className="border-border focus:border-primary text-gray-900 dark:text-gray-100 placeholder:text-gray-500"
+              className="border-border focus:border-primary text-foreground placeholder:text-gray-500"
               value={currentAnswer}
               onChange={(e) => setCurrentAnswer(e.target.value)}
               placeholder="Type your answer here..."
