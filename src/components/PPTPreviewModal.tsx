@@ -94,152 +94,164 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
 
       // If backend API returned error or 404, run instant client-side IR refinement
       if (!updatedIrData) {
-        updatedIrData = JSON.parse(JSON.stringify(localIr));
         const instrLower = userMsg.text.toLowerCase();
 
-        const isExplain = /explain/i.test(instrLower) || /detail/i.test(instrLower) || /expand/i.test(instrLower) || /elaborate/i.test(instrLower) || /this point/i.test(instrLower) || /poper explain/i.test(instrLower);
-        const isBusiness = /business/i.test(instrLower) || /professional/i.test(instrLower) || /corporate/i.test(instrLower) || /executive/i.test(instrLower);
-        const isReplacement = /replace/i.test(instrLower) || /revised/i.test(instrLower) || /overwrite/i.test(instrLower) || /instead/i.test(instrLower);
-        const isEnhancement = /enhance/i.test(instrLower) || /improve/i.test(instrLower) || /better/i.test(instrLower) || /rewrite/i.test(instrLower) || /thik lekha nei/i.test(instrLower) || /polish/i.test(instrLower);
+        // Check if instruction is gibberish/invalid
+        const isGibberish = /^[a-z0-9]+$/i.test(instrLower) && instrLower.length > 4 && 
+                            !['explain', 'detail', 'expand', 'update', 'delete', 'remove', 'change', 'modify', 'insert', 'create', 'rename', 'title', 'infra', 'costs', 'redis', 'mysql', 'mongo', 'react', 'axios', 'summary', 'requirement', 'gap', 'pillar', 'flow'].some(w => instrLower.includes(w));
+        const hasNoSpaces = !/\s/.test(instrLower);
+        const isInvalidGibberish = isGibberish || (hasNoSpaces && instrLower.length > 6 && !['requirements', 'infrastructure', 'architecture'].includes(instrLower));
 
-        // Helper to extract revised text lines & strip prompt prefixes
-        const extractLines = (raw: string) => {
-          let cleanedPrompt = raw.replace(
-            /^(?:please\s+)?(?:replace|change|update|modify|edit|set|rewrite|enhance|add|explain)\s+(?:the\s+)?(?:existing\s+)?(?:content|text|slide|bullets?|title|summary|point)?\s*(?:on\s+this\s+slide|for\s+slide\s*\d+|here)?\s*(?:with\s+this\s+revised|with\s+this|with|to|as)?[\s,:-]*/i,
-            ''
-          ).trim();
-          cleanedPrompt = cleanedPrompt.replace(/^(?:this\s+)?revised[\s,:-]*/i, '').trim();
+        if (isInvalidGibberish) {
+          updatedIrData = localIr;
+          replyText = "অনুগ্রহ করে আপনার নির্দেশনাটি পরিষ্কারভাবে লিখুন যাতে আমি স্লাইডটি সঠিকভাবে আপডেট করতে পারি। / Please write your instructions clearly so that I can update the slide properly.";
+        } else {
+          updatedIrData = JSON.parse(JSON.stringify(localIr));
 
-          const sanitized = (cleanedPrompt || raw).replace(/\[\d+\]|\[citation needed\]/gi, '').trim();
-          const lines = sanitized.split('\n').map(l => l.replace(/^[•\-\*\d\.\s]+/, '').trim()).filter(Boolean);
-          if (lines.length === 1 && lines[0].length > 80) {
-            const sentences = lines[0].split(/\.\s+/).map(s => s.trim().replace(/\.$/, '')).filter(s => s.length > 2);
-            if (sentences.length > 1) return sentences;
-          }
-          return lines.length > 0 ? lines : [sanitized];
-        };
+          const isExplain = /explain/i.test(instrLower) || /detail/i.test(instrLower) || /expand/i.test(instrLower) || /elaborate/i.test(instrLower) || /this point/i.test(instrLower) || /poper explain/i.test(instrLower);
+          const isBusiness = /business/i.test(instrLower) || /professional/i.test(instrLower) || /corporate/i.test(instrLower) || /executive/i.test(instrLower);
+          const isReplacement = /replace/i.test(instrLower) || /revised/i.test(instrLower) || /overwrite/i.test(instrLower) || /instead/i.test(instrLower);
+          const isEnhancement = /enhance/i.test(instrLower) || /improve/i.test(instrLower) || /better/i.test(instrLower) || /rewrite/i.test(instrLower) || /thik lekha nei/i.test(instrLower) || /polish/i.test(instrLower);
 
-        // Helper to generate clean, high-impact executive bullets for Explain/Business intents
-        const formatCleanExecutiveBullets = (mode: string) => {
-          if (mode === 'explain') {
-            return (
-              "• Core Solution Architecture: AI-driven multi-agent system automating end-to-end RFP ingestion, capability matching, and slide generation for pre-sales.\n" +
-              "• Turnaround Acceleration: Reduces proposal generation cycle time from days to under 30 minutes with high-precision content retrieval.\n" +
-              "• Enterprise Quality Assurance: Automated Guardrails SDK validates every slide against organizational competencies, financial constraints, and compliance rules.\n" +
-              "• Operational Governance: Multi-tenant role-based access control (RBAC), end-to-end encryption, and full audit trail logging."
-            );
-          } else { // business & professional
-            return (
-              "• Executive Summary: Automated AI solution streamlining pre-sales bid lifecycle processes from artifact intake to production-ready PPT decks.\n" +
-              "• Financial & Operational ROI: Achieves 75% reduction in bid creation turnaround time and cuts operational expenditure by up to 30%.\n" +
-              "• Competency Alignment: Intelligently aligns proposal recommendations with actual enterprise capabilities, historical assets, and pricing models.\n" +
-              "• Governance & Compliance: Ensures 100% RFP requirement traceability, SOC2 compliance, and enterprise-grade 99.95% SLA uptime."
-            );
-          }
-        };
+          // Helper to extract revised text lines & strip prompt prefixes
+          const extractLines = (raw: string) => {
+            let cleanedPrompt = raw.replace(
+              /^(?:please\s+)?(?:replace|change|update|modify|edit|set|rewrite|enhance|add|explain)\s+(?:the\s+)?(?:existing\s+)?(?:content|text|slide|bullets?|title|summary|point)?\s*(?:on\s+this\s+slide|for\s+slide\s*\d+|here)?\s*(?:with\s+this\s+revised|with\s+this|with|to|as)?[\s,:-]*/i,
+              ''
+            ).trim();
+            cleanedPrompt = cleanedPrompt.replace(/^(?:this\s+)?revised[\s,:-]*/i, '').trim();
 
-        // 1. Explain / Elaborate Intent ("this point explain here")
-        if (isExplain) {
-          updatedIrData.executive_summary = formatCleanExecutiveBullets('explain');
-          updatedIrData.business_summary = updatedIrData.executive_summary;
-          replyText = `Expanded Slide ${currentSlide + 1} into detailed operational & technical executive bullet points!`;
-        }
-        // 2. Business-Oriented & Professional Intent ("make it business oriented")
-        else if (isBusiness || isEnhancement) {
-          updatedIrData.executive_summary = formatCleanExecutiveBullets('business');
-          updatedIrData.business_summary = updatedIrData.executive_summary;
-          replyText = `Transformed Slide ${currentSlide + 1} into high-impact corporate executive business statements!`;
-        }
-        // 3. Direct Content Replacement Intent ("Please replace...")
-        else if (isReplacement) {
-          const revisedItems = extractLines(userMsg.text);
-          if (currentSlide === 0 || instrLower.includes('title')) {
-            updatedIrData.proposal_title = revisedItems.join(' ');
-            replyText = `Replaced proposal title on Slide 1.`;
-          } else if (currentSlide === 1 || instrLower.includes('summary')) {
-            updatedIrData.executive_summary = '• ' + revisedItems.join('\n• ');
+            const sanitized = (cleanedPrompt || raw).replace(/\[\d+\]|\[citation needed\]/gi, '').trim();
+            const lines = sanitized.split('\n').map(l => l.replace(/^[•\-\*\d\.\s]+/, '').trim()).filter(Boolean);
+            if (lines.length === 1 && lines[0].length > 80) {
+              const sentences = lines[0].split(/\.\s+/).map(s => s.trim().replace(/\.$/, '')).filter(s => s.length > 2);
+              if (sentences.length > 1) return sentences;
+            }
+            return lines.length > 0 ? lines : [sanitized];
+          };
+
+          // Helper to generate clean, high-impact executive bullets for Explain/Business intents
+          const formatCleanExecutiveBullets = (mode: string) => {
+            if (mode === 'explain') {
+              return (
+                "• Core Solution Architecture: AI-driven multi-agent system automating end-to-end RFP ingestion, capability matching, and slide generation for pre-sales.\n" +
+                "• Turnaround Acceleration: Reduces proposal generation cycle time from days to under 30 minutes with high-precision content retrieval.\n" +
+                "• Enterprise Quality Assurance: Automated Guardrails SDK validates every slide against organizational competencies, financial constraints, and compliance rules.\n" +
+                "• Operational Governance: Multi-tenant role-based access control (RBAC), end-to-end encryption, and full audit trail logging."
+              );
+            } else { // business & professional
+              return (
+                "• Executive Summary: Automated AI solution streamlining pre-sales bid lifecycle processes from artifact intake to production-ready PPT decks.\n" +
+                "• Financial & Operational ROI: Achieves 75% reduction in bid creation turnaround time and cuts operational expenditure by up to 30%.\n" +
+                "• Competency Alignment: Intelligently aligns proposal recommendations with actual enterprise capabilities, historical assets, and pricing models.\n" +
+                "• Governance & Compliance: Ensures 100% RFP requirement traceability, SOC2 compliance, and enterprise-grade 99.95% SLA uptime."
+              );
+            }
+          };
+
+          // 1. Explain / Elaborate Intent ("this point explain here")
+          if (isExplain) {
+            updatedIrData.executive_summary = formatCleanExecutiveBullets('explain');
             updatedIrData.business_summary = updatedIrData.executive_summary;
-            replyText = `Replaced existing Executive Summary content on Slide 2 with clean revised bullet points.`;
-          } else if (currentSlide === 2 || instrLower.includes('requirement')) {
-            updatedIrData.requirements = revisedItems;
-            replyText = `Replaced client requirements list on Slide 3 with your revised points.`;
-          } else if (currentSlide === 3 || instrLower.includes('gap')) {
-            updatedIrData.gaps = revisedItems;
-            replyText = `Replaced capability gaps list on Slide 4 with your revised points.`;
-          } else if (currentSlide === 4 || instrLower.includes('pillar')) {
-            updatedIrData.solution_pillars = revisedItems.map(item => ({ title: item, description: 'Custom revised strategic pillar item.' }));
-            replyText = `Replaced solution pillars on Slide 5.`;
-          } else if (currentSlide === 6 || instrLower.includes('flow')) {
-            updatedIrData.data_flow = revisedItems;
-            replyText = `Replaced data flow steps on Slide 7.`;
-          } else {
-            updatedIrData.executive_summary = '• ' + revisedItems.join('\n• ');
-            replyText = `Replaced existing content on Slide ${currentSlide + 1} with clean revised bullet points!`;
+            replyText = `Expanded Slide ${currentSlide + 1} into detailed operational & technical executive bullet points!`;
           }
-        }
-        // 3. Infrastructure Table / Unit Costs (Slide 8 or infra keywords)
-        else if (updatedIrData.infrastructure_approximation && Array.isArray(updatedIrData.infrastructure_approximation)) {
-          const costMatch = userMsg.text.match(/(\$?\s*\d+(?:\.\d+)?(?:\s*k|\s*m)?(?:\s*\$)?|\d+\s*(?:dollars?|USD))/i);
-          let newCost = costMatch ? costMatch[1].trim() : null;
-          if (newCost && !newCost.includes('$')) newCost = `$${newCost}`;
+          // 2. Business-Oriented & Professional Intent ("make it business oriented")
+          else if (isBusiness || isEnhancement) {
+            updatedIrData.executive_summary = formatCleanExecutiveBullets('business');
+            updatedIrData.business_summary = updatedIrData.executive_summary;
+            replyText = `Transformed Slide ${currentSlide + 1} into high-impact corporate executive business statements!`;
+          }
+          // 3. Direct Content Replacement Intent ("Please replace...")
+          else if (isReplacement) {
+            const revisedItems = extractLines(userMsg.text);
+            if (currentSlide === 0 || instrLower.includes('title')) {
+              updatedIrData.proposal_title = revisedItems.join(' ');
+              replyText = `Replaced proposal title on Slide 1.`;
+            } else if (currentSlide === 1 || instrLower.includes('summary')) {
+              updatedIrData.executive_summary = '• ' + revisedItems.join('\n• ');
+              updatedIrData.business_summary = updatedIrData.executive_summary;
+              replyText = `Replaced existing Executive Summary content on Slide 2 with clean revised bullet points.`;
+            } else if (currentSlide === 2 || instrLower.includes('requirement')) {
+              updatedIrData.requirements = revisedItems;
+              replyText = `Replaced client requirements list on Slide 3 with your revised points.`;
+            } else if (currentSlide === 3 || instrLower.includes('gap')) {
+              updatedIrData.gaps = revisedItems;
+              replyText = `Replaced capability gaps list on Slide 4 with your revised points.`;
+            } else if (currentSlide === 4 || instrLower.includes('pillar')) {
+              updatedIrData.solution_pillars = revisedItems.map(item => ({ title: item, description: 'Custom revised strategic pillar item.' }));
+              replyText = `Replaced solution pillars on Slide 5.`;
+            } else if (currentSlide === 6 || instrLower.includes('flow')) {
+              updatedIrData.data_flow = revisedItems;
+              replyText = `Replaced data flow steps on Slide 7.`;
+            } else {
+              updatedIrData.executive_summary = '• ' + revisedItems.join('\n• ');
+              replyText = `Replaced existing content on Slide ${currentSlide + 1} with clean revised bullet points!`;
+            }
+          }
+          // 3. Infrastructure Table / Unit Costs (Slide 8 or infra keywords)
+          else if (updatedIrData.infrastructure_approximation && Array.isArray(updatedIrData.infrastructure_approximation)) {
+            const costMatch = userMsg.text.match(/(\$?\s*\d+(?:\.\d+)?(?:\s*k|\s*m)?(?:\s*\$)?|\d+\s*(?:dollars?|USD))/i);
+            let newCost = costMatch ? costMatch[1].trim() : null;
+            if (newCost && !newCost.includes('$')) newCost = `$${newCost}`;
 
-          let updatedRow = false;
-          updatedIrData.infrastructure_approximation.forEach((row: any) => {
-            const compName = (row.component || '').toLowerCase();
-            if (
-              (instrLower.includes('app service') && compName.includes('app service')) ||
-              (instrLower.includes('postgres') && compName.includes('postgres')) ||
-              (instrLower.includes('redis') && compName.includes('redis')) ||
-              (instrLower.includes('blob') && compName.includes('blob')) ||
-              (instrLower.includes('api') && compName.includes('api'))
-            ) {
-              if (newCost) {
-                row.unit_cost = newCost;
-                row.estimated_monthly_cost = newCost;
-                replyText = `Updated unit cost for '${row.component}' to '${newCost}' on Slide ${currentSlide + 1}!`;
-              } else {
-                row.specification = userMsg.text;
-                replyText = `Updated specification for '${row.component}' on Slide ${currentSlide + 1}!`;
+            let updatedRow = false;
+            updatedIrData.infrastructure_approximation.forEach((row: any) => {
+              const compName = (row.component || '').toLowerCase();
+              if (
+                (instrLower.includes('app service') && compName.includes('app service')) ||
+                (instrLower.includes('postgres') && compName.includes('postgres')) ||
+                (instrLower.includes('redis') && compName.includes('redis')) ||
+                (instrLower.includes('blob') && compName.includes('blob')) ||
+                (instrLower.includes('api') && compName.includes('api'))
+              ) {
+                if (newCost) {
+                  row.unit_cost = newCost;
+                  row.estimated_monthly_cost = newCost;
+                  replyText = `Updated unit cost for '${row.component}' to '${newCost}' on Slide ${currentSlide + 1}!`;
+                } else {
+                  row.specification = userMsg.text;
+                  replyText = `Updated specification for '${row.component}' on Slide ${currentSlide + 1}!`;
+                }
+                updatedRow = true;
               }
-              updatedRow = true;
+            });
+
+            if (!updatedRow && updatedIrData.infrastructure_approximation.length > 0 && (instrLower.includes('cost') || instrLower.includes('unit') || newCost || currentSlide === 7)) {
+              const target = updatedIrData.infrastructure_approximation[0];
+              if (newCost) {
+                target.unit_cost = newCost;
+                target.estimated_monthly_cost = newCost;
+                replyText = `Updated unit cost for '${target.component}' to '${newCost}' on Slide ${currentSlide + 1}!`;
+              }
             }
-          });
-
-          if (!updatedRow && updatedIrData.infrastructure_approximation.length > 0 && (instrLower.includes('cost') || instrLower.includes('unit') || newCost || currentSlide === 7)) {
-            const target = updatedIrData.infrastructure_approximation[0];
-            if (newCost) {
-              target.unit_cost = newCost;
-              target.estimated_monthly_cost = newCost;
-              replyText = `Updated unit cost for '${target.component}' to '${newCost}' on Slide ${currentSlide + 1}!`;
+          }
+          // 4. Proposal Title
+          else if (instrLower.includes('title') || instrLower.includes('rename')) {
+            const titleMatch = userMsg.text.match(/(?:title|name)\s+(?:to\s+)?["\']?(.*?)["\']?$/i);
+            if (titleMatch && titleMatch[1]) {
+              updatedIrData.proposal_title = titleMatch[1].trim();
+            } else {
+              updatedIrData.proposal_title = userMsg.text;
             }
+            replyText = `Updated proposal title to '${updatedIrData.proposal_title}'.`;
           }
-        }
-        // 4. Proposal Title
-        else if (instrLower.includes('title') || instrLower.includes('rename')) {
-          const titleMatch = userMsg.text.match(/(?:title|name)\s+(?:to\s+)?["\']?(.*?)["\']?$/i);
-          if (titleMatch && titleMatch[1]) {
-            updatedIrData.proposal_title = titleMatch[1].trim();
-          } else {
-            updatedIrData.proposal_title = userMsg.text;
-          }
-          replyText = `Updated proposal title to '${updatedIrData.proposal_title}'.`;
-        }
 
-        // 3. Executive / Business Summary (Slide 2)
-        if (instrLower.includes('summary') || currentSlide === 1) {
-          if (typeof updatedIrData.executive_summary === 'string') {
-            updatedIrData.executive_summary += `\n• ${userMsg.text}`;
-          } else if (Array.isArray(updatedIrData.executive_summary)) {
-            updatedIrData.executive_summary.push(userMsg.text);
+          // 3. Executive / Business Summary (Slide 2)
+          if (instrLower.includes('summary') || currentSlide === 1) {
+            if (typeof updatedIrData.executive_summary === 'string') {
+              updatedIrData.executive_summary += `\n• ${userMsg.text}`;
+            } else if (Array.isArray(updatedIrData.executive_summary)) {
+              updatedIrData.executive_summary.push(userMsg.text);
+            }
+            replyText = `Updated Executive Summary on Slide ${currentSlide + 1}.`;
           }
-          replyText = `Updated Executive Summary on Slide ${currentSlide + 1}.`;
-        }
 
-        // 4. Client Requirements (Slide 3)
-        if (instrLower.includes('requirement') || instrLower.includes('scope') || currentSlide === 2) {
-          if (!Array.isArray(updatedIrData.requirements)) updatedIrData.requirements = [];
-          updatedIrData.requirements.push(userMsg.text);
-          replyText = `Added requirement to Scope of Work on Slide 3.`;
+          // 4. Client Requirements (Slide 3)
+          if (instrLower.includes('requirement') || instrLower.includes('scope') || currentSlide === 2) {
+            if (!Array.isArray(updatedIrData.requirements)) updatedIrData.requirements = [];
+            updatedIrData.requirements.push(userMsg.text);
+            replyText = `Added requirement to Scope of Work on Slide 3.`;
+          }
         }
       }
 
