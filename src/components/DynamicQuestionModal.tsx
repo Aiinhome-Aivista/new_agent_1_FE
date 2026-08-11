@@ -177,7 +177,7 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
             />
           </div>
           
-          <div className="flex justify-end gap-3 mt-2 border-t border-gray-200 dark:border-gray-800 pt-4">
+          <div className="flex justify-end gap-3 mt-2 border-t border-gray-200 dark:border-gray-800 py-2 pr-1">
             <Button variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>

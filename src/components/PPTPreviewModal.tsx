@@ -1712,7 +1712,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
         {isChatOpen && (
           <div className="w-full lg:w-[380px] xl:w-[450px] bg-card border border-border rounded-xl flex flex-col shadow-xl overflow-hidden h-full shrink-0 min-h-0 animate-in slide-in-from-right-4 duration-300">
             {/* Chat Modal Header (FIXED TOP) */}
-            <div className="shrink-0 p-3 bg-background text-foreground flex items-center justify-between shadow-xs">
+            <div className="shrink-0 p-3 bg-input border-b border-border-orange text-foreground flex items-center justify-between shadow-xs">
               <div className="flex items-center space-x-2.5">
                 <div className="p-1.5 bg-orange-border/80 text-primary-orange border-orange-border rounded-lg backdrop-blur-xs">
                   <Bot className="w-4.5 h-4.5 text-background" />
@@ -1745,10 +1745,10 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
             <div className="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-4 text-xs scroll-smooth bg-card">
               {/* Default Welcome message */}
               <div className="flex items-end justify-start gap-2 max-w-[91%] self-start">
-                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
-                  <Bot size={16} className="text-gray-500 dark:text-gray-400" />
+                <div className="w-8 h-8 rounded-full bg-button-orange/40 flex items-center justify-center shrink-0 mb-1">
+                  <Bot size={16} className="text-foreground" />
                 </div>
-                <div className="bg-foreground p-3 rounded-lg rounded-tl-none text-sm text-background">
+                <div className="bg-button-orange/90 p-3 rounded-lg rounded-tl-none text-sm text-foreground">
                   Hi! I am your <strong>AI Assistant</strong>.<br />
                    I’ll help you edit and customize your slides.
                   {/* Type any instruction for <strong>Slide {currentSlide + 1}</strong> (or mention any slide number), and I will update the presentation live for you! */}
@@ -1759,12 +1759,12 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                 <div key={i} className="flex flex-col gap-2">
                   {msg.sender === 'ai' ? (
                     <div className="flex items-end justify-start gap-2 max-w-[91%] self-start">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mb-1">
-                        <Bot size={16} className="text-gray-500 dark:text-gray-400" />
+                      <div className="w-8 h-8 rounded-full bg-button-orange/40 flex items-center justify-center shrink-0 mb-1">
+                        <Bot size={16} className="text-foreground" />
                       </div>
-                      <div className="bg-foreground p-3 rounded-lg rounded-tl-none text-sm text-background">
+                      <div className="bg-button-orange/90 p-3 rounded-lg rounded-tl-none text-sm text-foreground">
                         <ExpandableMessage text={msg.text} />
-                        <span className="block text-[10px] mt-1 text-gray-400">{msg.time}</span>
+                        <span className="block text-[10px] mt-1">{msg.time}</span>
                       </div>
                     </div>
                   ) : (
@@ -1798,7 +1798,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
             </div>
 
             {/* Chat Input Bar (FIXED AT BOTTOM OF CHAT) */}
-            <div className="shrink-0 p-4 bg-background border-t border-gray-200 dark:border-gray-800 flex items-center gap-2">
+            <div className="shrink-0 p-4 bg-input border-t border-border-orange flex items-center gap-2">
               <textarea
                 ref={chatInputRef}
                 rows={1}
