@@ -17,38 +17,8 @@ import '@xyflow/react/dist/style.css';
 import './DiagramEditor.css';
 import { parseMermaid, stringifyMermaid, CustomNode } from './mermaidParser';
 import { 
-  Plus, Trash2, HelpCircle, Database, Monitor, Cpu, Globe, Server, Folder, Bell, FileText, Activity 
+  Plus, Trash2, HelpCircle
 } from 'lucide-react';
-
-// Helper to get matching lucide icon for architecture boxes
-const getNodeIcon = (label: string) => {
-  const lbl = label.toLowerCase();
-  if (lbl.includes('database') || lbl.includes('db') || lbl.includes('cache') || lbl.includes('vector') || lbl.includes('postgres') || lbl.includes('redis') || lbl.includes('chroma') || lbl.includes('pgvector') || lbl.includes('store')) {
-    return <Database size={13} className="text-[#d04a02] shrink-0" />;
-  }
-  if (lbl.includes('web') || lbl.includes('ui') || lbl.includes('dashboard') || lbl.includes('review') || lbl.includes('interface')) {
-    return <Monitor size={13} className="text-[#d04a02] shrink-0" />;
-  }
-  if (lbl.includes('agent') || lbl.includes('orchestrat') || lbl.includes('synthesis') || lbl.includes('logic')) {
-    return <Cpu size={13} className="text-[#d04a02] shrink-0" />;
-  }
-  if (lbl.includes('gateway') || lbl.includes('api') || lbl.includes('external')) {
-    return <Globe size={13} className="text-[#d04a02] shrink-0" />;
-  }
-  if (lbl.includes('cluster') || lbl.includes('aks') || lbl.includes('eks') || lbl.includes('backend') || lbl.includes('services')) {
-    return <Server size={13} className="text-[#d04a02] shrink-0" />;
-  }
-  if (lbl.includes('artefact') || lbl.includes('blob') || lbl.includes('storage') || lbl.includes('s3') || lbl.includes('source')) {
-    return <Folder size={13} className="text-[#d04a02] shrink-0" />;
-  }
-  if (lbl.includes('alert') || lbl.includes('governance') || lbl.includes('monitor') || lbl.includes('logs') || lbl.includes('guardrail')) {
-    return <Bell size={13} className="text-[#d04a02] shrink-0" />;
-  }
-  if (lbl.includes('draft') || lbl.includes('proposal') || lbl.includes('json') || lbl.includes('document') || lbl.includes('intermediate') || lbl.includes('powerpoint')) {
-    return <FileText size={13} className="text-[#d04a02] shrink-0" />;
-  }
-  return <Activity size={13} className="text-[#d04a02] shrink-0" />;
-};
 
 // Custom Diagram Node Component (horizontal, Left/Right connection handles)
 const CustomNodeComponent = ({ data, id }: NodeProps) => {
@@ -75,7 +45,7 @@ const CustomNodeComponent = ({ data, id }: NodeProps) => {
 
         <div className="db-cylinder">
           <div className="db-cylinder-top"></div>
-          <div className="db-cylinder-body flex items-center justify-center gap-1.5 min-h-[44px]">
+          <div className="db-cylinder-body flex items-center justify-center min-h-[44px]">
             {editingId === id ? (
               <input
                 className="node-rename-input w-full text-center bg-transparent outline-none font-bold text-xs border-none p-0 m-0"
@@ -92,9 +62,8 @@ const CustomNodeComponent = ({ data, id }: NodeProps) => {
               <div 
                 onDoubleClick={(e) => onDoubleClick(e, { id, data })}
                 title="Double click to rename"
-                className="cursor-pointer font-bold flex items-center justify-center gap-1.5 text-[#2d2d2d]"
+                className="cursor-pointer font-bold flex items-center justify-center text-[#2d2d2d]"
               >
-                <Database size={13} className="text-[#d04a02] shrink-0" />
                 <span>{label}</span>
               </div>
             )}
@@ -120,7 +89,7 @@ const CustomNodeComponent = ({ data, id }: NodeProps) => {
         style={{ background: '#d04a02', width: 8, height: 8, border: '2px solid #ffffff' }} 
       />
       
-      <div className="w-full px-2 flex items-center justify-center gap-1.5">
+      <div className="w-full px-2 flex items-center justify-center">
         {editingId === id ? (
           <input
             className="node-rename-input w-full text-center bg-transparent outline-none font-bold text-xs border-none p-0 m-0"
@@ -137,9 +106,8 @@ const CustomNodeComponent = ({ data, id }: NodeProps) => {
           <div 
             onDoubleClick={(e) => onDoubleClick(e, { id, data })}
             title="Double click to rename"
-            className="py-1 cursor-pointer font-bold flex items-center gap-1.5 text-[#2d2d2d]"
+            className="py-1 cursor-pointer font-bold flex items-center justify-center text-center text-[#2d2d2d] w-full"
           >
-            {getNodeIcon(label)}
             <span>{label}</span>
           </div>
         )}
@@ -508,7 +476,7 @@ export const DiagramEditor: React.FC<DiagramEditorProps> = ({
               className="diagram-toolbar-btn primary cursor-pointer"
               onClick={addIconNode}
             >
-              <Plus size={14} /> Add Icon
+              <Plus size={14} /> Add Shape
             </button>
           </div>
           
