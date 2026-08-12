@@ -1599,29 +1599,6 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
           {/* Slide Controls & Action Bar (FIXED AT BOTTOM) */}
           <div className="shrink-0 flex justify-between items-center p-3 mt-2 border-t border-border">
             <div className="flex items-center gap-4">
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={prevSlide}
-                  disabled={currentSlide === 0 || isEditing || isRefiningSlide}
-                  className="h-8 w-8 p-0 cursor-pointer"
-                >
-                  <ChevronLeft size={16} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={nextSlide}
-                  disabled={currentSlide === slides.length - 1 || isEditing || isRefiningSlide}
-                  className="h-8 w-8 p-0 cursor-pointer"
-                >
-                  <ChevronRight size={16} />
-                </Button>
-              </div>
-              <span className="text-xs text-muted-foreground font-mono">
-                Slide <strong>{currentSlide + 1}</strong> of <strong>{slides.length}</strong>
-              </span>
               {isEditing && (
                 <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold animate-pulse">
                   Live Edit Mode
@@ -1630,6 +1607,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
             </div>
 {/* "gap-1.5 text-xs font-bold border-button-orange text-button-orange hover:bg-button-orange/10 cursor-pointer" */}
             <div className="flex gap-2.5 items-center">
+              {/* Navigation will be moved to the bottom */}
               {/* Chat Modal Toggle Button */}
               <Button
                 variant="outline"
@@ -1699,11 +1677,35 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onClose}
-                className="text-xs cursor-pointer"
+                className="text-xs cursor-pointer mr-4"
                 disabled={saving}
               >
                 Close Preview
               </Button>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={prevSlide}
+                  disabled={currentSlide === 0 || isEditing || isRefiningSlide}
+                  className="h-8 w-8 p-0 cursor-pointer"
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={nextSlide}
+                  disabled={currentSlide === slides.length - 1 || isEditing || isRefiningSlide}
+                  className="h-8 w-8 p-0 cursor-pointer"
+                >
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+              <span className="text-xs text-muted-foreground font-mono">
+                Slide <strong>{currentSlide + 1}</strong> of <strong>{slides.length}</strong>
+              </span>
             </div>
           </div>
         </div>
