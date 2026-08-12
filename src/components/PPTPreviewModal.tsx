@@ -667,7 +667,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     title: localIr.proposal_title || "Autonomous Solution Design",
     client: localIr.client_name || clientName || "Valued Client",
     subtitle: "Draft Solution Architecture & Implementation Proposal",
-    date: "July 2026"
+    date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   });
 
   // Slide 2: Business Summary
@@ -856,24 +856,12 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                       onChange={(e) => updateField('proposal_title', e.target.value)}
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] text-[#d04a02] font-mono">CLIENT NAME:</span>
-                    <input
-                      type="text"
-                      className="bg-transparent border border-gray-600 rounded px-2 py-1 text-sm font-semibold text-white w-full focus:border-[#d04a02] focus:outline-none"
-                      value={slide.client}
-                      onChange={(e) => updateField('client_name', e.target.value)}
-                    />
-                  </div>
                 </div>
               ) : (
                 <>
                   <h1 className="text-4xl font-extrabold tracking-tight mb-3 text-white leading-tight">
                     {slide.title}
                   </h1>
-                  <h3 className="text-lg font-medium text-[#d04a02] uppercase tracking-wider mb-6">
-                    Client: {slide.client}
-                  </h3>
                 </>
               )}
               <p className="text-sm text-gray-400 mt-12 font-mono">
