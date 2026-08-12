@@ -1534,8 +1534,8 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`PPT Presentation Slide Deck Preview - ${clientName || 'Solution'}`}
-      className={`transition-all duration-300 h-[88vh] max-h-[88vh] flex flex-col overflow-hidden ${
-        isChatOpen ? 'max-w-[96vw] w-full' : 'max-w-6xl w-full'
+      className={`transition-all duration-300 h-[88vh] max-h-full flex flex-col overflow-hidden ${
+        isChatOpen ? 'max-w-[96vw] h-[98vh] w-full' : 'max-w-7xl w-full'
       }`}
       bodyClassName="overflow-hidden p-0 flex flex-col min-h-0 h-full"
     >
@@ -1565,7 +1565,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
             )}
 
             {/* Main slide viewport mimicking python-pptx output */}
-            <div className="w-full max-w-6xl aspect-[4/3] max-h-[60vh] bg-white border border-gray-300 shadow-2xl rounded-lg p-6 flex flex-col justify-between overflow-hidden relative">
+            <div className={`w-full aspect-[4/3] ${isChatOpen ? 'max-h-[74vh]' : 'max-h-[60vh] max-w-6xl'} bg-white border border-gray-300 shadow-2xl rounded-lg p-6 flex flex-col justify-between overflow-hidden relative`}>
               
               {/* Header section (skipped for title and thank you slides) */}
               {slide.type !== 'cover' && slide.type !== 'thank_you' && (
