@@ -40,6 +40,7 @@ const Settings: React.FC = () => {
   // ── Add modal state ─────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formFiles, setFormFiles] = useState<FileList | null>(null);
+  const [formTags, setFormTags] = useState('');
   const [saving, setSaving] = useState(false);
 
   // ── Delete confirm ───────────────────────────────────────
@@ -81,6 +82,7 @@ const Settings: React.FC = () => {
   // ── Open modal ───────────────────────────────────────────
   const openAddModal = () => {
     setFormFiles(null);
+    setFormTags('');
     setIsModalOpen(true);
   };
 
@@ -95,6 +97,9 @@ const Settings: React.FC = () => {
     const formData = new FormData();
     for (let i = 0; i < formFiles.length; i++) {
       formData.append('files', formFiles[i]);
+    }
+    if (formTags.trim()) {
+      formData.append('tags', formTags.trim());
     }
 
     try {
@@ -349,7 +354,7 @@ const Settings: React.FC = () => {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           title="Add Knowledge Base Files"
-          className="max-w-md"
+          className="max-w-lg"
         >
           <form onSubmit={handleSave} className="flex flex-col gap-4 mt-2">
             <p className="text-sm text-muted-foreground">
@@ -366,6 +371,18 @@ const Settings: React.FC = () => {
                 className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-muted-foreground file:border-0 file:bg-transparent file:text-sm file:font-medium hover:file:cursor-pointer"
                 required
               />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground/80">Tags (Optional)</label>
+              <textarea
+                value={formTags}
+                onChange={(e) => setFormTags(e.target.value)}
+                placeholder="e.g., finance, report, 2024"
+                rows={3}
+                className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 resize-none"
+              />
+              <span className="text-[10px] text-muted-foreground">Enter optional manual tags. The system will also automatically analyze the document and extract tags based on its contents.</span>
             </div>
 
             <Button type="submit" variant="primary" isLoading={saving} disabled={!formFiles || formFiles.length === 0} className="w-full mt-4">
