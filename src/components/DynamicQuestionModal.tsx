@@ -51,6 +51,13 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
         history: history,
         questionIndex: history.length + 1
       });
+      
+      if (response.data.question === 'STOP') {
+        const formattedAnswers = history.map((qa, index) => `Q${index + 1}: ${qa.question}\nA: ${qa.answer}`).join('\n\n');
+        onSubmit(formattedAnswers);
+        return;
+      }
+      
       setCurrentQuestion(response.data.question || 'Please provide more details about your requirements.');
     } catch (error) {
       console.error('Failed to fetch next question:', error);
