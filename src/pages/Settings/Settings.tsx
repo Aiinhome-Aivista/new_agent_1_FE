@@ -34,7 +34,7 @@ const Settings: React.FC = () => {
   const [assets, setAssets] = useState<KnowledgeAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [sectorFilter, setSectorFilter] = useState<string>('All');
+  const [sectorFilter] = useState<string>('All');
   // const [reindexing, setReindexing] = useState(false);
 
   // ── Add modal state ─────────────────────────────────
