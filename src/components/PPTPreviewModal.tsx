@@ -29,11 +29,11 @@ const ExpandableMessage = ({ text }: { text: string }) => {
   return (
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
-      className={isOverflowing || isExpanded ? 'cursor-pointer' : ''}
+      className={`overflow-hidden ${isOverflowing || isExpanded ? 'cursor-pointer' : ''}`}
     >
       <div 
         ref={textRef}
-        className={`break-words whitespace-pre-wrap ${!isExpanded ? 'line-clamp-2' : ''}`}
+        className={`break-all break-words whitespace-pre-wrap ${!isExpanded ? 'line-clamp-2' : ''}`}
       >
         {text}
       </div>
@@ -187,9 +187,24 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
 
           // 1. Explain / Elaborate Intent ("this point explain here")
           if (isExplain) {
-            updatedIrData.executive_summary = formatCleanExecutiveBullets('explain');
-            updatedIrData.business_summary = updatedIrData.executive_summary;
-            replyText = `Expanded Slide ${currentSlide + 1} into detailed operational & technical executive bullet points!`;
+            if (currentSlide === 2 && Array.isArray(updatedIrData.requirements)) {
+              const numMatch = instrLower.match(/point\s*(\d+)/i) || instrLower.match(/(\d+)/);
+              let idx = 0;
+              if (numMatch && numMatch[1]) {
+                idx = parseInt(numMatch[1], 10) - 1;
+              }
+              if (updatedIrData.requirements[idx]) {
+                const existing = typeof updatedIrData.requirements[idx] === 'object' ? (updatedIrData.requirements[idx].title || JSON.stringify(updatedIrData.requirements[idx])) : updatedIrData.requirements[idx];
+                updatedIrData.requirements[idx] = existing + " - Detailed elaboration added to address specific operational workflows, robust logic requirements, and comprehensive validation criteria to ensure complete fulfillment of this objective.";
+                replyText = `Elaborated on point ${idx + 1} of Client Requirements on Slide 3.`;
+              } else {
+                replyText = `Could not find that point to elaborate.`;
+              }
+            } else {
+              updatedIrData.executive_summary = formatCleanExecutiveBullets('explain');
+              updatedIrData.business_summary = updatedIrData.executive_summary;
+              replyText = `Expanded Slide ${currentSlide + 1} into detailed operational & technical executive bullet points!`;
+            }
           }
           // 2. Business-Oriented & Professional Intent ("make it business oriented")
           else if (isBusiness || isEnhancement) {
@@ -273,7 +288,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
           }
 
           // 3. Executive / Business Summary (Slide 2)
-          if (instrLower.includes('summary') || currentSlide === 1) {
+          else if (instrLower.includes('summary') || currentSlide === 1) {
             if (typeof updatedIrData.executive_summary === 'string') {
               updatedIrData.executive_summary += `\n• ${userMsg.text}`;
             } else if (Array.isArray(updatedIrData.executive_summary)) {
@@ -283,7 +298,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
           }
 
           // 4. Client Requirements (Slide 3)
-          if (instrLower.includes('requirement') || instrLower.includes('scope') || currentSlide === 2) {
+          else if (instrLower.includes('requirement') || instrLower.includes('scope') || currentSlide === 2) {
             if (!Array.isArray(updatedIrData.requirements)) updatedIrData.requirements = [];
             updatedIrData.requirements.push(userMsg.text);
             replyText = `Added requirement to Scope of Work on Slide 3.`;
@@ -658,6 +673,13 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     return match?.description || '';
   };
 
+  const safeText = (v: any) => {
+    if (typeof v === 'object' && v !== null) {
+      return v.title ? `${v.title}${v.details ? ': ' + v.details : ''}` : JSON.stringify(v);
+    }
+    return String(v || '');
+  };
+
   // Build the slides dynamic list
   const slides: any[] = [];
 
@@ -892,7 +914,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
               ) : (
                 slide.content.map((p: string, idx: number) => (
                   <p key={idx} className="text-sm leading-relaxed text-[#2d2d2d] text-justify font-medium">
-                    {p}
+                    {safeText(p)}
                   </p>
                 ))
               )}
@@ -916,7 +938,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                       <input
                         type="text"
                         className="flex-1 bg-white border border-gray-300 rounded px-2 py-1 text-xs text-gray-700 focus:border-[#d04a02] focus:outline-none font-semibold"
-                        value={item}
+                        value={safeText(item)}
                         onChange={(e) => updateListItem(fieldName, idx, e.target.value)}
                       />
                       <button
@@ -928,7 +950,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                     </div>
                   ) : (
                     <p className="text-xs font-semibold text-gray-700 leading-relaxed">
-                      {item}
+                      {safeText(item)}
                     </p>
                   )}
                 </div>
@@ -1058,7 +1080,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                       <input
                         type="text"
                         className="flex-1 bg-transparent border-0 outline-none text-white text-[10px] font-bold text-center"
-                        value={item}
+                        value={safeText(item)}
                         onChange={(e) => updateListItem('data_flow', idx, e.target.value)}
                       />
                       <button
@@ -1070,7 +1092,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                     </div>
                   ) : (
                     <div className="bg-[#2d2d2d] border border-gray-600 rounded-lg p-2.5 text-center text-white text-[10px] font-bold shadow-md tracking-wide">
-                      {item}
+                      {safeText(item)}
                     </div>
                   )}
                   {idx < slide.items.length - 1 && (
@@ -1333,7 +1355,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                             <input
                               type="text"
                               className="flex-1 bg-white border border-gray-200 rounded px-1.5 py-0.5 text-[9px] text-gray-600"
-                              value={bp}
+                              value={safeText(bp)}
                               onChange={(e) => updateCaseStudyList(csIdx, 'business_problem', i, e.target.value)}
                             />
                             <button onClick={() => deleteCaseStudyListItem(csIdx, 'business_problem', i)} className="text-red-500 hover:text-red-700">
@@ -1341,7 +1363,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                             </button>
                           </>
                         ) : (
-                          <p className="text-[9px] text-gray-600 leading-relaxed">• {bp}</p>
+                          <p className="text-[9px] text-gray-600 leading-relaxed">• {safeText(bp)}</p>
                         )}
                       </div>
                     ))}
@@ -1365,7 +1387,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                             <input
                               type="text"
                               className="flex-1 bg-white border border-gray-200 rounded px-1.5 py-0.5 text-[9px] text-gray-600"
-                              value={oa}
+                              value={safeText(oa)}
                               onChange={(e) => updateCaseStudyList(csIdx, 'our_approach', i, e.target.value)}
                             />
                             <button onClick={() => deleteCaseStudyListItem(csIdx, 'our_approach', i)} className="text-red-500 hover:text-red-700">
@@ -1373,7 +1395,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                             </button>
                           </>
                         ) : (
-                          <p className="text-[9px] text-gray-600 leading-relaxed">• {oa}</p>
+                          <p className="text-[9px] text-gray-600 leading-relaxed">• {safeText(oa)}</p>
                         )}
                       </div>
                     ))}
