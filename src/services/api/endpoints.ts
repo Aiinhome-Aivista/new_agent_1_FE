@@ -10,6 +10,10 @@ export const authApi = {
 };
 
 export const proposalApi = {
+  generateQuestion: async (data: any): Promise<any> => {
+    const res = await apiClient.post('/api/generate-question', data);
+    return res.data;
+  },
   upload: async (formData: FormData): Promise<{ message: string; proposal_id: string }> => {
     const res = await apiClient.post(API_ENDPOINTS.uploadProposal, formData, {
       headers: {
@@ -28,6 +32,17 @@ export const proposalApi = {
   },
   edit: async (id: string, irData: any): Promise<any> => {
     const res = await apiClient.post(API_ENDPOINTS.editProposal(id), irData);
+    return res.data;
+  },
+  refineSlide: async (proposalId: string, slideNumber: number, slideTitle: string, instruction: string, currentIr: any, currentContent?: any): Promise<{ reply: string; updated_ir: any }> => {
+    const res = await apiClient.post('/api/proposals/refine-slide', {
+      proposal_id: proposalId,
+      slide_number: slideNumber,
+      slide_title: slideTitle,
+      instruction,
+      structured_ir: currentIr,
+      current_content: currentContent
+    });
     return res.data;
   },
   downloadUrl: (id: string) => {
@@ -58,10 +73,10 @@ export const proposalApi = {
     return res.data;
   },
   resumeProposal: async (id: string, ui_tech: string, backend_tech: string, db_tech: string, formatted_budget: string, selected_rag?: string, selected_guardrail?: string, selected_action_engine?: string): Promise<any> => {
-    const res = await apiClient.post(API_ENDPOINTS.resumeProposal(id), { 
-      ui_tech, 
-      backend_tech, 
-      db_tech, 
+    const res = await apiClient.post(API_ENDPOINTS.resumeProposal(id), {
+      ui_tech,
+      backend_tech,
+      db_tech,
       formatted_budget,
       selected_rag,
       selected_guardrail,

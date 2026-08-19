@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   FileUp, Pause, Play, Download, History, Layers, Clock,
   CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save,
-    Award, AlertTriangle, Lock
+  Award, AlertTriangle, Lock, MonitorPlay
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
 import { useProposalStore, useAuthStore } from '../../store';
@@ -18,6 +18,8 @@ import { Badge } from '../../components/ui/Badge/Badge';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { useToast } from '../../components/ui/Toast/Toast';
 import { TechSelectionModal } from '../../components/TechSelectionModal';
+import { PPTPreviewModal } from '../../components/PPTPreviewModal';
+import { DynamicQuestionModal } from '../../components/DynamicQuestionModal';
 
 const STEP_PHASES = [
   { name: 'Ingesting', label: 'Document parsing', icon: <FileUp size={16} /> },
@@ -52,16 +54,19 @@ const Home: React.FC = () => {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [requirementsText, setRequirementsText] = useState('');
+  const [additionalContext, setAdditionalContext] = useState('');
   const [activeUploadTab, setActiveUploadTab] = useState<'upload' | 'text'>('upload');
   const [isDragActive, setIsDragActive] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<'full' | 'rates_only'>('full');
   const [editableIr, setEditableIr] = useState<any>(null);
   const [savingIr, setSavingIr] = useState(false);
+  const [isPPTPreviewOpen, setIsPPTPreviewOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Extra upload modal states
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isDynamicQuestionModalOpen, setIsDynamicQuestionModalOpen] = useState(false);
   const [pendingUploadData, setPendingUploadData] = useState<any>(null);
   const [caseStudyFiles, setCaseStudyFiles] = useState<File[]>([]);
   const [skipCaseStudy, setSkipCaseStudy] = useState(false);
@@ -73,16 +78,16 @@ const Home: React.FC = () => {
 
   const [dots, setDots] = useState("");
 
-useEffect(() => {
-  const interval = setInterval(() => {
-    setDots((prev) => {
-      if (prev === "...") return "";
-      return prev + ".";
-    });
-  }, 400);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prev) => {
+        if (prev === "...") return "";
+        return prev + ".";
+      });
+    }, 400);
 
-  return () => clearInterval(interval);
-}, []);
+    return () => clearInterval(interval);
+  }, []);
 
   // Audit logs for partner review
   useEffect(() => {
@@ -136,7 +141,7 @@ useEffect(() => {
       try {
         const details = await proposalApi.status(activeProposalId);
         if (isCancelled) return;
-        
+
         const currentDetails = useProposalStore.getState().statusDetails;
         if (!currentDetails || currentDetails.proposal.id === activeProposalId) {
           setStatusDetails(details);
@@ -242,18 +247,23 @@ useEffect(() => {
     setPptTemplateFile(null);
     setIsUploadModalOpen(true);
   };
-  
-  const confirmUpload = async () => {
+
+  const confirmUpload = () => {
     if (!pendingUploadData) return;
-    
+
     // Validation
     if (!skipCaseStudy && caseStudyFiles.length === 0) {
       toast('Please upload a case study or check "Skip if you don\'t have any".', 'error');
       return;
     }
+    
+    setIsUploadModalOpen(false);
+    setIsDynamicQuestionModalOpen(true);
+  };
 
+  const finalSubmitUpload = async (userAnswers: string) => {
     try {
-      setIsUploadModalOpen(false);
+      setIsDynamicQuestionModalOpen(false);
       setUploadLoading(true);
       const formData = new FormData();
       formData.append('client_name', pendingUploadData.clientName);
@@ -261,11 +271,16 @@ useEffect(() => {
       formData.append('budget', pendingUploadData.budget);
 
       if (activeUploadTab === 'text') {
-        formData.append('requirements_text', requirementsText);
+        // Append user answers directly to requirements_text
+        const updatedText = `${requirementsText}\n\n=== User Context (Q&A) ===\n${userAnswers}`;
+        formData.append('requirements_text', updatedText);
       } else {
         selectedFiles.forEach((file) => formData.append('files', file));
+        // Append user answers to additional context
+        const updatedContext = `${additionalContext}\n\n=== User Context (Q&A) ===\n${userAnswers}`;
+        formData.append('additional_context', updatedContext);
       }
-      
+
       caseStudyFiles.forEach(f => formData.append('case_study_files', f));
       if (pptTemplateFile) {
         formData.append('ppt_template', pptTemplateFile);
@@ -279,6 +294,7 @@ useEffect(() => {
       setPolling(true);
       setSelectedFiles([]);
       setRequirementsText('');
+      setAdditionalContext('');
       setActiveUploadTab('upload');
       reset();
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -323,6 +339,37 @@ useEffect(() => {
     }
   };
 
+  const handlePreviewSave = async (newIr: any) => {
+    setEditableIr(newIr);
+    if (!statusDetails?.proposal.id || !newIr) return;
+    try {
+      setSavingIr(true);
+      if (statusDetails.proposal.status === 'WaitingForRateConfirmation') {
+        await proposalApi.resumeRate(statusDetails.proposal.id, newIr.resources);
+        toast('Rate changes saved. Resuming proposal generation...', 'success');
+        setPolling(true);
+      } else {
+        const response = await proposalApi.edit(statusDetails.proposal.id, newIr);
+        toast('Solution blueprint updated. PowerPoint deck regenerated.', 'success');
+        setStatusDetails({
+          ...statusDetails,
+          proposal: {
+            ...statusDetails.proposal,
+            generated_file_path: response.file_path,
+            structured_json_ir: JSON.stringify(response.structured_ir),
+          },
+          structured_ir: response.structured_ir
+        });
+        fetchProposals();
+      }
+    } catch (err: any) {
+      toast('Failed to save changes: ' + (err.response?.data?.error || err.message), 'error');
+      throw err;
+    } finally {
+      setSavingIr(false);
+    }
+  };
+
   const editItemInList = (key: 'requirements' | 'gaps', index: number, val: string) => {
     if (!editableIr) return;
     const list = [...editableIr[key]]; list[index] = val;
@@ -361,9 +408,9 @@ useEffect(() => {
 
   const updateResource = (index: number, field: string, val: string) => {
     if (!editableIr?.resources) return;
-    const res = [...editableIr.resources]; 
+    const res = [...editableIr.resources];
     res[index][field] = val;
-    
+
     // Auto calculate total if rate or person_hours changes
     if (field === 'rate' || field === 'person_hours') {
       try {
@@ -376,7 +423,7 @@ useEffect(() => {
         // ignore
       }
     }
-    
+
     setEditableIr({ ...editableIr, resources: res });
   };
 
@@ -474,8 +521,8 @@ useEffect(() => {
                   <button
                     type="button"
                     className={`flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold border-b-2 transition-all outline-none ${activeUploadTab === 'upload'
-                        ? 'border-primary text-primary font-bold'
-                        : 'border-transparent text-muted-foreground hover:text-foreground/80'
+                      ? 'border-primary text-primary font-bold'
+                      : 'border-transparent text-muted-foreground hover:text-foreground/80'
                       }`}
                     onClick={() => setActiveUploadTab('upload')}
                   >
@@ -485,8 +532,8 @@ useEffect(() => {
                   <button
                     type="button"
                     className={`flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold border-b-2 transition-all outline-none ${activeUploadTab === 'text'
-                        ? 'border-primary text-primary font-bold'
-                        : 'border-transparent text-muted-foreground hover:text-foreground/80'
+                      ? 'border-primary text-primary font-bold'
+                      : 'border-transparent text-muted-foreground hover:text-foreground/80'
                       }`}
                     onClick={() => setActiveUploadTab('text')}
                   >
@@ -530,6 +577,19 @@ useEffect(() => {
                         ))}
                       </div>
                     )}
+                    <div className="mt-3 flex flex-col gap-1.5">
+                      <label className="text-xs font-medium text-foreground/80 flex items-center gap-1">
+                        <Edit size={13} className="text-primary" />
+                        Additional Context / Notes
+                      </label>
+                      <textarea
+                        rows={4}
+                        className="w-full rounded-lg border border-border bg-card/50 p-2.5 text-xs text-foreground leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary transition-all resize-y placeholder:text-muted-foreground/50"
+                        placeholder="Type or paste any additional details like client background, objectives, success criteria, key focuses..."
+                        value={additionalContext}
+                        onChange={(e) => setAdditionalContext(e.target.value)}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -541,7 +601,7 @@ useEffect(() => {
                     </label>
                     <textarea
                       rows={6}
-                      className="w-full rounded-lg border border-border bg-card/50 p-3 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary transition-all resize-y placeholder:text-muted-foreground/60"
+                      className="w-full rounded-lg border border-border bg-card/50 p-3 text-xs text-foreground leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/45 focus:border-primary transition-all resize-y placeholder:text-muted-foreground/60"
                       placeholder="Describe client requirements, paste the email MoM, list features, or outline specific project goals here..."
                       value={requirementsText}
                       onChange={(e) => setRequirementsText(e.target.value)}
@@ -567,8 +627,8 @@ useEffect(() => {
                   {AI_RUNNING_STATUSES.includes(currentStatus)
                     ?
                     <div className="flex items-center gap-1">
-                    <span>Pipeline Execution{dots}</span>
-</div>
+                      <span>Pipeline Execution{dots}</span>
+                    </div>
                     : `Proposal Review: Completed`}
                 </CardTitle>
                 <CardDescription className="text-[12px] mt-0.5">
@@ -590,6 +650,7 @@ useEffect(() => {
                       setShowTechSelection(false);
                       setSelectedFiles([]);
                       setRequirementsText('');
+                      setAdditionalContext('');
                       setActiveUploadTab('upload');
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
@@ -623,7 +684,7 @@ useEffect(() => {
                     return (
                       <React.Fragment key={phase.name}>
                         <div
-                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-30 ${stepStatus === 'success' ? 'bg-[#FF7A45]/15 border-[#FF7A45]/30 text-[#FF7A45] font-medium' :
+                          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center gap-1 transition-all min-w-30 ${stepStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
                             stepStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
                               stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
                                 'bg-muted/40 border-border text-muted-foreground'
@@ -636,7 +697,7 @@ useEffect(() => {
                         {idx < STEP_PHASES.length - 1 && (
                           <MoveRight
                             size={20}
-                            className={idx < currentStepIndex ? 'text-button-orange shrink-0' : 'text-muted-foreground shrink-0'}
+                            className={idx < currentStepIndex ? 'text-emerald-500 shrink-0' : 'text-muted-foreground shrink-0'}
                           />
                         )}
                       </React.Fragment>
@@ -688,6 +749,13 @@ useEffect(() => {
                       )}
                     </span>
                     <div className="flex gap-2 flex-wrap">
+
+                      {/* Preview Slides */}
+                      {statusDetails?.structured_ir && (
+                        <Button size="sm" variant="outline" className="text-[10px] py-1 h-7 gap-1 text-button-orange border-button-orange hover:bg-button-orange/10" onClick={() => setIsPPTPreviewOpen(true)}>
+                          <MonitorPlay size={11} /> Preview Slides
+                        </Button>
+                      )}
 
                       {/* Approve */}
                       {canApproveNow && (
@@ -790,13 +858,13 @@ useEffect(() => {
               </div>
             )}
             <div className="flex items-center gap-2 mt-1">
-              <input 
-                type="checkbox" 
-                id="skipCaseStudy" 
-                checked={skipCaseStudy} 
+              <input
+                type="checkbox"
+                id="skipCaseStudy"
+                checked={skipCaseStudy}
                 onChange={(e) => {
-                    setSkipCaseStudy(e.target.checked);
-                    if (e.target.checked) setCaseStudyFiles([]);
+                  setSkipCaseStudy(e.target.checked);
+                  if (e.target.checked) setCaseStudyFiles([]);
                 }}
                 className="rounded border-input text-primary focus:ring-primary"
               />
@@ -834,12 +902,24 @@ useEffect(() => {
             )}
           </div>
 
-          <div className="flex justify-end gap-3 mt-4">
+          <div className="flex justify-end gap-3 mt-2 py-2">
             <Button variant="outline" onClick={() => setIsUploadModalOpen(false)}>Cancel</Button>
             <Button variant="primary" onClick={confirmUpload} disabled={uploadLoading}>Confirm & Assemble</Button>
           </div>
         </div>
       </Modal>
+
+      <DynamicQuestionModal
+        isOpen={isDynamicQuestionModalOpen}
+        onClose={() => setIsDynamicQuestionModalOpen(false)}
+        onSubmit={finalSubmitUpload}
+        contextData={{
+          clientName: pendingUploadData?.clientName,
+          projectDuration: pendingUploadData?.projectDuration,
+          budget: pendingUploadData?.budget,
+          requirementsText: activeUploadTab === 'text' ? requirementsText : additionalContext
+        }}
+      />
 
       {/* HITL SOLUTION REVIEW EDITOR MODAL */}
       <Modal
@@ -866,164 +946,164 @@ useEffect(() => {
             {/* Meta Sizing */}
             {editorMode === 'full' && (
               <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/40 p-4 rounded-xl border border-border">
-              <Input
-                label="Target Client Name"
-                value={editableIr.client_name}
-                disabled={!perms.canEditSolution}
-                onChange={(e) => setEditableIr({ ...editableIr, client_name: e.target.value })}
-              />
-              <Input
-                label="Duration Timeline"
-                value={editableIr.project_duration}
-                disabled={!perms.canEditSolution}
-                onChange={(e) => setEditableIr({ ...editableIr, project_duration: e.target.value })}
-              />
-              <Input
-                label="Financial Sizing Budget"
-                value={editableIr.budget}
-                disabled={!perms.canEditBudget}
-                onChange={(e) => setEditableIr({ ...editableIr, budget: e.target.value })}
-              />
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/40 p-4 rounded-xl border border-border">
+                  <Input
+                    label="Target Client Name"
+                    value={editableIr.client_name}
+                    disabled={!perms.canEditSolution}
+                    onChange={(e) => setEditableIr({ ...editableIr, client_name: e.target.value })}
+                  />
+                  <Input
+                    label="Duration Timeline"
+                    value={editableIr.project_duration}
+                    disabled={!perms.canEditSolution}
+                    onChange={(e) => setEditableIr({ ...editableIr, project_duration: e.target.value })}
+                  />
+                  <Input
+                    label="Financial Sizing Budget"
+                    value={editableIr.budget}
+                    disabled={!perms.canEditBudget}
+                    onChange={(e) => setEditableIr({ ...editableIr, budget: e.target.value })}
+                  />
+                </div>
 
-            {/* Requirements and Gaps */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Requirements */}
-              <div className="flex flex-col gap-3">
-                <span className="text-sm font-bold text-foreground flex items-center justify-between border-b border-border/60 pb-1.5">
-                  Core Requirements List
-                  {perms.canEditSolution && (
-                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" onClick={() => addItemToList('requirements')}>
-                      <Plus size={12} /> Add
-                    </Button>
-                  )}
-                </span>
-                <div className="flex flex-col gap-2">
-                  {editableIr.requirements?.map((req: string, idx: number) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        disabled={!perms.canEditSolution}
-                        className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs truncate"
-                        title={req}
-                        value={req}
-                        onChange={(e) => editItemInList('requirements', idx, e.target.value)}
-                      />
+                {/* Requirements and Gaps */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Requirements */}
+                  <div className="flex flex-col gap-3">
+                    <span className="text-sm font-bold text-foreground flex items-center justify-between border-b border-border/60 pb-1.5">
+                      Core Requirements List
                       {perms.canEditSolution && (
-                        <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10" onClick={() => deleteItemFromList('requirements', idx)}>
-                          <Trash2 size={13} />
+                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" onClick={() => addItemToList('requirements')}>
+                          <Plus size={12} /> Add
                         </Button>
                       )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Gaps / Mitigations */}
-              <div className="flex flex-col gap-3">
-                <span className="text-sm font-bold text-foreground flex items-center justify-between border-b border-border/60 pb-1.5">
-                  Capability Gaps & Mitigations
-                  {perms.canEditSolution && (
-                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" onClick={() => addItemToList('gaps')}>
-                      <Plus size={12} /> Add
-                    </Button>
-                  )}
-                </span>
-                <div className="flex flex-col gap-2">
-                  {editableIr.gaps?.map((gap: string, idx: number) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        disabled={!perms.canEditSolution}
-                        className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs truncate"
-                        title={gap}
-                        value={gap}
-                        onChange={(e) => editItemInList('gaps', idx, e.target.value)}
-                      />
-                      {perms.canEditSolution && (
-                        <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10" onClick={() => deleteItemFromList('gaps', idx)}>
-                          <Trash2 size={13} />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Solution Pillars */}
-            <div className="flex flex-col gap-3 border-t border-border pt-4">
-              <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5">
-                Technical Solution Pillars (PPTX Slide 3 Layout)
-              </span>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {editableIr.solution_pillars?.map((pillar: any, idx: number) => (
-                  <div key={idx} className="p-3 bg-muted/30 border border-border rounded-xl flex flex-col gap-2">
-                    <span className="text-[11px] font-bold text-primary uppercase">Pillar 0{idx + 1}</span>
-                    <input
-                      type="text"
-                      disabled={!perms.canEditSolution}
-                      className="h-8 rounded-md border border-input bg-card px-2 text-xs font-semibold"
-                      value={pillar.title}
-                      onChange={(e) => updatePillar(idx, 'title', e.target.value)}
-                    />
-                    <textarea
-                      rows={4}
-                      disabled={!perms.canEditSolution}
-                      className="rounded-md border border-input bg-card p-2 text-[11px] leading-relaxed resize-none"
-                      value={pillar.desc}
-                      onChange={(e) => updatePillar(idx, 'desc', e.target.value)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Architecture */}
-            <div className="flex flex-col gap-3 border-t border-border pt-4">
-              <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5">
-                Landscape Architecture & Components (PPTX Slide 4 Layout)
-              </span>
-              <div className="flex flex-col gap-4">
-                {editableIr.architecture?.map((layer: any, layerIdx: number) => (
-                  <div key={layerIdx} className="p-3 bg-muted/20 border border-border rounded-xl flex flex-col gap-2">
-                    <span className="text-xs font-bold text-foreground">{layer.name}</span>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      {layer.components?.map((comp: string, compIdx: number) => (
-                        <input
-                          key={compIdx}
-                          type="text"
-                          disabled={!perms.canEditSolution}
-                          className="h-8 rounded-md border border-input bg-card px-2 text-xs"
-                          value={comp}
-                          onChange={(e) => updateArchitectureComponent(layerIdx, compIdx, e.target.value)}
-                        />
+                    </span>
+                    <div className="flex flex-col gap-2">
+                      {editableIr.requirements?.map((req: string, idx: number) => (
+                        <div key={idx} className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            disabled={!perms.canEditSolution}
+                            className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs truncate"
+                            title={req}
+                            value={req}
+                            onChange={(e) => editItemInList('requirements', idx, e.target.value)}
+                          />
+                          {perms.canEditSolution && (
+                            <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10" onClick={() => deleteItemFromList('requirements', idx)}>
+                              <Trash2 size={13} />
+                            </Button>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Timeline Phases — Delivery editable */}
-            <div className="flex flex-col gap-3 border-t border-border pt-4">
-              <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5 flex items-center justify-between">
-                Timeline Phases & Milestones (PPTX Slide 5 Layout)
-                {!perms.canEditDelivery && <span className="text-[10px] text-muted-foreground font-normal flex items-center gap-1"><Lock size={10} /> Delivery Lead editable</span>}
-              </span>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {editableIr.timeline_phases?.map((phase: any, idx: number) => (
-                  <div key={idx} className="p-3 bg-muted/20 border border-border rounded-xl flex flex-col gap-2">
-                    <span className="text-[11px] font-bold text-primary uppercase">Phase 0{idx + 1}</span>
-                    <input type="text" disabled={!perms.canEditDelivery} className="h-8 rounded-md border border-input bg-card px-2 text-xs font-semibold" value={phase.phase} onChange={(e) => updateTimelinePhase(idx, 'phase', e.target.value)} />
-                    <input type="text" disabled={!perms.canEditDelivery} className="h-8 rounded-md border border-input bg-card px-2 text-xs" value={phase.duration} onChange={(e) => updateTimelinePhase(idx, 'duration', e.target.value)} />
-                    <textarea rows={3} disabled={!perms.canEditDelivery} className="rounded-md border border-input bg-card p-2 text-[11px] leading-relaxed resize-none" value={phase.deliverables} onChange={(e) => updateTimelinePhase(idx, 'deliverables', e.target.value)} />
+                  {/* Gaps / Mitigations */}
+                  <div className="flex flex-col gap-3">
+                    <span className="text-sm font-bold text-foreground flex items-center justify-between border-b border-border/60 pb-1.5">
+                      Capability Gaps & Mitigations
+                      {perms.canEditSolution && (
+                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" onClick={() => addItemToList('gaps')}>
+                          <Plus size={12} /> Add
+                        </Button>
+                      )}
+                    </span>
+                    <div className="flex flex-col gap-2">
+                      {editableIr.gaps?.map((gap: string, idx: number) => (
+                        <div key={idx} className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            disabled={!perms.canEditSolution}
+                            className="flex-1 h-9 rounded-md border border-input bg-card px-2.5 py-1 text-xs truncate"
+                            title={gap}
+                            value={gap}
+                            onChange={(e) => editItemInList('gaps', idx, e.target.value)}
+                          />
+                          {perms.canEditSolution && (
+                            <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10" onClick={() => deleteItemFromList('gaps', idx)}>
+                              <Trash2 size={13} />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-            </>
+                </div>
+
+                {/* Solution Pillars */}
+                <div className="flex flex-col gap-3 border-t border-border pt-4">
+                  <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5">
+                    Technical Solution Pillars (PPTX Slide 3 Layout)
+                  </span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {editableIr.solution_pillars?.map((pillar: any, idx: number) => (
+                      <div key={idx} className="p-3 bg-muted/30 border border-border rounded-xl flex flex-col gap-2">
+                        <span className="text-[11px] font-bold text-primary uppercase">Pillar 0{idx + 1}</span>
+                        <input
+                          type="text"
+                          disabled={!perms.canEditSolution}
+                          className="h-8 rounded-md border border-input bg-card px-2 text-xs font-semibold"
+                          value={pillar.title}
+                          onChange={(e) => updatePillar(idx, 'title', e.target.value)}
+                        />
+                        <textarea
+                          rows={4}
+                          disabled={!perms.canEditSolution}
+                          className="rounded-md border border-input bg-card p-2 text-[11px] leading-relaxed resize-none"
+                          value={pillar.desc}
+                          onChange={(e) => updatePillar(idx, 'desc', e.target.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Architecture */}
+                <div className="flex flex-col gap-3 border-t border-border pt-4">
+                  <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5">
+                    Landscape Architecture & Components (PPTX Slide 4 Layout)
+                  </span>
+                  <div className="flex flex-col gap-4">
+                    {editableIr.architecture?.map((layer: any, layerIdx: number) => (
+                      <div key={layerIdx} className="p-3 bg-muted/20 border border-border rounded-xl flex flex-col gap-2">
+                        <span className="text-xs font-bold text-foreground">{layer.name}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                          {layer.components?.map((comp: string, compIdx: number) => (
+                            <input
+                              key={compIdx}
+                              type="text"
+                              disabled={!perms.canEditSolution}
+                              className="h-8 rounded-md border border-input bg-card px-2 text-xs"
+                              value={comp}
+                              onChange={(e) => updateArchitectureComponent(layerIdx, compIdx, e.target.value)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Timeline Phases — Delivery editable */}
+                <div className="flex flex-col gap-3 border-t border-border pt-4">
+                  <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5 flex items-center justify-between">
+                    Timeline Phases & Milestones (PPTX Slide 5 Layout)
+                    {!perms.canEditDelivery && <span className="text-[10px] text-muted-foreground font-normal flex items-center gap-1"><Lock size={10} /> Delivery Lead editable</span>}
+                  </span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {editableIr.timeline_phases?.map((phase: any, idx: number) => (
+                      <div key={idx} className="p-3 bg-muted/20 border border-border rounded-xl flex flex-col gap-2">
+                        <span className="text-[11px] font-bold text-primary uppercase">Phase 0{idx + 1}</span>
+                        <input type="text" disabled={!perms.canEditDelivery} className="h-8 rounded-md border border-input bg-card px-2 text-xs font-semibold" value={phase.phase} onChange={(e) => updateTimelinePhase(idx, 'phase', e.target.value)} />
+                        <input type="text" disabled={!perms.canEditDelivery} className="h-8 rounded-md border border-input bg-card px-2 text-xs" value={phase.duration} onChange={(e) => updateTimelinePhase(idx, 'duration', e.target.value)} />
+                        <textarea rows={3} disabled={!perms.canEditDelivery} className="rounded-md border border-input bg-card p-2 text-[11px] leading-relaxed resize-none" value={phase.deliverables} onChange={(e) => updateTimelinePhase(idx, 'deliverables', e.target.value)} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
 
             {/* Resources */}
@@ -1061,37 +1141,37 @@ useEffect(() => {
             {/* Skills Mapping */}
             {editorMode === 'full' && (
               <>
-            <div className="flex flex-col gap-3 border-t border-border pt-4">
-              <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5 flex items-center justify-between">
-                Skills Inventory & Competency Mapping (PPTX Slide 7 Layout)
-                {!perms.canEditDelivery && <span className="text-[10px] text-muted-foreground font-normal flex items-center gap-1"><Lock size={10} /> Delivery Lead editable</span>}
-              </span>
-              <div className="flex flex-col gap-2 max-h-55 overflow-y-auto pr-1">
-                {editableIr.skills_mapping?.map((mapping: any, idx: number) => (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-muted/20 p-2 border border-border rounded-lg items-center">
-                    {[
-                      { label: 'Skill Keyword', field: 'skill', ph: 'Skill' },
-                      { label: 'Target Role', field: 'role', ph: 'Role' },
-                      { label: 'Internal Competency', field: 'asset', ph: 'Asset' },
-                      { label: 'Confidence', field: 'conf', ph: 'Confidence' },
-                    ].map(({ label, field, ph }) => (
-                      <div key={field} className="flex flex-col gap-0.5">
-                        <span className="text-[9px] text-muted-foreground uppercase font-bold">{label}</span>
-                        <input
-                          type="text"
-                          disabled={!perms.canEditDelivery}
-                          className="h-8 rounded-md border border-input bg-card px-2 text-[11px]"
-                          placeholder={ph}
-                          value={mapping[field]}
-                          onChange={(e) => updateSkillMapping(idx, field as any, e.target.value)}
-                        />
+                <div className="flex flex-col gap-3 border-t border-border pt-4">
+                  <span className="text-sm font-bold text-foreground border-b border-border/60 pb-1.5 flex items-center justify-between">
+                    Skills Inventory & Competency Mapping (PPTX Slide 7 Layout)
+                    {!perms.canEditDelivery && <span className="text-[10px] text-muted-foreground font-normal flex items-center gap-1"><Lock size={10} /> Delivery Lead editable</span>}
+                  </span>
+                  <div className="flex flex-col gap-2 max-h-55 overflow-y-auto pr-1">
+                    {editableIr.skills_mapping?.map((mapping: any, idx: number) => (
+                      <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-muted/20 p-2 border border-border rounded-lg items-center">
+                        {[
+                          { label: 'Skill Keyword', field: 'skill', ph: 'Skill' },
+                          { label: 'Target Role', field: 'role', ph: 'Role' },
+                          { label: 'Internal Competency', field: 'asset', ph: 'Asset' },
+                          { label: 'Confidence', field: 'conf', ph: 'Confidence' },
+                        ].map(({ label, field, ph }) => (
+                          <div key={field} className="flex flex-col gap-0.5">
+                            <span className="text-[9px] text-muted-foreground uppercase font-bold">{label}</span>
+                            <input
+                              type="text"
+                              disabled={!perms.canEditDelivery}
+                              className="h-8 rounded-md border border-input bg-card px-2 text-[11px]"
+                              placeholder={ph}
+                              value={mapping[field]}
+                              onChange={(e) => updateSkillMapping(idx, field as any, e.target.value)}
+                            />
+                          </div>
+                        ))}
                       </div>
                     ))}
                   </div>
-                ))}
-              </div>
-            </div>
-            </>
+                </div>
+              </>
             )}
 
             {/* Save / Close */}
@@ -1109,26 +1189,26 @@ useEffect(() => {
           </div>
         )}
       </Modal>
-            <Modal isOpen={showRateConfirmation} onClose={() => setShowRateConfirmation(false)} title="Effort and Person-Hour Rates">
+      <Modal isOpen={showRateConfirmation} onClose={() => setShowRateConfirmation(false)} title="Effort and Person-Hour Rates">
         <div className="flex flex-col gap-4 py-4">
           <p className="text-sm">
             Do you want to keep the default values?
           </p>
           <div className="flex gap-3 justify-end mt-4">
             <Button variant="outline" onClick={async () => {
-                setShowRateConfirmation(false);
-                const details = await proposalApi.status(activeProposalId!);
-                setEditableIr(details.structured_ir);
-                setEditorMode('rates_only');
-                setIsEditorOpen(true);
+              setShowRateConfirmation(false);
+              const details = await proposalApi.status(activeProposalId!);
+              setEditableIr(details.structured_ir);
+              setEditorMode('rates_only');
+              setIsEditorOpen(true);
             }}>
               No (Edit Rates)
             </Button>
             <Button variant="primary" onClick={async () => {
-                setShowRateConfirmation(false);
-                const details = await proposalApi.status(activeProposalId!);
-                await proposalApi.resumeRate(activeProposalId!, details.structured_ir?.resources || []);
-                setPolling(true);
+              setShowRateConfirmation(false);
+              const details = await proposalApi.status(activeProposalId!);
+              await proposalApi.resumeRate(activeProposalId!, details.structured_ir?.resources || []);
+              setPolling(true);
             }}>
               Yes (Continue)
             </Button>
@@ -1144,6 +1224,17 @@ useEffect(() => {
             setPolling(true); // resume polling to catch next phase
           }}
           onClose={() => setShowTechSelection(false)}
+        />
+      )}
+      {statusDetails && (
+        <PPTPreviewModal
+          isOpen={isPPTPreviewOpen}
+          onClose={() => setIsPPTPreviewOpen(false)}
+          proposalId={statusDetails.proposal.id}
+          clientName={statusDetails.proposal.client_name}
+          structuredIr={statusDetails.structured_ir}
+          canEdit={!perms.isReadOnly}
+          onSave={handlePreviewSave}
         />
       )}
     </PageWrapper>

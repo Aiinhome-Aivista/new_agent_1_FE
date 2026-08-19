@@ -34,12 +34,13 @@ const Settings: React.FC = () => {
   const [assets, setAssets] = useState<KnowledgeAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'All' | 'Asset' | 'Competency'>('All');
+  const [sectorFilter, setSectorFilter] = useState<string>('All');
   // const [reindexing, setReindexing] = useState(false);
 
   // ── Add modal state ─────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formFiles, setFormFiles] = useState<FileList | null>(null);
+  const [formTags, setFormTags] = useState('');
   const [saving, setSaving] = useState(false);
 
   // ── Delete confirm ───────────────────────────────────────
@@ -81,6 +82,7 @@ const Settings: React.FC = () => {
   // ── Open modal ───────────────────────────────────────────
   const openAddModal = () => {
     setFormFiles(null);
+    setFormTags('');
     setIsModalOpen(true);
   };
 
@@ -95,6 +97,9 @@ const Settings: React.FC = () => {
     const formData = new FormData();
     for (let i = 0; i < formFiles.length; i++) {
       formData.append('files', formFiles[i]);
+    }
+    if (formTags.trim()) {
+      formData.append('tags', formTags.trim());
     }
 
     try {
@@ -145,8 +150,8 @@ const Settings: React.FC = () => {
       asset.name.toLowerCase().includes(search.toLowerCase()) ||
       asset.description.toLowerCase().includes(search.toLowerCase()) ||
       asset.capabilities.toLowerCase().includes(search.toLowerCase());
-    const matchesCat = categoryFilter === 'All' || asset.category === categoryFilter;
-    return matchesSearch && matchesCat;
+    const matchesSector = sectorFilter === 'All' || asset.capabilities.includes(sectorFilter);
+    return matchesSearch && matchesSector;
   });
 
   return (
@@ -257,27 +262,13 @@ const Settings: React.FC = () => {
             <input
               type="text"
               placeholder="Search assets, tags, description..."
-              className="pl-9 pr-4 py-2 border border-input rounded-lg w-full text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              className="pl-9 pr-4 py-2 border border-input rounded-lg w-full text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           
-          <div className="flex bg-muted p-1 rounded-lg border border-border self-stretch sm:self-auto">
-            {(['All', 'Asset', 'Competency'] as const).map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategoryFilter(cat)}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                  categoryFilter === cat
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {cat}s
-              </button>
-            ))}
-          </div>
+
 
           <div className="ml-auto text-xs text-muted-foreground flex-shrink-0">
             {filtered.length} / {assets.length} items
@@ -363,7 +354,7 @@ const Settings: React.FC = () => {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           title="Add Knowledge Base Files"
-          className="max-w-md"
+          className="max-w-lg"
         >
           <form onSubmit={handleSave} className="flex flex-col gap-4 mt-2">
             <p className="text-sm text-muted-foreground">
@@ -382,7 +373,19 @@ const Settings: React.FC = () => {
               />
             </div>
 
-            <Button type="submit" variant="primary" isLoading={saving} className="w-full mt-2">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground/80">Tags (Optional)</label>
+              <textarea
+                value={formTags}
+                onChange={(e) => setFormTags(e.target.value)}
+                placeholder="e.g., finance, report, 2024"
+                rows={3}
+                className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 resize-none"
+              />
+              <span className="text-[10px] text-muted-foreground">Enter optional manual tags. The system will also automatically analyze the document and extract tags based on its contents.</span>
+            </div>
+
+            <Button type="submit" variant="primary" isLoading={saving} disabled={!formFiles || formFiles.length === 0} className="w-full mt-4">
               Upload and Index Files
             </Button>
           </form>

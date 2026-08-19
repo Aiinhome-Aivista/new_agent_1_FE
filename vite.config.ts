@@ -18,6 +18,8 @@ export default defineConfig({
       '/api': {
         target: 'http://187.127.163.17:3009',
         changeOrigin: true,
+        timeout: 300000,
+        proxyTimeout: 300000,
       },
       '/static': {
         target: 'http://187.127.163.17:3009',

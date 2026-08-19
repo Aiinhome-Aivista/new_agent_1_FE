@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   History, RefreshCw, Download, Plus, Save,
-  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Lock, Trash2, Play, Pause
+  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Lock, Trash2, Play, Pause, MonitorPlay
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
 import { useProposalStore, useAuthStore } from '../../store';
@@ -17,6 +17,7 @@ import { Modal } from '../../components/ui/Modal/Modal';
 import { ConfirmModal } from '../../components/ui/Modal/ConfirmModal';
 import { useToast } from '../../components/ui/Toast/Toast';
 import { formatDate } from '../../utils/formatters';
+import { PPTPreviewModal } from '../../components/PPTPreviewModal';
 
 const STEP_PHASES = [
   { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
@@ -57,6 +58,7 @@ const Archive: React.FC = () => {
   const [editableIr, setEditableIr] = useState<any>(null);
   const [savingIr, setSavingIr] = useState(false);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [isPPTPreviewOpen, setIsPPTPreviewOpen] = useState(false);
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancellingProposal, setCancellingProposal] = useState(false);
@@ -161,6 +163,31 @@ useEffect(() => {
       fetchProposals();
     } catch (err: any) {
       toast('Failed to save changes: ' + (err.response?.data?.error || err.message), 'error');
+    } finally {
+      setSavingIr(false);
+    }
+  };
+
+  const handlePreviewSave = async (newIr: any) => {
+    setEditableIr(newIr);
+    if (!statusDetails?.proposal.id || !newIr) return;
+    try {
+      setSavingIr(true);
+      const response = await proposalApi.edit(statusDetails.proposal.id, newIr);
+      toast('Solution blueprint updated. PowerPoint deck regenerated.', 'success');
+      setStatusDetails({
+        ...statusDetails,
+        proposal: {
+          ...statusDetails.proposal,
+          generated_file_path: response.file_path,
+          structured_json_ir: JSON.stringify(response.structured_ir),
+        },
+        structured_ir: response.structured_ir
+      });
+      fetchProposals();
+    } catch (err: any) {
+      toast('Failed to save changes: ' + (err.response?.data?.error || err.message), 'error');
+      throw err;
     } finally {
       setSavingIr(false);
     }
@@ -429,7 +456,7 @@ useEffect(() => {
                         <div
                           key={phase.name}
                           className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center gap-1 transition-all ${
-                            stepStatus === 'success'     ? 'bg-[#FF7A45]/15 border-[#FF7A45]/30 text-[#FF7A45] font-medium' :
+                            stepStatus === 'success'     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium' :
                             stepStatus === 'warning'     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium animate-pulse' :
                             stepStatus === 'destructive' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
                             'bg-muted/40 border-border text-muted-foreground'
@@ -488,6 +515,11 @@ useEffect(() => {
                         )}
                       </span>
                       <div className="flex gap-2 flex-wrap">
+                        {statusDetails?.structured_ir && (
+                          <Button size="sm" variant="outline" className="text-[10px] py-1 h-7 gap-1 text-button-orange border-button-orange hover:bg-button-orange/10" onClick={() => setIsPPTPreviewOpen(true)}>
+                            <MonitorPlay size={11} /> Preview Slides
+                          </Button>
+                        )}
                         {canApproveNow && (
                           <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Approved')}>
                             <CheckCircle2 size={11} /> Approve
@@ -892,6 +924,17 @@ useEffect(() => {
         showIcon={false}
         isLoading={cancellingProposal}
       />
+      {statusDetails && (
+        <PPTPreviewModal
+          isOpen={isPPTPreviewOpen}
+          onClose={() => setIsPPTPreviewOpen(false)}
+          proposalId={statusDetails.proposal.id}
+          clientName={statusDetails.proposal.client_name}
+          structuredIr={statusDetails.structured_ir}
+          canEdit={!perms.isReadOnly}
+          onSave={handlePreviewSave}
+        />
+      )}
     </PageWrapper>
   );
 };
