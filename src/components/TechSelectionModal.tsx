@@ -75,8 +75,8 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             // Helper to sort recommended options to the top
             const sortOpts = (opts: any[]) => {
               return [...opts].sort((a, b) => {
-                const aRec = a.name.toLowerCase().includes("mentioned in hla") ? 1 : 0;
-                const bRec = b.name.toLowerCase().includes("mentioned in hla") ? 1 : 0;
+                const aRec = a.name.toLowerCase().includes("mentioned in INPUT") ? 1 : 0;
+                const bRec = b.name.toLowerCase().includes("mentioned in INPUT") ? 1 : 0;
                 return bRec - aRec;
               });
             };
@@ -402,12 +402,12 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <Sparkles size={20} className="text-primary" /> RAG Strategy Selection
                   </h4>
                   {ragOptions.length === 0 ? (
-                    <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
+                    <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this input</div>
                   ) : (
                     <div className="flex flex-col gap-3">
                       {ragOptions.map((opt, i) => {
                         const isSelected = selectedRag === opt.id;
-                        const isRecommended = opt.name.toLowerCase().includes("mentioned in hla") || (i === 0 && !ragOptions.some(o => o.name.toLowerCase().includes("mentioned in hla")));
+                        const isRecommended = opt.name.toLowerCase().includes("mentioned in input") || (i === 0 && !ragOptions.some(o => o.name.toLowerCase().includes("mentioned in input")));
                         return (
                           <div
                             key={opt.id}
@@ -469,12 +469,12 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     <Terminal size={20} className="text-primary" /> Guardrails (Data Protection)
                   </h4>
                   {guardrailOptions.length === 0 ? (
-                    <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
+                    <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this input</div>
                   ) : (
                     <div className="flex flex-col gap-3">
                       {guardrailOptions.map((opt, i) => {
                         const isSelected = selectedGuardrail === opt.id;
-                        const isRecommended = opt.name.toLowerCase().includes("mentioned in hla") || (i === 0 && !guardrailOptions.some(o => o.name.toLowerCase().includes("mentioned in hla")));
+                        const isRecommended = opt.name.toLowerCase().includes("mentioned in input") || (i === 0 && !guardrailOptions.some(o => o.name.toLowerCase().includes("mentioned in input")));
                         return (
                           <div
                             key={opt.id}
@@ -534,12 +534,12 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
                     )}
                   </div>
                   {actionEngineOptions.length === 0 ? (
-                    <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this HLA</div>
+                    <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this input</div>
                   ) : (
                     <div className="flex flex-col gap-3">
                       {actionEngineOptions.map((opt, i) => {
                         const isSelected = selectedActionEngine === opt.id;
-                        const isRecommended = opt.name.toLowerCase().includes("mentioned in hla") || (i === 0 && !actionEngineOptions.some(o => o.name.toLowerCase().includes("mentioned in hla")));
+                        const isRecommended = opt.name.toLowerCase().includes("mentioned in input") || (i === 0 && !actionEngineOptions.some(o => o.name.toLowerCase().includes("mentioned in input")));
                         return (
                           <div
                             key={opt.id}
