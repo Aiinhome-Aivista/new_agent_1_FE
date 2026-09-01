@@ -71,6 +71,7 @@ const Home: React.FC = () => {
   const [caseStudyFiles, setCaseStudyFiles] = useState<File[]>([]);
   const [skipCaseStudy, setSkipCaseStudy] = useState(false);
   const [pptTemplateFile, setPptTemplateFile] = useState<File | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
   const caseStudyInputRef = useRef<HTMLInputElement>(null);
   const templateInputRef = useRef<HTMLInputElement>(null);
 
@@ -285,6 +286,7 @@ const Home: React.FC = () => {
       if (pptTemplateFile) {
         formData.append('ppt_template', pptTemplateFile);
       }
+      formData.append('template_type', selectedTemplate);
 
       const response = await proposalApi.upload(formData);
       toast('Document intake complete. Initiating specialist agents workflow.', 'info');
@@ -873,7 +875,21 @@ const Home: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-3 pt-4 border-t border-border">
-            <label className="text-sm font-bold text-foreground">Upload a PPT template format (optional)</label>
+            <label className="text-sm font-bold text-foreground">Select a PPT template format</label>
+            <select
+              value={selectedTemplate}
+              onChange={(e) => setSelectedTemplate(e.target.value)}
+              className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="default">Default PwC Template</option>
+              <option value="modern">Modern Tech Template</option>
+              <option value="corporate">Corporate Standard Template</option>
+              <option value="creative">Creative Design Template</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-4 border-t border-border">
+            <label className="text-sm font-bold text-foreground">Or upload a custom PPT template format (optional)</label>
             <div
               className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer border-border bg-muted/20 hover:bg-muted/40"
               onClick={() => templateInputRef.current?.click()}
