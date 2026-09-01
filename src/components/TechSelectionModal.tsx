@@ -609,7 +609,7 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             disabled={isLoading || !selectedOptionId}
             isLoading={isResuming}
           >
-            <CheckCircle2 size={16} /> Confirm Technology Stack & Resume Pipeline
+            <CheckCircle2 size={16}  /> Confirm Technology Stack & Resume Pipeline
           </Button>
         </div>
       </div>
