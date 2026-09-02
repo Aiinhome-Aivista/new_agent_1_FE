@@ -883,8 +883,6 @@ const Home: React.FC = () => {
             >
               <option value="default">Default PwC Template</option>
               <option value="modern">Modern Tech Template</option>
-              <option value="corporate">Corporate Standard Template</option>
-              <option value="creative">Creative Design Template</option>
             </select>
           </div>
 

@@ -105,7 +105,7 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isInitialLoading ? undefined : 'Additional Details'}
+      title={isInitialLoading ? undefined : `Additional Details (${currentQuestionIndex + 1}/${MAX_QUESTIONS})`}
       hideCloseButton={isInitialLoading}
       className='h-[75vh]'
     >
