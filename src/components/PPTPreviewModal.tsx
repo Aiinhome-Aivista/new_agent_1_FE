@@ -358,6 +358,26 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     updateField('solution_pillars', newPillars);
   };
 
+  
+  const updateSlideHeader = (key: string, field: 'title' | 'subtitle', value: string) => {
+    setLocalIr((prev: any) => {
+      const newIr = { ...prev };
+      if (!newIr.slide_headers) newIr.slide_headers = {};
+      if (!newIr.slide_headers[key]) newIr.slide_headers[key] = {};
+      newIr.slide_headers[key][field] = value;
+      return newIr;
+    });
+  };
+
+  const getSlideHeader = (key: string, defaultTitle: string, defaultSubtitle: string) => {
+    const headers = localIr?.slide_headers || {};
+    const slideHeader = headers[key] || {};
+    return {
+      title: slideHeader.title || defaultTitle,
+      subtitle: slideHeader.subtitle || defaultSubtitle
+    };
+  };
+
   const updateMermaidCode = (slideTitle: string, newMermaid: string) => {
     setLocalIr((prev: any) => {
       const complex = [...(prev.complex_diagrams || [])];
@@ -704,8 +724,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     }
     slides.push({
       type: 'summary',
-      title: 'Business Summary',
-      subtitle: 'Executive overview of the proposed solution',
+      slideKey: 'business_summary',
+      title: getSlideHeader('business_summary', 'Business Summary', 'Executive overview of the proposed solution').title,
+      subtitle: getSlideHeader('business_summary', 'Business Summary', 'Executive overview of the proposed solution').subtitle,
       content: summaryText.split('\n').filter(p => p.trim()),
       rawSummary: summaryText
     });
@@ -716,8 +737,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     slides.push({
       type: 'list_slide',
       field: 'requirements',
-      title: 'Client Requirements & Gap Analysis',
-      subtitle: 'RAG-driven competence matching against RFP requirements',
+      slideKey: 'client_requirements',
+      title: getSlideHeader('client_requirements', 'Client Requirements & Gap Analysis', 'RAG-driven competence matching against RFP requirements').title,
+      subtitle: getSlideHeader('client_requirements', 'Client Requirements & Gap Analysis', 'RAG-driven competence matching against RFP requirements').subtitle,
       headerLabel: 'Key Client Requirements:',
       headerColor: 'text-[#d04a02]',
       items: Array.isArray(localIr.requirements) ? localIr.requirements : [localIr.requirements]
@@ -729,8 +751,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     slides.push({
       type: 'list_slide',
       field: 'gaps',
-      title: 'Capability Gaps & Mitigations',
-      subtitle: 'Identified gaps against RFP requirements and proposed mitigations',
+      slideKey: 'capability_gaps',
+      title: getSlideHeader('capability_gaps', 'Capability Gaps & Mitigations', 'Identified gaps against RFP requirements and proposed mitigations').title,
+      subtitle: getSlideHeader('capability_gaps', 'Capability Gaps & Mitigations', 'Identified gaps against RFP requirements and proposed mitigations').subtitle,
       headerLabel: 'Capability Gaps & Mitigations:',
       headerColor: 'text-[#b42828]',
       items: Array.isArray(localIr.gaps) ? localIr.gaps : [localIr.gaps]
@@ -741,8 +764,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   if (localIr.solution_pillars && Array.isArray(localIr.solution_pillars)) {
     slides.push({
       type: 'pillars',
-      title: 'Solution Approach & Architecture',
-      subtitle: 'High-level implementation strategy and operational frameworks',
+      slideKey: 'solution_approach',
+      title: getSlideHeader('solution_approach', 'Solution Approach & Architecture', 'High-level implementation strategy and operational frameworks').title,
+      subtitle: getSlideHeader('solution_approach', 'Solution Approach & Architecture', 'High-level implementation strategy and operational frameworks').subtitle,
       pillars: localIr.solution_pillars
     });
   }
@@ -751,8 +775,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   if (localIr.architecture && Array.isArray(localIr.architecture)) {
     slides.push({
       type: 'architecture',
-      title: 'Landscape & Architecture',
-      subtitle: 'Reference systems architecture and integration patterns',
+      slideKey: 'architecture_layers',
+      title: getSlideHeader('architecture_layers', 'Landscape & Architecture', 'Reference systems architecture and integration patterns').title,
+      subtitle: getSlideHeader('architecture_layers', 'Landscape & Architecture', 'Reference systems architecture and integration patterns').subtitle,
       layers: localIr.architecture
     });
   }
@@ -762,8 +787,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     slides.push({
       type: 'data_flow',
       field: 'data_flow',
-      title: 'High Level Design: Data Flow',
-      subtitle: 'Dynamic data integration and multi-agent interaction flow',
+      slideKey: 'high_level_design',
+      title: getSlideHeader('high_level_design', 'High Level Design: Data Flow', 'Dynamic data integration and multi-agent interaction flow').title,
+      subtitle: getSlideHeader('high_level_design', 'High Level Design: Data Flow', 'Dynamic data integration and multi-agent interaction flow').subtitle,
       items: localIr.data_flow
     });
   }
@@ -772,8 +798,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   if (localIr.infrastructure_approximation && Array.isArray(localIr.infrastructure_approximation)) {
     slides.push({
       type: 'infra_table',
-      title: 'Infrastructure Approximation',
-      subtitle: 'Estimated cloud infrastructure components and costs',
+      slideKey: 'infrastructure',
+      title: getSlideHeader('infrastructure', 'Infrastructure Approximation', 'Estimated cloud infrastructure components and costs').title,
+      subtitle: getSlideHeader('infrastructure', 'Infrastructure Approximation', 'Estimated cloud infrastructure components and costs').subtitle,
       rows: localIr.infrastructure_approximation
     });
   }
@@ -782,8 +809,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   if (localIr.resources && Array.isArray(localIr.resources)) {
     slides.push({
       type: 'resources_table',
-      title: 'Effort & Person-Hour Conversion',
-      subtitle: 'Allocated program FTE structure, rate cards, and financial sizing',
+      slideKey: 'resources_effort',
+      title: getSlideHeader('resources_effort', 'Effort & Person-Hour Conversion', 'Allocated program FTE structure, rate cards, and financial sizing').title,
+      subtitle: getSlideHeader('resources_effort', 'Effort & Person-Hour Conversion', 'Allocated program FTE structure, rate cards, and financial sizing').subtitle,
       resources: localIr.resources,
       budget: localIr.budget
     });
@@ -793,8 +821,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   if (localIr.skills_mapping && Array.isArray(localIr.skills_mapping)) {
     slides.push({
       type: 'skills_table',
-      title: 'Skills Inventory & Competency Mapping',
-      subtitle: 'Required technical capabilities grounded in organizational assets',
+      slideKey: 'skills_inventory',
+      title: getSlideHeader('skills_inventory', 'Skills Inventory & Competency Mapping', 'Required technical capabilities grounded in organizational assets').title,
+      subtitle: getSlideHeader('skills_inventory', 'Skills Inventory & Competency Mapping', 'Required technical capabilities grounded in organizational assets').subtitle,
       skills: localIr.skills_mapping
     });
   }
@@ -815,8 +844,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   // Slide 12: Reference Architecture Diagram
   slides.push({
     type: 'mermaid_diagram',
-    title: 'Reference Architecture',
-    subtitle: 'System Data Flow & Orchestration Architecture',
+    slideKey: 'reference_architecture',
+      title: getSlideHeader('reference_architecture', 'Reference Architecture', 'System Data Flow & Orchestration Architecture').title,
+      subtitle: getSlideHeader('reference_architecture', 'Reference Architecture', 'System Data Flow & Orchestration Architecture').subtitle,
     subHeader: 'Logical Reference Architecture & Component Topology',
     mermaidCode: getRefArchMermaid(),
     description: getRefArchDescription()
@@ -826,8 +856,9 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
   const cloudPlatformName = localIr.budget?.toLowerCase().includes('aws') ? 'AWS' : 'Azure';
   slides.push({
     type: 'mermaid_diagram',
-    title: `Landscape Architecture (${cloudPlatformName} Cloud Platform)`,
-    subtitle: `${cloudPlatformName} Native Services & Integration Topology`,
+    slideKey: 'landscape_architecture',
+      title: getSlideHeader('landscape_architecture', `Landscape Architecture (${cloudPlatformName} Cloud Platform)`, `${cloudPlatformName} Native Services & Integration Topology`).title,
+      subtitle: getSlideHeader('landscape_architecture', `Landscape Architecture (${cloudPlatformName} Cloud Platform)`, `${cloudPlatformName} Native Services & Integration Topology`).subtitle,
     subHeader: `${cloudPlatformName} Services Integration & Data Pipeline`,
     mermaidCode: getCloudLandscapeMermaid(),
     description: getLandscapeArchDescription()
@@ -1580,13 +1611,32 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
               {/* Header section (skipped for title and thank you slides) */}
               {slide.type !== 'cover' && slide.type !== 'thank_you' && (
                 <div className="flex flex-col text-left border-b border-gray-200 pb-2 mb-2 shrink-0">
-                  <h2 className="text-xl font-extrabold text-[#2d2d2d] leading-none mb-1">
-                    {slide.title}
-                  </h2>
-                  {slide.subtitle && (
-                    <p className="text-[10px] font-bold text-[#d04a02] tracking-wide uppercase">
-                      {slide.subtitle}
-                    </p>
+                  {isEditing && slide.slideKey ? (
+                    <>
+                      <input
+                        className="text-xl font-extrabold text-[#2d2d2d] leading-none mb-1 border-b border-gray-300 focus:border-[#d04a02] focus:outline-none w-full bg-transparent"
+                        value={slide.title}
+                        onChange={(e) => updateSlideHeader(slide.slideKey, 'title', e.target.value)}
+                        placeholder="Slide Title"
+                      />
+                      <input
+                        className="text-[10px] font-bold text-[#d04a02] tracking-wide uppercase border-b border-gray-300 focus:border-[#d04a02] focus:outline-none w-full bg-transparent mt-1"
+                        value={slide.subtitle || ''}
+                        onChange={(e) => updateSlideHeader(slide.slideKey, 'subtitle', e.target.value)}
+                        placeholder="Slide Subtitle"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-xl font-extrabold text-[#2d2d2d] leading-none mb-1">
+                        {slide.title}
+                      </h2>
+                      {slide.subtitle && (
+                        <p className="text-[10px] font-bold text-[#d04a02] tracking-wide uppercase">
+                          {slide.subtitle}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               )}
