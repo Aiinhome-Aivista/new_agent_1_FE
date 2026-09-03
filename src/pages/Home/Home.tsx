@@ -241,6 +241,19 @@ const Home: React.FC = () => {
       toast('Your role does not have permission to create proposals.', 'error');
       return;
     }
+    
+    if (selectedFiles.length > 0) {
+      const s3Data = new FormData();
+      selectedFiles.forEach((file) => s3Data.append('files', file));
+      try {
+        await proposalApi.uploadS3Only(s3Data);
+        toast('Files uploaded to S3 successfully!', 'success');
+      } catch (err) {
+        console.error("S3 early upload failed", err);
+        toast('S3 upload failed', 'error');
+      }
+    }
+    
     // Instead of directly uploading, save the data and open the extra files modal
     setPendingUploadData(data);
     setCaseStudyFiles([]);

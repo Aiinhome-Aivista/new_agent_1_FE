@@ -22,6 +22,14 @@ export const proposalApi = {
     });
     return res.data;
   },
+  uploadS3Only: async (formData: FormData): Promise<any> => {
+    const res = await apiClient.post(API_ENDPOINTS.uploadS3Only, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
   list: async (): Promise<Proposal[]> => {
     const res = await apiClient.get(API_ENDPOINTS.proposalsList);
     return res.data;

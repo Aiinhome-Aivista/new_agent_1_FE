@@ -1,6 +1,7 @@
 export const API_ENDPOINTS = {
   login: '/api/auth/login',
   uploadProposal: '/api/proposals/upload',
+  uploadS3Only: '/api/proposals/upload-s3-only',
   proposalsList: '/api/proposals',
   proposalStatus: (id: string) => `/api/proposals/status/${id}`,
   editProposal: (id: string) => `/api/proposals/edit/${id}`,
