@@ -99,6 +99,11 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
     }
   };
 
+  const handleSkipAll = () => {
+    const formattedAnswers = qaHistory.map((qa, index) => `Q${index + 1}: ${qa.question}\nA: ${qa.answer}`).join('\n\n');
+    onSubmit(formattedAnswers || "(No additional details provided)");
+  };
+
   const isInitialLoading = isLoading && qaHistory.length === 0;
 
   return (
@@ -187,6 +192,9 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
           <div className="flex justify-end gap-3 mt-2 border-t border-gray-200 dark:border-gray-800 py-2 pr-1">
             <Button variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
+            </Button>
+            <Button variant="outline" onClick={handleSkipAll} disabled={isLoading}>
+              Skip All
             </Button>
             <Button variant="outline" onClick={() => handleNext(true)} disabled={isLoading}>
               Skip
