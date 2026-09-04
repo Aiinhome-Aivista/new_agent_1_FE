@@ -110,7 +110,7 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isInitialLoading ? undefined : `Additional Details (${currentQuestionIndex + 1}/${MAX_QUESTIONS})`}
+      title={isInitialLoading ? undefined : "Additional Details"}
       hideCloseButton={isInitialLoading}
       className='h-[75vh]'
     >
@@ -120,6 +120,20 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
         </div>
       ) : (
         <div className="flex flex-col h-full overflow-hidden">
+          {/* Progress Indicator */}
+          <div className="flex flex-col gap-1 mb-4 px-1 mt-1 shrink-0">
+            <div className="flex justify-between items-center text-sm font-bold text-gray-900">
+              <span>Question {currentQuestionIndex + 1} of {MAX_QUESTIONS}</span>
+              <span>{Math.round((currentQuestionIndex / MAX_QUESTIONS) * 100)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+              <div 
+                className="bg-button-orange h-full rounded-full transition-all duration-300 ease-in-out"
+                style={{ width: `${(currentQuestionIndex / MAX_QUESTIONS) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+
           {/* Chat History Section */}
           <div 
             ref={chatContainerRef}
