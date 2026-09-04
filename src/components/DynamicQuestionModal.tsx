@@ -122,7 +122,7 @@ export const DynamicQuestionModal: React.FC<DynamicQuestionModalProps> = ({
         <div className="flex flex-col h-full overflow-hidden">
           {/* Progress Indicator */}
           <div className="flex flex-col gap-1 mb-4 px-1 mt-1 shrink-0">
-            <div className="flex justify-between items-center text-sm font-bold text-gray-900">
+            <div className="flex justify-between items-center text-sm font-bold text-gray-900 dark:text-white">
               <span>Question {currentQuestionIndex + 1} of {MAX_QUESTIONS}</span>
               <span>{Math.round((currentQuestionIndex / MAX_QUESTIONS) * 100)}%</span>
             </div>

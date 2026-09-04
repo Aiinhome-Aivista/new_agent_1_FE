@@ -242,6 +242,8 @@ const Home: React.FC = () => {
       return;
     }
     
+    setUploadLoading(true);
+    
     if (selectedFiles.length > 0) {
       const s3Data = new FormData();
       selectedFiles.forEach((file) => s3Data.append('files', file));
@@ -253,6 +255,8 @@ const Home: React.FC = () => {
         toast('S3 upload failed', 'error');
       }
     }
+    
+    setUploadLoading(false);
     
     // Instead of directly uploading, save the data and open the extra files modal
     setPendingUploadData(data);
