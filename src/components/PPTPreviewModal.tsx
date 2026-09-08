@@ -541,7 +541,7 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
       }
 
       const encoded = btoa(unescape(encodeURIComponent(clean)));
-      return `https://mermaid.ink/img/${encoded.replace(/=+$/, '')}`;
+      return `${import.meta.env.VITE_MERMAID_INK_URL || 'https://mermaid.ink/img/'}${encoded.replace(/=+$/, '')}`;
     } catch (e) {
       console.error('Error rendering mermaid base64', e);
       return '';
