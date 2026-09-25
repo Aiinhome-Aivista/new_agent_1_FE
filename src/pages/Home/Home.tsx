@@ -643,12 +643,23 @@ const Home: React.FC = () => {
             <CardHeader className="flex flex-row items-center justify-between p-1.5! px-3! gap-2">
               <div>
                 <CardTitle className="text-sm font-bold">
-                  {AI_RUNNING_STATUSES.includes(currentStatus)
-                    ?
-                    <div className="flex items-center gap-1">
-                      <span>Pipeline Execution{dots}</span>
-                    </div>
-                    : `Proposal Review: Completed`}
+                  <div className="flex items-center gap-1">
+                    <span>
+                      {(() => {
+                        let title = AI_RUNNING_STATUSES.includes(currentStatus) ? "Pipeline Execution" : "Proposal Review: Completed";
+                        try {
+                          if (statusDetails?.proposal?.files_info) {
+                            const filesInfo = JSON.parse(statusDetails.proposal.files_info);
+                            if (filesInfo && filesInfo.length > 0 && filesInfo[0].original_name) {
+                              title = filesInfo[0].original_name;
+                            }
+                          }
+                        } catch(e) {}
+                        return title;
+                      })()}
+                      {AI_RUNNING_STATUSES.includes(currentStatus) ? dots : ''}
+                    </span>
+                  </div>
                 </CardTitle>
                 <CardDescription className="text-[12px] mt-0.5">
                   {AI_RUNNING_STATUSES.includes(currentStatus)
