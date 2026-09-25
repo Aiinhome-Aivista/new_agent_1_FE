@@ -40,7 +40,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const bgStyles = {
-    success: 'bg-card border-button-orange/30 shadow-button-orange/5',
+    success: 'bg-muted border-button-orange/30 shadow-button-orange/5',
     error: 'bg-card border-destructive/20 shadow-destructive/5',
     info: 'bg-card border-sky-500/20 shadow-sky-500/5',
   };
@@ -59,7 +59,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               layout
-              className={`flex items-center justify-between p-4 rounded-xl border shadow-lg ${bgStyles[item.type]} glass transition-all`}
+              className={`flex items-center justify-between p-4 rounded-xl border shadow-lg ${bgStyles[item.type]} transition-all`}
             >
               <div className="flex items-center gap-3">
                 {icons[item.type]}
