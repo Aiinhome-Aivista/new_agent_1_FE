@@ -39,24 +39,24 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
   const [originalBudget, setOriginalBudget] = useState<string>('$250,000');
   const [isLoading, setIsLoading] = useState(true);
   const [isResuming, setIsResuming] = useState(false);
-  const [selectedAiModel, setSelectedAiModel] = useState<string>('');
+  const [selectedAiModels, setSelectedAiModels] = useState<string[]>([]);
 
   // Advanced Options State
   const [ragOptions, setRagOptions] = useState<AdvancedOption[] | null>(null);
-  const [selectedRag, setSelectedRag] = useState<string>('');
+  const [selectedRags, setSelectedRags] = useState<string[]>([]);
 
   const [guardrailOptions, setGuardrailOptions] = useState<AdvancedOption[] | null>(null);
-  const [selectedGuardrail, setSelectedGuardrail] = useState<string>('');
+  const [selectedGuardrails, setSelectedGuardrails] = useState<string[]>([]);
 
   const [actionEngineOptions, setActionEngineOptions] = useState<AdvancedOption[] | null>(null);
-  const [selectedActionEngine, setSelectedActionEngine] = useState<string>('');
+  const [selectedActionEngines, setSelectedActionEngines] = useState<string[]>([]);
 
   useEffect(() => {
     const pkg = techOptions.find(opt => opt.id === selectedOptionId);
     if (pkg && pkg.ai_models && pkg.ai_models.length > 0) {
-      setSelectedAiModel(pkg.ai_models[0]);
+      setSelectedAiModels([pkg.ai_models[0]]);
     } else {
-      setSelectedAiModel('');
+      setSelectedAiModels([]);
     }
   }, [selectedOptionId, techOptions]);
 
@@ -87,13 +87,13 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
             const aOpts = sortOpts(ir.action_engine_options || []);
 
             setRagOptions(rOpts);
-            if (rOpts.length > 0) setSelectedRag(rOpts[0].id);
+            if (rOpts.length > 0) setSelectedRags([rOpts[0].id]);
 
             setGuardrailOptions(gOpts);
-            if (gOpts.length > 0) setSelectedGuardrail(gOpts[0].id);
+            if (gOpts.length > 0) setSelectedGuardrails([gOpts[0].id]);
 
             setActionEngineOptions(aOpts);
-            if (aOpts.length > 0) setSelectedActionEngine(aOpts[0].id);
+            if (aOpts.length > 0) setSelectedActionEngines([aOpts[0].id]);
 
             const options = ir.tech_options || [];
             if (options.length === 3) {
@@ -172,9 +172,9 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
         selectedPkg.backend,
         selectedPkg.database,
         originalBudget,
-        selectedRag,
-        selectedGuardrail,
-        selectedActionEngine
+        selectedRags.join(', '),
+        selectedGuardrails.join(', '),
+        selectedActionEngines.join(', ')
       );
       toast('Technology package confirmed. Resuming pipeline...', 'success');
       onComplete();
@@ -351,17 +351,28 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
               {/* Recommended AI Models */}
               {selectedPkg && selectedPkg.ai_models && selectedPkg.ai_models.length > 0 && (
                 <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
-                  <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Bot size={14} className="text-primary animate-pulse" /> AI Model Selection (Choose one)
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Bot size={14} className="text-primary animate-pulse" /> AI Model Selection (Multiple)
+                    </h4>
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedAiModels([])}>
+                      Skip All
+                    </Button>
+                  </div>
                   <div className="flex flex-col gap-3">
                     {selectedPkg.ai_models.map((model, i) => {
-                      const isSelected = selectedAiModel === model;
+                      const isSelected = selectedAiModels.includes(model);
                       const isRecommended = i === 0;
                       return (
                         <div
                           key={i}
-                          onClick={() => setSelectedAiModel(model)}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedAiModels(selectedAiModels.filter(m => m !== model));
+                            } else {
+                              setSelectedAiModels([...selectedAiModels, model]);
+                            }
+                          }}
                           className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
                             ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
                             : 'border-border bg-card hover:border-muted-foreground/30'
@@ -398,20 +409,31 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
               {/* Advanced Options Sections */}
               {ragOptions !== null && (
                 <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
-                  <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Sparkles size={20} className="text-primary" /> RAG Strategy Selection
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Sparkles size={20} className="text-primary" /> RAG Strategy Selection
+                    </h4>
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedRags([])}>
+                      Skip All
+                    </Button>
+                  </div>
                   {ragOptions.length === 0 ? (
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this input</div>
                   ) : (
                     <div className="flex flex-col gap-3">
                       {ragOptions.map((opt, i) => {
-                        const isSelected = selectedRag === opt.id;
+                        const isSelected = selectedRags.includes(opt.id);
                         const isRecommended = opt.name.toLowerCase().includes("mentioned in input") || (i === 0 && !ragOptions.some(o => o.name.toLowerCase().includes("mentioned in input")));
                         return (
                           <div
                             key={opt.id}
-                            onClick={() => setSelectedRag(opt.id)}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedRags(selectedRags.filter(id => id !== opt.id));
+                              } else {
+                                setSelectedRags([...selectedRags, opt.id]);
+                              }
+                            }}
                             className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
                               ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
                               : 'border-border bg-card hover:border-muted-foreground/30'
@@ -465,20 +487,31 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
 
               {guardrailOptions !== null && (
                 <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
-                  <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Terminal size={20} className="text-primary" /> Guardrails (Data Protection)
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Terminal size={20} className="text-primary" /> Guardrails (Data Protection)
+                    </h4>
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedGuardrails([])}>
+                      Skip All
+                    </Button>
+                  </div>
                   {guardrailOptions.length === 0 ? (
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this input</div>
                   ) : (
                     <div className="flex flex-col gap-3">
                       {guardrailOptions.map((opt, i) => {
-                        const isSelected = selectedGuardrail === opt.id;
+                        const isSelected = selectedGuardrails.includes(opt.id);
                         const isRecommended = opt.name.toLowerCase().includes("mentioned in input") || (i === 0 && !guardrailOptions.some(o => o.name.toLowerCase().includes("mentioned in input")));
                         return (
                           <div
                             key={opt.id}
-                            onClick={() => setSelectedGuardrail(opt.id)}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedGuardrails(selectedGuardrails.filter(id => id !== opt.id));
+                              } else {
+                                setSelectedGuardrails([...selectedGuardrails, opt.id]);
+                              }
+                            }}
                             className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
                               ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
                               : 'border-border bg-card hover:border-muted-foreground/30'
@@ -523,27 +556,38 @@ export const TechSelectionModal: React.FC<TechSelectionModalProps> = ({ isOpen, 
 
               {actionEngineOptions !== null && (
                 <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Cpu size={20} className="text-primary" /> Action Engine Framework
-                    </h4>
-                    {actionEngineOptions.length > 0 && (
-                      <span className="text-[18px] bg-transparent border border-primary/30 text-primary px-3 py-0.5 rounded-full flex items-center gap-1.5 font-bold animate-pulse">
-                        <Bot size={22} className="animate-bounce shrink-0 text-primary" /> Agentic Solution Recommended
-                      </span>
-                    )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-base font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Cpu size={20} className="text-primary" /> Action Engine Framework
+                      </h4>
+                      {actionEngineOptions.length > 0 && (
+                        <span className="text-[18px] bg-transparent border border-primary/30 text-primary px-3 py-0.5 rounded-full flex items-center gap-1.5 font-bold animate-pulse">
+                          <Bot size={22} className="animate-bounce shrink-0 text-primary" /> Agentic Solution Recommended
+                        </span>
+                      )}
+                    </div>
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedActionEngines([])}>
+                      Skip All
+                    </Button>
                   </div>
                   {actionEngineOptions.length === 0 ? (
                     <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border/50">Not Required for this input</div>
                   ) : (
                     <div className="flex flex-col gap-3">
                       {actionEngineOptions.map((opt, i) => {
-                        const isSelected = selectedActionEngine === opt.id;
+                        const isSelected = selectedActionEngines.includes(opt.id);
                         const isRecommended = opt.name.toLowerCase().includes("mentioned in input") || (i === 0 && !actionEngineOptions.some(o => o.name.toLowerCase().includes("mentioned in input")));
                         return (
                           <div
                             key={opt.id}
-                            onClick={() => setSelectedActionEngine(opt.id)}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedActionEngines(selectedActionEngines.filter(id => id !== opt.id));
+                              } else {
+                                setSelectedActionEngines([...selectedActionEngines, opt.id]);
+                              }
+                            }}
                             className={`flex flex-col md:flex-row gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
                               ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
                               : 'border-border bg-card hover:border-muted-foreground/30'

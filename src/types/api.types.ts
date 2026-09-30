@@ -32,6 +32,7 @@ export interface Proposal {
   last_transitioned_at?: string | null;
   generated_file_path?: string | null;
   structured_json_ir?: string | null;
+  files_info?: string | null;
   created_at: string;
 }
 

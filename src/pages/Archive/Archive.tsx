@@ -317,7 +317,17 @@ useEffect(() => {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex flex-col gap-0.5">
                           <span className="font-bold text-sm text-foreground/90 line-clamp-1" title={proposal.client_name}>
-                            {proposal.client_name}
+                            {(() => {
+                              try {
+                                if (proposal.files_info) {
+                                  const filesInfo = JSON.parse(proposal.files_info);
+                                  if (filesInfo && filesInfo.length > 0 && filesInfo[0].original_name) {
+                                    return filesInfo[0].original_name;
+                                  }
+                                }
+                              } catch(e) {}
+                              return proposal.client_name;
+                            })()}
                           </span>
                           <span className="text-[11px] text-muted-foreground line-clamp-1">Generated: {formatDate(proposal.created_at)}</span>
                           <span className="text-[11px] text-muted-foreground">proposal id: {formatDate(proposal.id)}</span>
@@ -358,11 +368,23 @@ useEffect(() => {
               <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <div>
                   <CardTitle className="text-base font-bold">
-                    {AI_RUNNING_STATUSES.includes(currentStatus)
-                      ? <div className="flex items-center gap-1">
-                      <span>Pipeline Execution{dots}</span>
+                    <div className="flex items-center gap-1">
+                      <span>
+                        {(() => {
+                          let title = AI_RUNNING_STATUSES.includes(currentStatus) ? "Pipeline Execution" : "Proposal Review: Completed";
+                          try {
+                            if (statusDetails?.proposal?.files_info) {
+                              const filesInfo = JSON.parse(statusDetails.proposal.files_info);
+                              if (filesInfo && filesInfo.length > 0 && filesInfo[0].original_name) {
+                                title = filesInfo[0].original_name;
+                              }
+                            }
+                          } catch(e) {}
+                          return title;
+                        })()}
+                        {AI_RUNNING_STATUSES.includes(currentStatus) ? dots : ''}
+                      </span>
                     </div>
-                      : `Proposal Review: completed`}
                   </CardTitle>
                   <CardDescription className="text-xs">
                     {AI_RUNNING_STATUSES.includes(currentStatus)
