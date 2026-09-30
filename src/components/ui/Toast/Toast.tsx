@@ -59,7 +59,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               layout
-              className={`flex items-center justify-between p-4 rounded-xl border shadow-lg ${bgStyles[item.type]} glass transition-all`}
+              className={`flex items-center justify-between p-4 rounded-xl border shadow-lg ${bgStyles[item.type]} transition-all`}
             >
               <div className="flex items-center gap-3">
                 {icons[item.type]}

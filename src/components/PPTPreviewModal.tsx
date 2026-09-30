@@ -732,101 +732,200 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
     });
   }
 
+  // Slide 2A: Technical Key Points
+  const techPoints = (localIr.technical_key_points && Array.isArray(localIr.technical_key_points) && localIr.technical_key_points.length > 0) ? localIr.technical_key_points : [
+    { title: "Core System Implementation", bullets: ["Deploy secure API endpoints", "Establish database schemas"] },
+    { title: "Security & Compliance", bullets: ["Implement Role-Based Access Control", "Enable data encryption at rest and in transit"] }
+  ];
+  slides.push({
+    type: 'technical_key_points',
+    slideKey: 'technical_key_points',
+    title: getSlideHeader('technical_key_points', 'Technical Key Points', 'Immediate needs (Phase 1)').title,
+    subtitle: getSlideHeader('technical_key_points', 'Technical Key Points', 'Immediate needs (Phase 1)').subtitle,
+    points: techPoints,
+    mermaidCode: localIr.technical_key_points_mermaid || ""
+  });
+
+  // Slide 2B: Approach
+  const approachSteps = (localIr.approach_steps && Array.isArray(localIr.approach_steps) && localIr.approach_steps.length > 0) ? localIr.approach_steps : [
+    { phase: "Phase 1: Discovery & Design", bullets: ["Gather detailed requirements", "Finalize architecture blueprints"] },
+    { phase: "Phase 2: Development & Testing", bullets: ["Sprint-based agile development", "Continuous QA integration"] }
+  ];
+  slides.push({
+    type: 'approach',
+    slideKey: 'approach',
+    title: getSlideHeader('approach', 'Approach', 'Execution Steps').title,
+    subtitle: getSlideHeader('approach', 'Approach', 'Execution Steps').subtitle,
+    steps: approachSteps
+  });
+
+  // Slide 2C: Our Understanding
+  const inScope = (localIr.understanding_in_scope && Array.isArray(localIr.understanding_in_scope) && localIr.understanding_in_scope.length > 0) ? localIr.understanding_in_scope : [
+    { module: "Core Application Features", access: "Admin & Users", points: ["Dashboard and analytics", "User management and onboarding"] }
+  ];
+  const outScope = (localIr.understanding_out_scope && Array.isArray(localIr.understanding_out_scope) && localIr.understanding_out_scope.length > 0) ? localIr.understanding_out_scope : [
+    { module: "Legacy Systems Integration", access: "N/A", points: ["Migration of legacy tape drives", "Third-party ERP customizations"] }
+  ];
+  slides.push({
+    type: 'our_understanding',
+    slideKey: 'our_understanding',
+    title: getSlideHeader('our_understanding', 'Our Understanding', 'In Scope and Out of Scope Analysis').title,
+    subtitle: getSlideHeader('our_understanding', 'Our Understanding', 'In Scope and Out of Scope Analysis').subtitle,
+    inScope: inScope,
+    outScope: outScope
+  });
+
+  // Slide 2D: Considerations
+  const considerations = (localIr.considerations_topics && Array.isArray(localIr.considerations_topics) && localIr.considerations_topics.length > 0) ? localIr.considerations_topics : [
+    { topic: "Data Migration Assumptions", bullets: ["Client will provide cleansed data extracts", "Downtime window is approved for weekends"] },
+    { topic: "Infrastructure", bullets: ["Cloud resources will be provisioned in client tenant"] }
+  ];
+  slides.push({
+    type: 'considerations',
+    slideKey: 'considerations',
+    title: getSlideHeader('considerations', 'Considerations', 'Topics & Assumptions').title,
+    subtitle: getSlideHeader('considerations', 'Considerations', 'Topics & Assumptions').subtitle,
+    topics: considerations
+  });
+
   // Slide 3: Client Requirements
-  if (localIr.requirements) {
-    slides.push({
-      type: 'list_slide',
-      field: 'requirements',
-      slideKey: 'client_requirements',
-      title: getSlideHeader('client_requirements', 'Client Requirements & Gap Analysis', 'RAG-driven competence matching against RFP requirements').title,
-      subtitle: getSlideHeader('client_requirements', 'Client Requirements & Gap Analysis', 'RAG-driven competence matching against RFP requirements').subtitle,
-      headerLabel: 'Key Client Requirements:',
-      headerColor: 'text-[#d04a02]',
-      items: Array.isArray(localIr.requirements) ? localIr.requirements : [localIr.requirements]
-    });
-  }
+  const reqs = (localIr.requirements && (Array.isArray(localIr.requirements) ? localIr.requirements.length > 0 : true)) ? (Array.isArray(localIr.requirements) ? localIr.requirements : [localIr.requirements]) : ["No requirements specified"];
+  slides.push({
+    type: 'list_slide',
+    field: 'requirements',
+    slideKey: 'client_requirements',
+    title: getSlideHeader('client_requirements', 'Client Requirements & Gap Analysis', 'RAG-driven competence matching against RFP requirements').title,
+    subtitle: getSlideHeader('client_requirements', 'Client Requirements & Gap Analysis', 'RAG-driven competence matching against RFP requirements').subtitle,
+    headerLabel: 'Key Client Requirements:',
+    headerColor: 'text-[#d04a02]',
+    items: reqs
+  });
 
   // Slide 4: Capability Gaps
-  if (localIr.gaps) {
-    slides.push({
-      type: 'list_slide',
-      field: 'gaps',
-      slideKey: 'capability_gaps',
-      title: getSlideHeader('capability_gaps', 'Capability Gaps & Mitigations', 'Identified gaps against RFP requirements and proposed mitigations').title,
-      subtitle: getSlideHeader('capability_gaps', 'Capability Gaps & Mitigations', 'Identified gaps against RFP requirements and proposed mitigations').subtitle,
-      headerLabel: 'Capability Gaps & Mitigations:',
-      headerColor: 'text-[#b42828]',
-      items: Array.isArray(localIr.gaps) ? localIr.gaps : [localIr.gaps]
-    });
-  }
+  const gapsData = (localIr.gaps && (Array.isArray(localIr.gaps) ? localIr.gaps.length > 0 : true)) ? (Array.isArray(localIr.gaps) ? localIr.gaps : [localIr.gaps]) : ["No gaps identified"];
+  slides.push({
+    type: 'list_slide',
+    field: 'gaps',
+    slideKey: 'capability_gaps',
+    title: getSlideHeader('capability_gaps', 'Capability Gaps & Mitigations', 'Identified gaps against RFP requirements and proposed mitigations').title,
+    subtitle: getSlideHeader('capability_gaps', 'Capability Gaps & Mitigations', 'Identified gaps against RFP requirements and proposed mitigations').subtitle,
+    headerLabel: 'Capability Gaps & Mitigations:',
+    headerColor: 'text-[#b42828]',
+    items: gapsData
+  });
+
+  // Slide 4A: Capability Gaps (Cont.)
+  slides.push({
+    type: 'list_slide',
+    field: 'gaps_cont',
+    slideKey: 'capability_gaps_cont',
+    title: getSlideHeader('capability_gaps_cont', 'Capability Gaps & Mitigations', 'Identified gaps against RFP requirements and proposed mitigations').title,
+    subtitle: getSlideHeader('capability_gaps_cont', 'Capability Gaps & Mitigations', 'Identified gaps against RFP requirements and proposed mitigations').subtitle,
+    headerLabel: 'Capability Gaps & Mitigations:',
+    headerColor: 'text-[#b42828]',
+    items: [
+      "Identified gap in Client Requirement: 'Security and Data Protection'. Mitigation: Implement enterprise-grade zero-trust architecture, advanced data encryption, RBAC, and continuous threat detection mechanisms.",
+      "Identified gap in Client Requirement: 'System Observability and Monitoring'. Mitigation: Deploy comprehensive distributed tracing, centralized logging, and real-time alerting dashboards across the multi-agent environment."
+    ]
+  });
 
   // Slide 5: Solution Pillars
-  if (localIr.solution_pillars && Array.isArray(localIr.solution_pillars)) {
-    slides.push({
-      type: 'pillars',
-      slideKey: 'solution_approach',
-      title: getSlideHeader('solution_approach', 'Solution Approach & Architecture', 'High-level implementation strategy and operational frameworks').title,
-      subtitle: getSlideHeader('solution_approach', 'Solution Approach & Architecture', 'High-level implementation strategy and operational frameworks').subtitle,
-      pillars: localIr.solution_pillars
-    });
-  }
+  const pillarsData = (localIr.solution_pillars && Array.isArray(localIr.solution_pillars) && localIr.solution_pillars.length > 0) ? localIr.solution_pillars : [
+    { title: "Pillar 1", desc: "Description 1" },
+    { title: "Pillar 2", desc: "Description 2" },
+    { title: "Pillar 3", desc: "Description 3" }
+  ];
+  slides.push({
+    type: 'pillars',
+    slideKey: 'solution_approach',
+    title: getSlideHeader('solution_approach', 'Solution Approach & Architecture', 'High-level implementation strategy and operational frameworks').title,
+    subtitle: getSlideHeader('solution_approach', 'Solution Approach & Architecture', 'High-level implementation strategy and operational frameworks').subtitle,
+    pillars: pillarsData
+  });
 
   // Slide 6: Landscape & Architecture (Components Layer)
-  if (localIr.architecture && Array.isArray(localIr.architecture)) {
-    slides.push({
-      type: 'architecture',
-      slideKey: 'architecture_layers',
-      title: getSlideHeader('architecture_layers', 'Landscape & Architecture', 'Reference systems architecture and integration patterns').title,
-      subtitle: getSlideHeader('architecture_layers', 'Landscape & Architecture', 'Reference systems architecture and integration patterns').subtitle,
-      layers: localIr.architecture
-    });
-  }
+  const archData = (localIr.architecture && Array.isArray(localIr.architecture) && localIr.architecture.length > 0) ? localIr.architecture : [
+    { name: "Client Access / Presentation Layer", components: ["Web Portal", "Mobile Client", "API Gateway"] },
+    { name: "Application Logic & Agents Core", components: ["Orchestrator Engine", "Estimation Engine", "Document Agent"] },
+    { name: "Data Integration & Knowledge", components: ["MySQL Database", "Qdrant Vector DB", "Asset Library"] }
+  ];
+  slides.push({
+    type: 'architecture',
+    slideKey: 'architecture_layers',
+    title: getSlideHeader('architecture_layers', 'Landscape & Architecture', 'Reference systems architecture and integration patterns').title,
+    subtitle: getSlideHeader('architecture_layers', 'Landscape & Architecture', 'Reference systems architecture and integration patterns').subtitle,
+    layers: archData
+  });
 
   // Slide 7: High Level Design: Data Flow
-  if (localIr.data_flow && Array.isArray(localIr.data_flow)) {
-    slides.push({
-      type: 'data_flow',
-      field: 'data_flow',
-      slideKey: 'high_level_design',
-      title: getSlideHeader('high_level_design', 'High Level Design: Data Flow', 'Dynamic data integration and multi-agent interaction flow').title,
-      subtitle: getSlideHeader('high_level_design', 'High Level Design: Data Flow', 'Dynamic data integration and multi-agent interaction flow').subtitle,
-      items: localIr.data_flow
-    });
-  }
+  const dfData = (localIr.data_flow && Array.isArray(localIr.data_flow)) ? localIr.data_flow : [];
+  slides.push({
+    type: 'data_flow',
+    field: 'data_flow',
+    slideKey: 'high_level_design',
+    title: getSlideHeader('high_level_design', 'High Level Design: Data Flow', 'Dynamic data integration and multi-agent interaction flow').title,
+    subtitle: getSlideHeader('high_level_design', 'High Level Design: Data Flow', 'Dynamic data integration and multi-agent interaction flow').subtitle,
+    items: dfData
+  });
 
   // Slide 8: Infrastructure Cost Calculator
-  if (localIr.infrastructure_approximation && Array.isArray(localIr.infrastructure_approximation)) {
-    slides.push({
-      type: 'infra_table',
-      slideKey: 'infrastructure',
-      title: getSlideHeader('infrastructure', 'Infrastructure Approximation', 'Estimated cloud infrastructure components and costs').title,
-      subtitle: getSlideHeader('infrastructure', 'Infrastructure Approximation', 'Estimated cloud infrastructure components and costs').subtitle,
-      rows: localIr.infrastructure_approximation
-    });
-  }
+  const infraData = (localIr.infrastructure_approximation && Array.isArray(localIr.infrastructure_approximation)) ? localIr.infrastructure_approximation : [];
+  slides.push({
+    type: 'infra_table',
+    slideKey: 'infrastructure',
+    title: getSlideHeader('infrastructure', 'Infrastructure Approximation', 'Estimated cloud infrastructure components and costs').title,
+    subtitle: getSlideHeader('infrastructure', 'Infrastructure Approximation', 'Estimated cloud infrastructure components and costs').subtitle,
+    rows: infraData
+  });
+
+  // Slide 8B: Project Milestones
+  const pmData = (localIr.timeline_phases && Array.isArray(localIr.timeline_phases) && localIr.timeline_phases.length > 0) ? localIr.timeline_phases : [
+    { phase: "Design & Planning", deliverables: "RFP requirements analysis" },
+    { phase: "Development", deliverables: "Core engineering & integration" },
+    { phase: "Testing", deliverables: "QA and Integration Testing" },
+    { phase: "Deployment", deliverables: "Production release" },
+    { phase: "Training", deliverables: "User training & handover" }
+  ];
+  slides.push({
+    type: 'project_milestones',
+    slideKey: 'project_milestones',
+    title: getSlideHeader('project_milestones', 'Project Milestones', 'Sequential delivery phases and target deliverables').title,
+    subtitle: getSlideHeader('project_milestones', 'Project Milestones', 'Sequential delivery phases and target deliverables').subtitle,
+    phases: pmData
+  });
 
   // Slide 9: Sizing & Effort table
-  if (localIr.resources && Array.isArray(localIr.resources)) {
-    slides.push({
-      type: 'resources_table',
-      slideKey: 'resources_effort',
-      title: getSlideHeader('resources_effort', 'Effort & Person-Hour Conversion', 'Allocated program FTE structure, rate cards, and financial sizing').title,
-      subtitle: getSlideHeader('resources_effort', 'Effort & Person-Hour Conversion', 'Allocated program FTE structure, rate cards, and financial sizing').subtitle,
-      resources: localIr.resources,
-      budget: localIr.budget
-    });
-  }
+  const resData = (localIr.resources && Array.isArray(localIr.resources) && localIr.resources.length > 0) ? localIr.resources : [
+    { role: "Engagement Partner", fte: "0.25", rate: "$30,000", total: "$45,000", person_hours: 80 },
+    { role: "Lead Architect", fte: "1.00", rate: "$24,000", total: "$144,000", person_hours: 480 },
+    { role: "Senior Frontend Developer", fte: "2.00", rate: "$8,000", total: "$96,000", person_hours: 960 },
+    { role: "Senior Backend Developer", fte: "2.00", rate: "$8,000", total: "$96,000", person_hours: 960 },
+    { role: "DevOps & Security Specialist", fte: "1.00", rate: "$9,000", total: "$54,000", person_hours: 480 }
+  ];
+  slides.push({
+    type: 'resources_table',
+    slideKey: 'resources_effort',
+    title: getSlideHeader('resources_effort', 'Effort & Person-Hour Conversion', 'Allocated program FTE structure, rate cards, and financial sizing').title,
+    subtitle: getSlideHeader('resources_effort', 'Effort & Person-Hour Conversion', 'Allocated program FTE structure, rate cards, and financial sizing').subtitle,
+    resources: resData,
+    budget: localIr.budget || "N/A"
+  });
 
   // Slide 10: Skills Competency Mapping
-  if (localIr.skills_mapping && Array.isArray(localIr.skills_mapping)) {
-    slides.push({
-      type: 'skills_table',
-      slideKey: 'skills_inventory',
-      title: getSlideHeader('skills_inventory', 'Skills Inventory & Competency Mapping', 'Required technical capabilities grounded in organizational assets').title,
-      subtitle: getSlideHeader('skills_inventory', 'Skills Inventory & Competency Mapping', 'Required technical capabilities grounded in organizational assets').subtitle,
-      skills: localIr.skills_mapping
-    });
-  }
+  const skillsData = (localIr.skills_mapping && Array.isArray(localIr.skills_mapping) && localIr.skills_mapping.length > 0) ? localIr.skills_mapping : [
+    { skill: "React 18, TypeScript, Tailwind", role: "Frontend Developer", conf: "[✔]" },
+    { skill: "Flask API, Python Core", role: "Backend Developer", conf: "[✔]" },
+    { skill: "MySQL Connector, RAG Store", role: "Database Architect", conf: "[✔]" },
+    { skill: "python-pptx Engine", role: "Orchestrator Agent", conf: "[✔]" },
+    { skill: "CI/CD & DevOps", role: "DevOps Engineer", conf: "[✔]" }
+  ];
+  slides.push({
+    type: 'skills_table',
+    slideKey: 'skills_inventory',
+    title: getSlideHeader('skills_inventory', 'Skills Inventory & Competency Mapping', 'Required technical capabilities grounded in organizational assets').title,
+    subtitle: getSlideHeader('skills_inventory', 'Skills Inventory & Competency Mapping', 'Required technical capabilities grounded in organizational assets').subtitle,
+    skills: skillsData
+  });
 
   // Slide 11: Case Studies
   if (localIr.similar_projects && Array.isArray(localIr.similar_projects) && localIr.similar_projects.length > 0) {
@@ -949,6 +1048,143 @@ export const PPTPreviewModal: React.FC<PPTPreviewModalProps> = ({
                   </p>
                 ))
               )}
+            </div>
+          </div>
+        );
+
+      case 'technical_key_points':
+        return (
+          <div className="flex-1 flex flex-col gap-4 py-4 px-2 text-left h-full max-h-[390px]">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+              {slide.points.map((pt: any, idx: number) => (
+                <div key={idx}>
+                  <h4 className="text-sm font-bold text-[#2d2d2d] mb-1">• {safeText(pt.title)}</h4>
+                  <ul className="list-decimal pl-6 space-y-1">
+                    {pt.bullets?.map((b: string, bIdx: number) => (
+                      <li key={bIdx} className="text-[11px] text-gray-700">{safeText(b)}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            {slide.mermaidCode && (
+              <div className="mt-4 border-t border-gray-200 pt-2 flex justify-center">
+                <img src={getMermaidUrl(slide.mermaidCode)} alt="Diagram" className="max-h-[140px] max-w-full object-contain" />
+              </div>
+            )}
+          </div>
+        );
+
+      case 'approach':
+        return (
+          <div className="flex-1 flex flex-col gap-4 py-4 px-2 text-left h-full max-h-[390px]">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+              {slide.steps.map((step: any, idx: number) => (
+                <div key={idx}>
+                  <h4 className="text-sm font-bold text-[#2d2d2d] mb-1">• {safeText(step.phase)}</h4>
+                  <ul className="list-decimal pl-6 space-y-1">
+                    {step.bullets?.map((b: string, bIdx: number) => (
+                      <li key={bIdx} className="text-[11px] text-gray-700">{safeText(b)}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'considerations':
+        return (
+          <div className="flex-1 flex flex-col gap-4 py-4 px-2 text-left h-full max-h-[390px]">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+              {slide.topics.map((top: any, idx: number) => (
+                <div key={idx}>
+                  <h4 className="text-sm font-bold text-[#2d2d2d] mb-1">• {safeText(top.topic)}</h4>
+                  <ul className="list-decimal pl-6 space-y-1">
+                    {top.bullets?.map((b: string, bIdx: number) => (
+                      <li key={bIdx} className="text-[11px] text-gray-700">{safeText(b)}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'our_understanding':
+        return (
+          <div className="flex-1 flex flex-row gap-6 py-4 px-2 text-left h-full max-h-[390px]">
+            {/* In Scope */}
+            <div className="flex-1 flex flex-col overflow-y-auto pr-1">
+              <h4 className="text-[11px] font-bold text-white bg-[#d04a02] p-1.5 text-center rounded-t-sm">In Scope</h4>
+              <table className="w-full text-left border-collapse text-[9px] border border-gray-200">
+                <thead>
+                  <tr className="bg-gray-100 text-gray-800">
+                    <th className="py-1 px-2 font-bold border-b border-gray-200">Module</th>
+                    <th className="py-1 px-2 font-bold border-b border-gray-200">Access</th>
+                    <th className="py-1 px-2 font-bold border-b border-gray-200">Key Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {slide.inScope.map((item: any, idx: number) => (
+                    <React.Fragment key={idx}>
+                      {(item.points?.length ? item.points : ['']).map((pt: string, ptIdx: number) => (
+                        <tr key={`${idx}-${ptIdx}`} className="bg-white border-b border-gray-100">
+                          <td className="py-1 px-2 text-gray-800 font-semibold align-top border-r border-gray-100">{ptIdx === 0 ? safeText(item.module) : ''}</td>
+                          <td className="py-1 px-2 text-gray-600 align-top border-r border-gray-100">{ptIdx === 0 ? safeText(item.access) : ''}</td>
+                          <td className="py-1 px-2 text-gray-700">{safeText(pt)}</td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Out Scope */}
+            <div className="flex-1 flex flex-col overflow-y-auto pl-1">
+              <h4 className="text-[11px] font-bold text-white bg-[#2d2d2d] p-1.5 text-center rounded-t-sm">Out of Scope</h4>
+              <table className="w-full text-left border-collapse text-[9px] border border-gray-200">
+                <thead>
+                  <tr className="bg-gray-100 text-gray-800">
+                    <th className="py-1 px-2 font-bold border-b border-gray-200">Module</th>
+                    <th className="py-1 px-2 font-bold border-b border-gray-200">Access</th>
+                    <th className="py-1 px-2 font-bold border-b border-gray-200">Key Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {slide.outScope.map((item: any, idx: number) => (
+                    <React.Fragment key={idx}>
+                      {(item.points?.length ? item.points : ['']).map((pt: string, ptIdx: number) => (
+                        <tr key={`${idx}-${ptIdx}`} className="bg-white border-b border-gray-100">
+                          <td className="py-1 px-2 text-gray-800 font-semibold align-top border-r border-gray-100">{ptIdx === 0 ? safeText(item.module) : ''}</td>
+                          <td className="py-1 px-2 text-gray-600 align-top border-r border-gray-100">{ptIdx === 0 ? safeText(item.access) : ''}</td>
+                          <td className="py-1 px-2 text-gray-700">{safeText(pt)}</td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+
+      case 'project_milestones':
+        return (
+          <div className="flex-1 flex flex-col gap-4 py-4 px-2 text-left h-full max-h-[390px]">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+              {slide.phases.map((phase: any, idx: number) => (
+                <div key={idx} className="flex flex-row items-center gap-4">
+                  <div className="bg-[#d04a02] text-white px-3 py-2 font-bold text-xs flex-shrink-0 w-32 text-center relative rounded-r-md shadow-sm">
+                    {safeText(phase.phase)}
+                  </div>
+                  <div className="flex-1 border border-gray-300 rounded p-2 text-xs bg-gray-50 shadow-sm">
+                    <span className="font-bold block mb-1">Key Deliverables / Activities:</span>
+                    <span className="text-gray-700 text-[10px]">{safeText(phase.deliverables)}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         );
