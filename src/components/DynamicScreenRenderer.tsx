@@ -271,6 +271,39 @@ const ComponentWidget: React.FC<ComponentProps> = ({ type, props, platform }) =>
     );
   }
 
+  // 7. IMAGE / HERO BANNER / GRAPHIC
+  if (type === 'image' || type === 'banner') {
+    return (
+      <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-sm space-y-1">
+        {props.title && (
+          <div className="px-3 pt-2 text-xs font-semibold text-slate-300">
+            {props.title}
+          </div>
+        )}
+        <div className="relative w-full overflow-hidden bg-slate-900 flex items-center justify-center min-h-[140px] max-h-[260px]">
+          {props.src || props.image_url ? (
+            <img 
+              src={props.src || props.image_url} 
+              alt={props.alt || props.title || 'Screen mock visual'} 
+              className="w-full h-auto object-cover max-h-[260px] rounded-b-xl"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center p-6 text-slate-500 text-center gap-1">
+              <FileText size={24} className="text-slate-600 mb-1" />
+              <span className="text-xs font-medium text-slate-400">{props.title || 'Visual Graphic Area'}</span>
+              <span className="text-[10px] text-slate-600">Dynamic image asset or screenshot</span>
+            </div>
+          )}
+        </div>
+        {props.caption && (
+          <p className="px-3 pb-2 text-[10px] text-slate-400 italic">
+            {props.caption}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   // Fallback for custom or unknown component types
   return (
     <div className="p-3 bg-slate-900/60 border border-dashed border-slate-800 rounded-xl text-xs text-slate-400 flex items-center justify-between">

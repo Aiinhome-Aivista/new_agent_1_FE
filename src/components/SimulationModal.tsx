@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Smartphone, 
   Monitor, 
@@ -9,7 +9,9 @@ import {
   X, 
   Bot, 
   Layers, 
-  RotateCcw
+  RotateCcw,
+  Paperclip,
+  Trash2
 } from 'lucide-react';
 import { DynamicScreenRenderer } from './DynamicScreenRenderer';
 import { simulationApi } from '../services/api/endpoints';
@@ -29,17 +31,20 @@ export const SimulationModal: React.FC<SimulationModalProps> = ({
 }) => {
   const [schema, setSchema] = useState<any>(null);
   const [activeScreenId, setActiveScreenId] = useState<string>('');
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string; time: string }>>([
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string; time: string; image?: string }>>([
     { 
       role: 'assistant', 
-      text: 'Hello! Interactive prototype screens have been generated from the solution architecture and requirements. Select any screen or instruct the Copilot to add, refine, or update components.',
+      text: 'Hello! Interactive prototype screens have been generated from the solution architecture and requirements. Select any screen, upload mock images/diagrams, or instruct the Copilot to modify components.',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
   const [inputMsg, setInputMsg] = useState('');
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [attachedImageName, setAttachedImageName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
   const [deviceFilter, setDeviceFilter] = useState<'all' | 'mobile' | 'desktop'>('all');
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen && proposalId) {
@@ -64,20 +69,36 @@ export const SimulationModal: React.FC<SimulationModalProps> = ({
     }
   }, [isOpen, proposalId]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttachedImageName(file.name);
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      setAttachedImage(uploadEvent.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSendMessage = async () => {
-    if (!inputMsg.trim() || loading) return;
-    const userText = inputMsg.trim();
+    if ((!inputMsg.trim() && !attachedImage) || loading) return;
+    const userText = inputMsg.trim() || "Add this uploaded mockup/diagram into the application screens";
+    const currentImg = attachedImage;
     const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     setInputMsg('');
-    setMessages(prev => [...prev, { role: 'user', text: userText, time: currentTime }]);
+    setAttachedImage(null);
+    setAttachedImageName(null);
+    if (imageInputRef.current) imageInputRef.current.value = '';
+
+    setMessages(prev => [...prev, { role: 'user', text: userText, time: currentTime, image: currentImg || undefined }]);
     setLoading(true);
 
     try {
-      const res = await simulationApi.chatRefine(proposalId, userText, schema);
+      const res = await simulationApi.chatRefine(proposalId, userText, schema, currentImg);
       const resPayload = res?.data ? res.data : res;
       if (resPayload?.updated_schema) {
-        setSchema(resPayload.updated_schema);
+        setSchema({ ...resPayload.updated_schema }); // Immediate state update for instant UI re-render
         setMessages(prev => [
           ...prev, 
           { 
@@ -243,7 +264,12 @@ export const SimulationModal: React.FC<SimulationModalProps> = ({
                         <Bot size={11} /> Copilot
                       </div>
                     )}
-                    {m.text}
+                    {m.image && (
+                      <div className="mb-2 rounded-lg overflow-hidden border border-white/20 max-w-[200px]">
+                        <img src={m.image} alt="Uploaded attachment" className="w-full h-auto object-cover max-h-36" />
+                      </div>
+                    )}
+                    <p className="whitespace-pre-wrap">{m.text}</p>
                   </div>
                   <span className="text-[9px] text-slate-500 mt-1 px-1">{m.time}</span>
                 </div>
@@ -251,33 +277,70 @@ export const SimulationModal: React.FC<SimulationModalProps> = ({
               {loading && (
                 <div className="flex items-center gap-2 p-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-blue-400 text-xs">
                   <RefreshCw size={13} className="animate-spin text-blue-400" />
-                  <span>Updating screen prototype schema...</span>
+                  <span>Updating screen prototype in real-time...</span>
                 </div>
               )}
             </div>
 
             {/* Chatbot Input Box */}
-            <div className="p-3 border-t border-slate-800 bg-slate-900/40">
-              <div className="flex gap-2">
+            <div className="p-3 border-t border-slate-800 bg-slate-900/40 space-y-2">
+              {/* Attached Image Preview Thumbnail */}
+              {attachedImage && (
+                <div className="flex items-center justify-between p-1.5 px-2 bg-slate-950 border border-slate-800 rounded-xl text-[11px] text-slate-300">
+                  <div className="flex items-center gap-2 truncate">
+                    <img src={attachedImage} alt="Thumbnail preview" className="w-7 h-7 rounded object-cover border border-slate-700" />
+                    <span className="truncate max-w-[200px] text-xs font-medium">{attachedImageName || 'Mockup image'}</span>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => { setAttachedImage(null); setAttachedImageName(null); }}
+                    className="p-1 hover:text-rose-400 text-slate-500 transition cursor-pointer"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  ref={imageInputRef}
+                  onChange={handleImageSelect}
+                  accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                  className="hidden"
+                />
+
+                {/* Upload Image Button */}
+                <button
+                  type="button"
+                  title="Upload UI screenshot, wireframe or diagram"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={loading}
+                  className="p-2.5 bg-slate-950 border border-slate-700/80 hover:border-slate-500 text-slate-300 hover:text-white rounded-xl transition shadow-sm cursor-pointer disabled:opacity-40"
+                >
+                  <Paperclip size={14} />
+                </button>
+
                 <input
                   type="text"
                   value={inputMsg}
                   onChange={(e) => setInputMsg(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="e.g. Add date range filter to the dashboard..."
+                  placeholder={attachedImage ? "Add instructions for this image..." : "e.g. Add date range filter to the dashboard..."}
                   disabled={loading}
                   className="flex-1 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition"
                 />
                 <button
                   onClick={handleSendMessage}
-                  disabled={loading || !inputMsg.trim()}
+                  disabled={loading || (!inputMsg.trim() && !attachedImage)}
                   className="p-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-white disabled:opacity-40 transition shadow-sm cursor-pointer"
                 >
                   <Send size={13} />
                 </button>
               </div>
-              <span className="text-[10px] text-slate-500 mt-1 block">
-                💡 Tip: Ask Copilot to add cards, widgets, metrics, or custom workflows.
+              <span className="text-[10px] text-slate-500 block">
+                💡 Tip: Upload a mockup image or type modifications — changes reflect instantly on screen.
               </span>
             </div>
           </div>

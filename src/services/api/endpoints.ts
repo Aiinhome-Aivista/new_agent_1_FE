@@ -172,11 +172,12 @@ export const simulationApi = {
     const res = await apiClient.get(`/api/simulation/${proposalId}`);
     return res.data;
   },
-  chatRefine: async (proposalId: string, message: string, currentSchema: any): Promise<any> => {
+  chatRefine: async (proposalId: string, message: string, currentSchema: any, imageData?: string | null): Promise<any> => {
     const res = await apiClient.post('/api/simulation/chat', {
       proposal_id: proposalId,
       message,
       current_schema: currentSchema,
+      image_data: imageData || null,
     });
     return res.data;
   },
