@@ -167,3 +167,22 @@ export const adminApi = {
   },
 };
 
+export const simulationApi = {
+  getScreens: async (proposalId: string): Promise<any> => {
+    const res = await apiClient.get(`/api/simulation/${proposalId}`);
+    return res.data;
+  },
+  chatRefine: async (proposalId: string, message: string, currentSchema: any): Promise<any> => {
+    const res = await apiClient.post('/api/simulation/chat', {
+      proposal_id: proposalId,
+      message,
+      current_schema: currentSchema,
+    });
+    return res.data;
+  },
+  resetScreens: async (proposalId: string): Promise<any> => {
+    const res = await apiClient.post(`/api/simulation/reset/${proposalId}`);
+    return res.data;
+  },
+};
+

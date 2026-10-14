@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   History, RefreshCw, Download, Plus, Save,
-  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Lock, Trash2, Play, Pause, MonitorPlay
+  AlertTriangle, Award, FileUp, Cpu, Layers, Clock, CheckCircle2, Lock, Trash2, Play, Pause, MonitorPlay, Smartphone
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
 import { useProposalStore, useAuthStore } from '../../store';
@@ -18,6 +18,7 @@ import { ConfirmModal } from '../../components/ui/Modal/ConfirmModal';
 import { useToast } from '../../components/ui/Toast/Toast';
 import { formatDate } from '../../utils/formatters';
 import { PPTPreviewModal } from '../../components/PPTPreviewModal';
+import { SimulationModal } from '../../components/SimulationModal';
 
 const STEP_PHASES = [
   { name: 'Ingesting',  label: 'Document parsing',      icon: <FileUp size={16} /> },
@@ -26,6 +27,7 @@ const STEP_PHASES = [
   { name: 'Planning',   label: 'Timeline & pricing',    icon: <Clock size={16} /> },
   { name: 'Assembling', label: 'Reflexion assembly',    icon: <CheckCircle2 size={16} /> },
   { name: 'Complete',   label: 'Render PowerPoint',     icon: <Download size={16} /> },
+  { name: 'Simulation', label: 'App & Screen Simulator', icon: <Smartphone size={16} /> },
 ];
 
 const AI_RUNNING_STATUSES = ['Ingesting', 'Analyzing', 'Designing', 'Planning', 'Assembling', 'Failed'];
@@ -59,6 +61,7 @@ const Archive: React.FC = () => {
   const [savingIr, setSavingIr] = useState(false);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [isPPTPreviewOpen, setIsPPTPreviewOpen] = useState(false);
+  const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancellingProposal, setCancellingProposal] = useState(false);
@@ -550,6 +553,14 @@ useEffect(() => {
                             <MonitorPlay size={11} /> Preview Slides
                           </Button>
                         )}
+                        <Button 
+                          size="sm" 
+                          variant="primary" 
+                          className="text-[10px] py-1 h-7 gap-1 bg-blue-600 hover:bg-blue-500 border-blue-600 text-white shadow-sm" 
+                          onClick={() => setIsSimulationModalOpen(true)}
+                        >
+                          <Smartphone size={11} /> Launch App Simulation
+                        </Button>
                         {canApproveNow && (
                           <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Approved')}>
                             <CheckCircle2 size={11} /> Approve
@@ -963,6 +974,14 @@ useEffect(() => {
           structuredIr={statusDetails.structured_ir}
           canEdit={!perms.isReadOnly}
           onSave={handlePreviewSave}
+        />
+      )}
+      {statusDetails && (
+        <SimulationModal
+          isOpen={isSimulationModalOpen}
+          onClose={() => setIsSimulationModalOpen(false)}
+          proposalId={statusDetails.proposal.id}
+          proposalClient={statusDetails.proposal.client_name}
         />
       )}
     </PageWrapper>

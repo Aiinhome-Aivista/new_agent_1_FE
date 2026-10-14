@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   FileUp, Pause, Play, Download, History, Layers, Clock,
   CheckCircle2, Cpu, MoveRight, Edit, Trash2, Plus, X, Save,
-  Award, AlertTriangle, Lock, MonitorPlay
+  Award, AlertTriangle, Lock, MonitorPlay, Smartphone
 } from 'lucide-react';
 import { proposalApi, adminApi } from '../../services/api/endpoints';
 import { useProposalStore, useAuthStore } from '../../store';
@@ -20,6 +20,7 @@ import { useToast } from '../../components/ui/Toast/Toast';
 import { TechSelectionModal } from '../../components/TechSelectionModal';
 import { PPTPreviewModal } from '../../components/PPTPreviewModal';
 import { DynamicQuestionModal } from '../../components/DynamicQuestionModal';
+import { SimulationModal } from '../../components/SimulationModal';
 
 const STEP_PHASES = [
   { name: 'Ingesting', label: 'Document parsing', icon: <FileUp size={16} /> },
@@ -28,6 +29,7 @@ const STEP_PHASES = [
   { name: 'Planning', label: 'Timeline & pricing', icon: <Clock size={16} /> },
   { name: 'Assembling', label: 'Reflexion assembly', icon: <CheckCircle2 size={16} /> },
   { name: 'Complete', label: 'Render PowerPoint', icon: <Download size={16} /> },
+  { name: 'Simulation', label: 'App & Screen Simulator', icon: <Smartphone size={16} /> },
 ];
 
 // Pipeline-only statuses (AI running, business workflow not yet started)
@@ -62,6 +64,7 @@ const Home: React.FC = () => {
   const [editableIr, setEditableIr] = useState<any>(null);
   const [savingIr, setSavingIr] = useState(false);
   const [isPPTPreviewOpen, setIsPPTPreviewOpen] = useState(false);
+  const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extra upload modal states
@@ -794,6 +797,16 @@ const Home: React.FC = () => {
                         </Button>
                       )}
 
+                      {/* App & Screen Simulator */}
+                      <Button 
+                        size="sm" 
+                        variant="primary" 
+                        className="text-[10px] py-1 h-7 gap-1 bg-blue-600 hover:bg-blue-500 border-blue-600 text-white shadow-sm" 
+                        onClick={() => setIsSimulationModalOpen(true)}
+                      >
+                        <Smartphone size={11} /> Launch App Simulation
+                      </Button>
+
                       {/* Approve */}
                       {canApproveNow && (
                         <Button size="sm" variant="success" className="text-[10px] py-1 h-7 gap-1" onClick={() => handleTransition('Approved')}>
@@ -1284,6 +1297,14 @@ const Home: React.FC = () => {
           structuredIr={statusDetails.structured_ir}
           canEdit={!perms.isReadOnly}
           onSave={handlePreviewSave}
+        />
+      )}
+      {statusDetails && (
+        <SimulationModal
+          isOpen={isSimulationModalOpen}
+          onClose={() => setIsSimulationModalOpen(false)}
+          proposalId={statusDetails.proposal.id}
+          proposalClient={statusDetails.proposal.client_name}
         />
       )}
     </PageWrapper>
