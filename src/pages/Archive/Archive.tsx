@@ -81,45 +81,53 @@ useEffect(() => {
     fetchProposals();
   }, []);
 
-  // ── Poll active proposal status ─────────────────────────
+  // ── Stream active proposal status (SSE) ─────────────────
   useEffect(() => {
-    let timerId: any = null;
-    let isFetching = false;
-
-    const poll = async () => {
-      if (!activeProposalId || isFetching) return;
-      isFetching = true;
-      try {
-        const details = await proposalApi.status(activeProposalId);
-        const currentDetails = useProposalStore.getState().statusDetails;
-        if (!currentDetails || currentDetails.proposal.id === activeProposalId) {
-          setStatusDetails(details);
-        }
-        const proposalStatus = details.proposal.status;
-        const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
-        if (!isRunning) {
-          setPolling(false);
-          setActiveProposalId(null);
-          if (proposalStatus === 'Failed') {
-            toast('Proposal generation failed. Check step logs.', 'error');
-          } else if (proposalStatus === 'Complete') {
-            toast('Proposal PowerPoint generation completed!', 'success');
-          }
-          fetchProposals();
-        }
-      } catch (err) {
-        console.error('Error polling status:', err);
-      } finally {
-        isFetching = false;
-      }
-    };
+    let evtSource: EventSource | null = null;
 
     if (isPolling && activeProposalId) {
-      timerId = setInterval(poll, 3000);
+      evtSource = new EventSource(`/api/proposals/status/stream/${activeProposalId}`);
+      
+      evtSource.onmessage = (event) => {
+        try {
+          const details = JSON.parse(event.data);
+          if (details.error) {
+            console.error('SSE Error:', details.error);
+            evtSource?.close();
+            return;
+          }
+          
+          const currentDetails = useProposalStore.getState().statusDetails;
+          if (!currentDetails || currentDetails.proposal.id === activeProposalId) {
+            setStatusDetails(details);
+          }
+          const proposalStatus = details.proposal.status;
+          const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
+          
+          if (!isRunning) {
+            setPolling(false);
+            setActiveProposalId(null);
+            evtSource?.close();
+            if (proposalStatus === 'Failed') {
+              toast('Proposal generation failed. Check step logs.', 'error');
+            } else if (proposalStatus === 'Complete') {
+              toast('Proposal PowerPoint generation completed!', 'success');
+            }
+            fetchProposals();
+          }
+        } catch (err) {
+          console.error('Error parsing SSE data:', err);
+        }
+      };
+
+      evtSource.onerror = (err) => {
+        console.error('SSE connection error:', err);
+        evtSource?.close();
+      };
     }
 
     return () => {
-      if (timerId) clearInterval(timerId);
+      if (evtSource) evtSource.close();
     };
   }, [isPolling, activeProposalId]);
 

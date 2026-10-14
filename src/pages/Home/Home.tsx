@@ -130,58 +130,65 @@ const Home: React.FC = () => {
   const [showTechSelection, setShowTechSelection] = useState(false);
   const [showRateConfirmation, setShowRateConfirmation] = useState(false);
 
-  // ── Poll active proposal status ─────────────────────────
+  // ── Stream active proposal status (SSE) ─────────────────
   useEffect(() => {
-    let timerId: any = null;
-    let isFetching = false;
-    let isCancelled = false;
-
-    const poll = async () => {
-      if (!activeProposalId || isFetching || isCancelled) return;
-      isFetching = true;
-      try {
-        const details = await proposalApi.status(activeProposalId);
-        if (isCancelled) return;
-
-        const currentDetails = useProposalStore.getState().statusDetails;
-        if (!currentDetails || currentDetails.proposal.id === activeProposalId) {
-          setStatusDetails(details);
-        }
-        const proposalStatus = details.proposal.status;
-
-        if (proposalStatus === 'WaitingForTechSelection') {
-          setPolling(false);
-          setShowTechSelection(true);
-        } else if (proposalStatus === 'WaitingForRateConfirmation') {
-          setPolling(false);
-          setShowRateConfirmation(true);
-        } else {
-          const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
-          if (!isRunning) {
-            setPolling(false);
-            setActiveProposalId(null);
-            if (proposalStatus === 'Failed') {
-              toast('Proposal generation failed. Check step logs.', 'error');
-            } else if (proposalStatus === 'Complete') {
-              toast('Proposal PowerPoint generation completed!', 'success');
-            }
-            fetchProposals();
-          } else {
-            if (!isCancelled) timerId = setTimeout(poll, 3000);
+    let evtSource: EventSource | null = null;
+    
+    if (isPolling && activeProposalId) {
+      evtSource = new EventSource(`/api/proposals/status/stream/${activeProposalId}`);
+      
+      evtSource.onmessage = (event) => {
+        try {
+          const details = JSON.parse(event.data);
+          if (details.error) {
+            console.error('SSE Error:', details.error);
+            evtSource?.close();
+            return;
           }
+          
+          const currentDetails = useProposalStore.getState().statusDetails;
+          if (!currentDetails || currentDetails.proposal.id === activeProposalId) {
+            setStatusDetails(details);
+          }
+          const proposalStatus = details.proposal.status;
+          
+          if (proposalStatus === 'WaitingForTechSelection') {
+            setPolling(false);
+            setShowTechSelection(true);
+            evtSource?.close();
+          } else if (proposalStatus === 'WaitingForRateConfirmation') {
+            setPolling(false);
+            setShowRateConfirmation(true);
+            evtSource?.close();
+          } else {
+            const isRunning = AI_RUNNING_STATUSES.filter(s => s !== 'Failed').includes(proposalStatus);
+            if (!isRunning) {
+              setPolling(false);
+              setActiveProposalId(null);
+              evtSource?.close();
+              if (proposalStatus === 'Failed') {
+                toast('Proposal generation failed. Check step logs.', 'error');
+              } else if (proposalStatus === 'Complete') {
+                toast('Proposal PowerPoint generation completed!', 'success');
+              }
+              fetchProposals();
+            }
+          }
+        } catch (err) {
+          console.error('Error parsing SSE data:', err);
         }
-      } catch (err) {
-        console.error('Polling status failed:', err);
-        if (!isCancelled) timerId = setTimeout(poll, 3000);
-      } finally {
-        isFetching = false;
-      }
-    };
+      };
 
-    if (isPolling && activeProposalId) poll();
+      evtSource.onerror = (err) => {
+        console.error('SSE connection error:', err);
+        evtSource?.close();
+      };
+    }
+    
     return () => {
-      isCancelled = true;
-      if (timerId) clearTimeout(timerId);
+      if (evtSource) {
+        evtSource.close();
+      }
     };
   }, [isPolling, activeProposalId]);
 
